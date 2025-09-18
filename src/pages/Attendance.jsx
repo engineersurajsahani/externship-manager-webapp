@@ -1,0 +1,730 @@
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { 
+  FiCalendar, 
+  FiTrendingUp, 
+  FiClock, 
+  FiTarget,
+  FiUsers,
+  FiCheck,
+  FiX,
+  FiEye,
+  FiFolder
+} from 'react-icons/fi';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
+import AttendanceHistory from '../components/widgets/AttendanceHistory';
+import CalendarAttendanceView from '../components/widgets/CalendarAttendanceView';
+import { useAuth } from '../contexts/AuthContext';
+import { apiService } from '../services/api';
+
+const Attendance = () => {
+  const { user, getUserRole, ROLES } = useAuth();
+  const userRole = getUserRole();
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [attendanceData, setAttendanceData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Load attendance data from API
+  useEffect(() => {
+    const loadAttendanceData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        let response;
+        if (userRole === ROLES.ADMIN) {
+          // Admin gets team attendance stats
+          response = await apiService.getAttendanceStats();
+        } else {
+          // Other roles get their personal attendance
+          response = await apiService.getMyAttendance();
+        }
+        
+        if (response.data.success) {
+          setAttendanceData(response.data);
+        } else {
+          throw new Error(response.data.message || 'Failed to load attendance data');
+        }
+      } catch (error) {
+        console.error('Failed to load attendance data:', error);
+        setError(error.message);
+        // Set fallback empty data
+        setAttendanceData({
+          totalWorkingDays: 0,
+          presentDays: 0,
+          absentDays: 0,
+          attendanceRate: 0,
+          todayStatus: 'pending',
+          streak: 0
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (user) {
+      loadAttendanceData();
+    }
+  }, [user, userRole, ROLES.ADMIN]);
+
+  const getWorkingDaysInMonth = (year, month) => {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    let workingDays = 0;
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0) { // Only Sunday is non-working day
+        workingDays++;
+      }
+    }
+    
+    return workingDays;
+  };
+
+  const getPastWorkingDaysThisMonth = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const today = now.getDate();
+    
+    let pastWorkingDays = 0;
+    
+    for (let day = 1; day <= today; day++) {
+      const date = new Date(currentYear, currentMonth, day);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0 && date <= now) { // Only Sunday is non-working day
+        pastWorkingDays++;
+      }
+    }
+    
+    return pastWorkingDays;
+  };
+
+  const calculateStreak = (userUpdates) => {
+    if (userUpdates.length === 0) return 0;
+    
+    const sortedUpdates = userUpdates
+      .map(update => new Date(update.date))
+      .sort((a, b) => b - a);
+    
+    let streak = 0;
+    let currentDate = new Date();
+    
+    for (const updateDate of sortedUpdates) {
+      const daysDifference = Math.floor((currentDate - updateDate) / (1000 * 60 * 60 * 24));
+      
+      if (daysDifference <= 1 && currentDate.getDay() !== 0) { // Only Sunday is non-working day
+        streak++;
+        currentDate = new Date(updateDate);
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+
+
+
+  const handleProjectClick = (project) => {
+    setSelectedProject(project);
+    setShowProjectModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowProjectModal(false);
+    setSelectedProject(null);
+  };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card className="p-6 text-center">
+          <div className="text-red-600 mb-4">
+            <FiX className="w-12 h-12 mx-auto mb-2" />
+            <p className="text-lg font-semibold">Error Loading Attendance Data</p>
+            <p className="text-sm">{error}</p>
+          </div>
+          <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
+            Retry
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+  
+  const overview = attendanceData || {};
+  const projectAttendanceData = attendanceData?.projects || [];
+
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between mb-8"
+      >
+        <div className="flex items-center space-x-3">
+          <div className="p-3 bg-blue-100 rounded-full">
+            <FiCalendar className="w-6 h-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {userRole === ROLES.ADMIN ? 'Team Attendance Management' : 'Attendance Tracking'}
+            </h1>
+            <p className="text-gray-600 mt-1">
+              {userRole === ROLES.ADMIN 
+                ? 'Monitor team attendance and daily update submissions across all users'
+                : 'Monitor your daily update submissions and attendance record'
+              }
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Quick Stats */}
+      <div className={`grid grid-cols-1 gap-6 ${
+        userRole === ROLES.ADMIN 
+          ? 'md:grid-cols-2 lg:grid-cols-4' 
+          : userRole === ROLES.INTERN 
+            ? 'md:grid-cols-2 lg:grid-cols-3' 
+            : 'md:grid-cols-2 lg:grid-cols-4'
+      }`}>
+        {userRole === ROLES.ADMIN ? (
+          // Admin Team Stats
+          <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Users</p>
+                    <p className="text-2xl font-bold text-gray-900">{overview.totalUsers}</p>
+                    <p className="text-sm text-gray-500">Registered users</p>
+                  </div>
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <FiCalendar className="w-6 h-6 text-blue-600" />
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Team Attendance</p>
+                    <p className="text-2xl font-bold text-gray-900">{overview.teamAttendanceRate}%</p>
+                    <p className={`text-sm ${overview.teamAttendanceRate >= 90 ? 'text-green-600' : 
+                                  overview.teamAttendanceRate >= 75 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      {overview.teamAttendanceRate >= 90 ? 'Excellent' : 
+                       overview.teamAttendanceRate >= 75 ? 'Good' : 'Needs Improvement'}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-full ${
+                    overview.teamAttendanceRate >= 90 ? 'bg-green-100' :
+                    overview.teamAttendanceRate >= 75 ? 'bg-yellow-100' : 'bg-red-100'
+                  }`}>
+                    <FiTrendingUp className={`w-6 h-6 ${
+                      overview.teamAttendanceRate >= 90 ? 'text-green-600' :
+                      overview.teamAttendanceRate >= 75 ? 'text-yellow-600' : 'text-red-600'
+                    }`} />
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Today Submitted</p>
+                    <p className="text-2xl font-bold text-gray-900">{overview.todaySubmissions}</p>
+                    <p className="text-sm text-gray-500">Updates received</p>
+                  </div>
+                  <div className="p-3 bg-green-100 rounded-full">
+                    <FiTarget className="w-6 h-6 text-green-600" />
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Pending Today</p>
+                    <p className={`text-2xl font-bold ${
+                      overview.pendingToday === 0 ? 'text-green-600' : 'text-yellow-600'
+                    }`}>
+                      {overview.pendingToday}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {overview.pendingToday === 0 ? 'All submitted' : 'Awaiting updates'}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-full ${
+                    overview.pendingToday === 0 ? 'bg-green-100' : 'bg-yellow-100'
+                  }`}>
+                    <FiClock className={`w-6 h-6 ${
+                      overview.pendingToday === 0 ? 'text-green-600' : 'text-yellow-600'
+                    }`} />
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          </>
+        ) : userRole === ROLES.INTERN ? (
+          // Intern Stats (3 cards only)
+          <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">This Month</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {overview.presentDays}/{overview.totalWorkingDays}
+                    </p>
+                    <p className="text-sm text-gray-500">Days present</p>
+                  </div>
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <FiCalendar className="w-6 h-6 text-blue-600" />
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Attendance Rate</p>
+                    <p className="text-2xl font-bold text-gray-900">{overview.attendanceRate}%</p>
+                    <p className={`text-sm ${overview.attendanceRate >= 90 ? 'text-green-600' : 
+                                  overview.attendanceRate >= 75 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      {overview.attendanceRate >= 90 ? 'Excellent' : 
+                       overview.attendanceRate >= 75 ? 'Good' : 'Needs Improvement'}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-full ${
+                    overview.attendanceRate >= 90 ? 'bg-green-100' :
+                    overview.attendanceRate >= 75 ? 'bg-yellow-100' : 'bg-red-100'
+                  }`}>
+                    <FiTrendingUp className={`w-6 h-6 ${
+                      overview.attendanceRate >= 90 ? 'text-green-600' :
+                      overview.attendanceRate >= 75 ? 'text-yellow-600' : 'text-red-600'
+                    }`} />
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Current Streak</p>
+                    <p className="text-2xl font-bold text-gray-900">{overview.streak}</p>
+                    <p className="text-sm text-gray-500">Consecutive days</p>
+                  </div>
+                  <div className="p-3 bg-orange-100 rounded-full">
+                    <FiTarget className="w-6 h-6 text-orange-600" />
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          </>
+        ) : (
+          // Personal Stats for Team Leaders and Project Managers (4 cards)
+          <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">This Month</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {overview.presentDays}/{overview.totalWorkingDays}
+                    </p>
+                    <p className="text-sm text-gray-500">Days present</p>
+                  </div>
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <FiCalendar className="w-6 h-6 text-blue-600" />
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Attendance Rate</p>
+                    <p className="text-2xl font-bold text-gray-900">{overview.attendanceRate}%</p>
+                    <p className={`text-sm ${overview.attendanceRate >= 90 ? 'text-green-600' : 
+                                  overview.attendanceRate >= 75 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      {overview.attendanceRate >= 90 ? 'Excellent' : 
+                       overview.attendanceRate >= 75 ? 'Good' : 'Needs Improvement'}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-full ${
+                    overview.attendanceRate >= 90 ? 'bg-green-100' :
+                    overview.attendanceRate >= 75 ? 'bg-yellow-100' : 'bg-red-100'
+                  }`}>
+                    <FiTrendingUp className={`w-6 h-6 ${
+                      overview.attendanceRate >= 90 ? 'text-green-600' :
+                      overview.attendanceRate >= 75 ? 'text-yellow-600' : 'text-red-600'
+                    }`} />
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Current Streak</p>
+                    <p className="text-2xl font-bold text-gray-900">{overview.streak}</p>
+                    <p className="text-sm text-gray-500">Consecutive days</p>
+                  </div>
+                  <div className="p-3 bg-orange-100 rounded-full">
+                    <FiTarget className="w-6 h-6 text-orange-600" />
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Today's Status</p>
+                    <p className={`text-2xl font-bold ${
+                      overview.todayStatus === 'present' ? 'text-green-600' : 'text-yellow-600'
+                    }`}>
+                      {overview.todayStatus === 'present' ? 'Present' : 'Pending'}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {overview.todayStatus === 'present' ? 'Update submitted' : 'Awaiting update'}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-full ${
+                    overview.todayStatus === 'present' ? 'bg-green-100' : 'bg-yellow-100'
+                  }`}>
+                    <FiClock className={`w-6 h-6 ${
+                      overview.todayStatus === 'present' ? 'text-green-600' : 'text-yellow-600'
+                    }`} />
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          </>
+        )}
+      </div>
+
+      {/* Today's Quick Action */}
+      {userRole !== ROLES.ADMIN && overview.todayStatus === 'pending' && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-blue-100 rounded-full">
+                  <FiClock className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Submit Today's Update</h3>
+                  <p className="text-sm text-gray-600">
+                    You haven't submitted your daily update yet. Submit it now to mark your attendance.
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => window.location.href = '/daily-update'}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Submit Update
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
+
+      {/* Project Attendance View for Admin */}
+      {userRole === ROLES.ADMIN ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+        >
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">Project Attendance Overview</h3>
+              <span className="text-sm text-gray-500">
+                Today's attendance by project
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projectAttendanceData.map((project, index) => (
+                <motion.div
+                  key={project.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * index }}
+                  className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 hover:shadow-md transition-all cursor-pointer"
+                  onClick={() => handleProjectClick(project)}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <FiFolder className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{project.name}</h4>
+                        <p className="text-sm text-gray-500">{project.totalMembers} members</p>
+                      </div>
+                    </div>
+                    <Badge className={`${project.attendanceRate >= 80 ? 'bg-green-100 text-green-800' : 
+                                     project.attendanceRate >= 60 ? 'bg-yellow-100 text-yellow-800' : 
+                                     'bg-red-100 text-red-800'}`}>
+                      {project.attendanceRate}%
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center space-x-2 mb-1">
+                        <FiCheck className="w-4 h-4 text-green-600" />
+                        <span className="text-lg font-bold text-green-600">{project.presentCount}</span>
+                      </div>
+                      <p className="text-xs text-gray-500">Present</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center space-x-2 mb-1">
+                        <FiX className="w-4 h-4 text-red-600" />
+                        <span className="text-lg font-bold text-red-600">{project.absentCount}</span>
+                      </div>
+                      <p className="text-xs text-gray-500">Absent</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Click to view details</span>
+                      <FiEye className="w-4 h-4 text-gray-400" />
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            
+            {projectAttendanceData.length === 0 && (
+              <div className="text-center py-8">
+                <FiFolder className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No projects found</p>
+                <p className="text-sm text-gray-400">Create projects to track team attendance</p>
+              </div>
+            )}
+          </Card>
+        </motion.div>
+      ) : (
+        /* Attendance View for non-admin roles */
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+        >
+          {userRole === ROLES.INTERN ? (
+            <CalendarAttendanceView />
+          ) : (
+            <AttendanceHistory viewMode="table" />
+          )}
+        </motion.div>
+      )}
+
+
+      {/* Project Detail Modal */}
+      {showProjectModal && selectedProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <FiFolder className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">{selectedProject.name}</h2>
+                  <p className="text-sm text-gray-500">
+                    Attendance: {selectedProject.attendanceRate}% • {selectedProject.totalMembers} total members
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseModal}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Present Members */}
+              <div>
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <FiCheck className="w-5 h-5 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Present Today ({selectedProject.presentCount})
+                  </h3>
+                </div>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {selectedProject.presentMembers.length > 0 ? (
+                    selectedProject.presentMembers.map((member, index) => (
+                      <div key={member.email} className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <FiUsers className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{member.name}</p>
+                          <p className="text-sm text-gray-500">{member.department} • {member.role}</p>
+                        </div>
+                        <div className="p-1 bg-green-100 rounded-full">
+                          <FiCheck className="w-4 h-4 text-green-600" />
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-6">
+                      <FiCheck className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-500">No members present today</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Absent Members */}
+              <div>
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="p-2 bg-red-100 rounded-lg">
+                    <FiX className="w-5 h-5 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Absent Today ({selectedProject.absentCount})
+                  </h3>
+                </div>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {selectedProject.absentMembers.length > 0 ? (
+                    selectedProject.absentMembers.map((member, index) => (
+                      <div key={member.email} className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg">
+                        <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                          <FiUsers className="w-4 h-4 text-red-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{member.name}</p>
+                          <p className="text-sm text-gray-500">{member.department} • {member.role}</p>
+                        </div>
+                        <div className="p-1 bg-red-100 rounded-full">
+                          <FiX className="w-4 h-4 text-red-600" />
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-6">
+                      <FiX className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-500">All members are present today!</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="flex justify-end">
+                <Button onClick={handleCloseModal}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Attendance;
