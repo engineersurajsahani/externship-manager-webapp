@@ -10,7 +10,7 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  
+
   const handleSignOut = () => {
     // Use AuthContext logout method
     logout();
@@ -21,31 +21,46 @@ const Header = () => {
   // Get user display info
   const getUserDisplayInfo = () => {
     if (!user) return { name: 'User', role: 'Guest', initials: 'U' };
-    
+
     const email = user.email || '';
     const name = email.split('@')[0] || 'User';
     const initials = name.substring(0, 2).toUpperCase();
-    
+
     const roleDisplayNames = {
       admin: 'Administrator',
-      pm: 'Project Manager', 
+      pm: 'Project Manager',
       tl: 'Team Leader',
-      intern: 'Intern'
+      intern: 'Intern',
     };
-    
+
     return {
       name: name.charAt(0).toUpperCase() + name.slice(1),
       role: roleDisplayNames[user.role] || user.role || 'User',
-      initials
+      initials,
     };
   };
 
   const userDisplayInfo = getUserDisplayInfo();
 
   const notifications = [
-    { id: 1, text: 'New externship application received', time: '5 min ago', unread: true },
-    { id: 2, text: 'Interview scheduled with ABC Corp', time: '1 hour ago', unread: true },
-    { id: 3, text: 'Application approved for John Doe', time: '3 hours ago', unread: false },
+    {
+      id: 1,
+      text: 'New externship application received',
+      time: '5 min ago',
+      unread: true,
+    },
+    {
+      id: 2,
+      text: 'Interview scheduled with ABC Corp',
+      time: '1 hour ago',
+      unread: true,
+    },
+    {
+      id: 3,
+      text: 'Application approved for John Doe',
+      time: '3 hours ago',
+      unread: false,
+    },
   ];
 
   return (
@@ -56,7 +71,10 @@ const Header = () => {
           <div className="flex items-center flex-1">
             <div className="flex-1 max-w-2xl">
               <div className="relative">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <FiSearch
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={20}
+                />
                 <input
                   type="text"
                   placeholder="Search projects, users, daily updates..."
@@ -103,7 +121,9 @@ const Header = () => {
                           }`}
                         >
                           <p className="text-sm text-gray-800">{notif.text}</p>
-                          <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {notif.time}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -140,8 +160,12 @@ const Header = () => {
                     className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden"
                   >
                     <div className="px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600">
-                      <p className="text-sm font-semibold text-white">{userDisplayInfo.name}</p>
-                      <p className="text-xs text-indigo-100">{userDisplayInfo.role}</p>
+                      <p className="text-sm font-semibold text-white">
+                        {userDisplayInfo.name}
+                      </p>
+                      <p className="text-xs text-indigo-100">
+                        {userDisplayInfo.role}
+                      </p>
                     </div>
                     <div className="py-2">
                       <button className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
@@ -151,7 +175,7 @@ const Header = () => {
                         Account Settings
                       </button>
                       <hr className="my-2" />
-                      <button 
+                      <button
                         onClick={handleSignOut}
                         className="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                       >

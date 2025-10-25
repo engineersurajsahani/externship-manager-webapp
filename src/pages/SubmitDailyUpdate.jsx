@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiArrowLeft, FiSave, FiUpload, FiCheckCircle, FiClock } from 'react-icons/fi';
+import {
+  FiArrowLeft,
+  FiSave,
+  FiUpload,
+  FiCheckCircle,
+  FiClock,
+  FiFolder,
+} from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,22 +18,40 @@ const SubmitDailyUpdate = () => {
   const { user, getUserRole, ROLES } = useAuth();
   const navigate = useNavigate();
   const userRole = getUserRole();
-  
+
   const [formData, setFormData] = useState({
     workDone: '',
     challenges: '',
-    planTomorrow: '',
-    attachments: []
+    planForTomorrow: '',
+    attachments: [],
+    project: '',
   });
-  
+
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasExistingUpdate, setHasExistingUpdate] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [projects, setProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+
+  const fetchUserProjects = useCallback(async () => {
+    try {
+      setLoadingProjects(true);
+      const response = await apiService.getMyProjects();
+      if (response.data.success) {
+        setProjects(response.data.projects || []);
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      setProjects([]);
+    } finally {
+      setLoadingProjects(false);
+    }
+  }, []);
 
   const checkExistingSubmission = useCallback(async () => {
     if (!user) return;
-    
+
     try {
       const response = await apiService.getTodayUpdate();
       if (response.data.success && response.data.hasSubmitted) {
@@ -35,8 +60,9 @@ const SubmitDailyUpdate = () => {
         setFormData({
           workDone: update.workDone || '',
           challenges: update.challenges || '',
-          planTomorrow: update.planForTomorrow || '',
-          attachments: update.attachments || []
+          planForTomorrow: update.planForTomorrow || '',
+          attachments: update.attachments || [],
+          project: update.project?._id || '',
         });
       }
     } catch (error) {
@@ -44,6 +70,11 @@ const SubmitDailyUpdate = () => {
       // If API call fails, we'll assume no existing submission
     }
   }, [user]);
+
+  // Fetch user projects on load
+  useEffect(() => {
+    fetchUserProjects();
+  }, [fetchUserProjects]);
 
   // Check for existing update on load
   useEffect(() => {
@@ -60,21 +91,27 @@ const SubmitDailyUpdate = () => {
   const validateForm = () => {
     const newErrors = {};
 
+    if (!formData.project) {
+      newErrors.project = 'Please select a project';
+    }
+
     if (!formData.workDone.trim()) {
       newErrors.workDone = 'Work done today is required';
     } else if (formData.workDone.trim().length < 10) {
       newErrors.workDone = 'Please provide more detail (minimum 10 characters)';
     }
 
-    if (!formData.planTomorrow.trim()) {
-      newErrors.planTomorrow = 'Plan for tomorrow is required';
-    } else if (formData.planTomorrow.trim().length < 10) {
-      newErrors.planTomorrow = 'Please provide more detail (minimum 10 characters)';
+    if (!formData.planForTomorrow.trim()) {
+      newErrors.planForTomorrow = 'Plan for tomorrow is required';
+    } else if (formData.planForTomorrow.trim().length < 10) {
+      newErrors.planForTomorrow =
+        'Please provide more detail (minimum 10 characters)';
     }
 
     // Challenges can be optional, but if provided, should have some content
     if (formData.challenges.trim() && formData.challenges.trim().length < 5) {
-      newErrors.challenges = 'Please provide more detail if mentioning challenges';
+      newErrors.challenges =
+        'Please provide more detail if mentioning challenges';
     }
 
     setErrors(newErrors);
@@ -82,23 +119,23 @@ const SubmitDailyUpdate = () => {
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
 
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: ''
+        [field]: '',
       }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -109,17 +146,18 @@ const SubmitDailyUpdate = () => {
       const updateData = {
         workDone: formData.workDone,
         challenges: formData.challenges,
-        planForTomorrow: formData.planTomorrow,
+        planForTomorrow: formData.planForTomorrow,
         attachments: formData.attachments,
+        project: formData.project,
         hoursWorked: 8, // Default to 8 hours
-        mood: 'neutral' // Default mood
+        mood: 'neutral', // Default mood
       };
 
       const response = await apiService.submitDailyUpdate(updateData);
-      
+
       if (response.data.success) {
         setSubmitSuccess(true);
-        
+
         // Redirect after success message
         setTimeout(() => {
           navigate('/daily-updates');
@@ -127,20 +165,23 @@ const SubmitDailyUpdate = () => {
       } else {
         throw new Error(response.data.message || 'Failed to submit update');
       }
-      
     } catch (error) {
       console.error('Error submitting daily update:', error);
-      
+
       // Show error message to user
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to submit update';
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        'Failed to submit update';
       setErrors({ submit: errorMessage });
-      
+
       // If it's a validation error from backend, show specific errors
       if (error.response?.data?.errors) {
         const backendErrors = {};
-        error.response.data.errors.forEach(err => {
+        error.response.data.errors.forEach((err) => {
           if (err.param === 'workDone') backendErrors.workDone = err.msg;
-          if (err.param === 'planForTomorrow') backendErrors.planTomorrow = err.msg;
+          if (err.param === 'planForTomorrow')
+            backendErrors.planForTomorrow = err.msg;
           if (err.param === 'challenges') backendErrors.challenges = err.msg;
         });
         setErrors(backendErrors);
@@ -157,12 +198,15 @@ const SubmitDailyUpdate = () => {
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
   const getWordCount = (text) => {
-    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+    return text
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length;
   };
 
   // Show loading if user is not loaded yet
@@ -195,8 +239,9 @@ const SubmitDailyUpdate = () => {
               {hasExistingUpdate ? 'Update Saved!' : 'Daily Update Submitted!'}
             </h2>
             <p className="text-gray-600 mb-6">
-              Your daily update has been {hasExistingUpdate ? 'updated' : 'submitted'} successfully. 
-              You'll be redirected to the updates page shortly.
+              Your daily update has been{' '}
+              {hasExistingUpdate ? 'updated' : 'submitted'} successfully. You'll
+              be redirected to the updates page shortly.
             </p>
             <Button onClick={() => navigate('/daily-updates')}>
               View All Updates
@@ -225,7 +270,9 @@ const SubmitDailyUpdate = () => {
         </Button>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {hasExistingUpdate ? 'Update Today\'s Submission' : 'Submit Daily Update'}
+            {hasExistingUpdate
+              ? "Update Today's Submission"
+              : 'Submit Daily Update'}
           </h1>
           <p className="text-gray-600 mt-1">
             Share your progress, challenges, and plans for tomorrow
@@ -275,7 +322,8 @@ const SubmitDailyUpdate = () => {
                       You've already submitted an update for today
                     </p>
                     <p className="text-xs text-blue-700 mt-1">
-                      You can modify your submission until the daily cutoff time.
+                      You can modify your submission until the daily cutoff
+                      time.
                     </p>
                   </div>
                 </div>
@@ -285,6 +333,43 @@ const SubmitDailyUpdate = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Project Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <FiFolder className="inline w-4 h-4 mr-1 mb-0.5" />
+                Select Project *
+              </label>
+              {loadingProjects ? (
+                <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                  <p className="text-sm text-gray-500">Loading projects...</p>
+                </div>
+              ) : projects.length === 0 ? (
+                <div className="w-full px-3 py-2 border border-yellow-300 rounded-lg bg-yellow-50">
+                  <p className="text-sm text-yellow-700">
+                    No projects assigned. Please contact your project manager.
+                  </p>
+                </div>
+              ) : (
+                <select
+                  value={formData.project}
+                  onChange={(e) => handleInputChange('project', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                    errors.project ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">-- Select a project --</option>
+                  {projects.map((project) => (
+                    <option key={project._id} value={project._id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {errors.project && (
+                <p className="text-red-500 text-xs mt-1">{errors.project}</p>
+              )}
+            </div>
+
             {/* Work Done Today */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -320,7 +405,9 @@ const SubmitDailyUpdate = () => {
               </label>
               <textarea
                 value={formData.challenges}
-                onChange={(e) => handleInputChange('challenges', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange('challenges', e.target.value)
+                }
                 rows={3}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none ${
                   errors.challenges ? 'border-red-300' : 'border-gray-300'
@@ -347,24 +434,26 @@ const SubmitDailyUpdate = () => {
                 What do you plan to work on tomorrow? *
               </label>
               <textarea
-                value={formData.planTomorrow}
-                onChange={(e) => handleInputChange('planTomorrow', e.target.value)}
+                value={formData.planForTomorrow}
+                onChange={(e) =>
+                  handleInputChange('planForTomorrow', e.target.value)
+                }
                 rows={3}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none ${
-                  errors.planTomorrow ? 'border-red-300' : 'border-gray-300'
+                  errors.planForTomorrow ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Outline your goals and tasks for the next working day..."
               />
               <div className="flex items-center justify-between mt-1">
-                {errors.planTomorrow ? (
-                  <p className="text-red-500 text-xs">{errors.planTomorrow}</p>
+                {errors.planForTomorrow ? (
+                  <p className="text-red-500 text-xs">{errors.planForTomorrow}</p>
                 ) : (
                   <p className="text-gray-500 text-xs">
                     Outline your priorities and goals for tomorrow
                   </p>
                 )}
                 <span className="text-xs text-gray-400">
-                  {getWordCount(formData.planTomorrow)} words
+                  {getWordCount(formData.planForTomorrow)} words
                 </span>
               </div>
             </div>
@@ -373,14 +462,20 @@ const SubmitDailyUpdate = () => {
             <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-6">
               <div className="text-center">
                 <FiUpload className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Attach Files (Optional)</h4>
-                <p className="text-sm text-gray-500 mb-2">Screenshots, documents, or relevant files</p>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">
+                  Attach Files (Optional)
+                </h4>
+                <p className="text-sm text-gray-500 mb-2">
+                  Screenshots, documents, or relevant files
+                </p>
                 <p className="text-xs text-gray-400 mb-4">
                   File upload functionality will be available in future updates
                 </p>
                 <div className="flex items-center justify-center space-x-2">
                   <div className="bg-white px-3 py-1 rounded-md border border-gray-300">
-                    <span className="text-xs text-gray-400">Supported: PNG, JPG, PDF, DOC</span>
+                    <span className="text-xs text-gray-400">
+                      Supported: PNG, JPG, PDF, DOC
+                    </span>
                   </div>
                   <div className="bg-white px-3 py-1 rounded-md border border-gray-300">
                     <span className="text-xs text-gray-400">Max: 10MB</span>
@@ -398,9 +493,9 @@ const SubmitDailyUpdate = () => {
 
             {/* Submit Button */}
             <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => navigate('/daily-updates')}
               >
                 Cancel

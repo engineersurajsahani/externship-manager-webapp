@@ -1,12 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import {
-  FiHome,
-  FiBriefcase,
-  FiUsers,
-  FiClock,
-  FiEdit3
-} from 'react-icons/fi';
+import { FiHome, FiBriefcase, FiUsers, FiClock, FiEdit3, FiMessageSquare } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = () => {
@@ -15,37 +9,101 @@ const Sidebar = () => {
 
   const allMenuItems = [
     // Dashboard - Available to all roles
-    { path: '/dashboard', icon: FiHome, label: 'Dashboard', badge: null, roles: [ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.TEAM_LEADER, ROLES.INTERN] },
-    
+    {
+      path: '/dashboard',
+      icon: FiHome,
+      label: 'Dashboard',
+      badge: null,
+      roles: [
+        ROLES.ADMIN,
+        ROLES.PROJECT_MANAGER,
+        ROLES.TEAM_LEADER,
+        ROLES.INTERN,
+      ],
+    },
+
     // Daily Updates - All roles but different views:
     // Admin: Views all updates across system
     // PM: Views updates from their project teams
     // TL: Reviews updates from their interns + submits own
     // Intern: Submits daily updates
-    { path: '/daily-updates', icon: FiEdit3, label: 'Daily Updates', badge: null, roles: [ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.TEAM_LEADER, ROLES.INTERN] },
-    
+    {
+      path: '/daily-updates',
+      icon: FiEdit3,
+      label: 'Daily Updates',
+      badge: null,
+      roles: [
+        ROLES.ADMIN,
+        ROLES.PROJECT_MANAGER,
+        ROLES.TEAM_LEADER,
+        ROLES.INTERN,
+      ],
+    },
+
     // Attendance - All roles:
     // Admin: Views all user attendance
     // PM: Views attendance of their project teams
     // TL: Views attendance of their interns
     // Intern: Views their own attendance history in calendar style
-    { path: '/attendance', icon: FiClock, label: 'Attendance', badge: null, roles: [ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.TEAM_LEADER, ROLES.INTERN] },
-    
+    {
+      path: '/attendance',
+      icon: FiClock,
+      label: 'Attendance',
+      badge: null,
+      roles: [
+        ROLES.ADMIN,
+        ROLES.PROJECT_MANAGER,
+        ROLES.TEAM_LEADER,
+        ROLES.INTERN,
+      ],
+    },
+
     // Projects - All roles:
     // Admin: Creates and manages all projects
     // PM: Manages assigned projects
     // TL: Views project details, manages team tasks
     // Intern: Views assigned projects and tracks progress
-    { path: '/projects', icon: FiBriefcase, label: 'Projects', badge: null, roles: [ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.TEAM_LEADER, ROLES.INTERN] },
-    
+    {
+      path: '/projects',
+      icon: FiBriefcase,
+      label: 'Projects',
+      badge: null,
+      roles: [
+        ROLES.ADMIN,
+        ROLES.PROJECT_MANAGER,
+        ROLES.TEAM_LEADER,
+        ROLES.INTERN,
+      ],
+    },
+
+    // Chat - Project-based communication:
+    // PM, TL, Intern: Can chat in projects they're assigned to
+    {
+      path: '/chat',
+      icon: FiMessageSquare,
+      label: 'Chat',
+      badge: null,
+      roles: [
+        ROLES.PROJECT_MANAGER,
+        ROLES.TEAM_LEADER,
+        ROLES.INTERN,
+      ],
+    },
+
     // User Management - Admin only:
     // Admin: Full control over all users and roles
-    { path: '/users', icon: FiUsers, label: 'User Management', badge: null, roles: [ROLES.ADMIN] },
+    {
+      path: '/users',
+      icon: FiUsers,
+      label: 'User Management',
+      badge: null,
+      roles: [ROLES.ADMIN],
+    },
   ];
 
   // Filter menu items based on user role
-  const menuItems = allMenuItems.filter(item => 
-    item.roles.includes(userRole) || !userRole
+  const menuItems = allMenuItems.filter(
+    (item) => item.roles.includes(userRole) || !userRole
   );
 
   // Get role-specific subtitle
@@ -65,7 +123,10 @@ const Sidebar = () => {
   };
 
   return (
-    <aside style={{ minWidth: '256px', width: '256px' }} className="bg-white shadow-2xl border-r border-gray-200 h-screen flex flex-col">
+    <aside
+      style={{ minWidth: '256px', width: '256px' }}
+      className="bg-white shadow-2xl border-r border-gray-200 h-screen flex flex-col"
+    >
       {/* Header */}
       <div className="relative h-16 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 shadow-lg overflow-hidden">
         {/* Background decoration */}
@@ -79,8 +140,12 @@ const Sidebar = () => {
               <span className="text-indigo-600 font-bold text-xl">E</span>
             </div>
             <div>
-              <span className="text-white font-bold text-lg leading-tight">Externship Manager</span>
-              <div className="text-indigo-200 text-xs font-medium">{getRoleSubtitle()}</div>
+              <span className="text-white font-bold text-lg leading-tight">
+                Externship Manager
+              </span>
+              <div className="text-indigo-200 text-xs font-medium">
+                {getRoleSubtitle()}
+              </div>
             </div>
           </div>
         </div>
@@ -110,7 +175,7 @@ const Sidebar = () => {
                     {!isActive && (
                       <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     )}
-                    
+
                     {/* Content */}
                     <div className="relative flex items-center justify-between w-full">
                       <div className="flex items-center">

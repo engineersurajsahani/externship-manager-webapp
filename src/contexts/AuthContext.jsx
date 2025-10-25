@@ -5,7 +5,7 @@ export const ROLES = {
   ADMIN: 'admin',
   PROJECT_MANAGER: 'project_manager',
   TEAM_LEADER: 'team_leader',
-  INTERN: 'intern'
+  INTERN: 'intern',
 };
 
 // Role mappings for demo users
@@ -13,7 +13,7 @@ const ROLE_MAPPINGS = {
   'admin@example.com': ROLES.ADMIN,
   'pm@example.com': ROLES.PROJECT_MANAGER,
   'tl@example.com': ROLES.TEAM_LEADER,
-  'intern1@example.com': ROLES.INTERN
+  'intern1@example.com': ROLES.INTERN,
 };
 
 // Create the context
@@ -41,10 +41,10 @@ export const AuthProvider = ({ children }) => {
         const token = localStorage.getItem('token');
         const userEmail = localStorage.getItem('userEmail');
         const storedUserData = localStorage.getItem('userData');
-        
+
         if (token && userEmail) {
           let userData;
-          
+
           // Try to use stored API user data first
           if (storedUserData) {
             try {
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }) => {
                 lastName: parsedUserData.lastName,
                 role: parsedUserData.role,
                 department: parsedUserData.department,
-                token: token
+                token: token,
               };
             } catch (e) {
               // Fall back to role mappings if stored data is corrupted
@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }) => {
               userData = {
                 email: userEmail,
                 role: userRole,
-                token: token
+                token: token,
               };
             }
           } else {
@@ -73,10 +73,10 @@ export const AuthProvider = ({ children }) => {
             userData = {
               email: userEmail,
               role: userRole,
-              token: token
+              token: token,
             };
           }
-          
+
           setUser(userData);
           setIsAuthenticated(true);
         }
@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }) => {
       lastName: apiUserData?.lastName,
       role: userRole,
       department: apiUserData?.department,
-      token
+      token,
     };
 
     // Store in localStorage
@@ -158,14 +158,10 @@ export const AuthProvider = ({ children }) => {
     getUserRole,
     hasRole,
     hasAnyRole,
-    ROLES
+    ROLES,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export default AuthContext;

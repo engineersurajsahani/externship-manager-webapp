@@ -7,38 +7,38 @@ const ConnectionStatus = () => {
     isConnected: false,
     isLoading: true,
     lastChecked: null,
-    error: null
+    error: null,
   });
 
   const checkConnection = async () => {
-    setConnectionStatus(prev => ({ ...prev, isLoading: true }));
-    
+    setConnectionStatus((prev) => ({ ...prev, isLoading: true }));
+
     try {
       // Try to ping the backend
       await apiService.testConnection();
-      
+
       setConnectionStatus({
         isConnected: true,
         isLoading: false,
         lastChecked: new Date(),
-        error: null
+        error: null,
       });
     } catch (error) {
       setConnectionStatus({
         isConnected: false,
         isLoading: false,
         lastChecked: new Date(),
-        error: error.message
+        error: error.message,
       });
     }
   };
 
   useEffect(() => {
     checkConnection();
-    
+
     // Check connection every 30 seconds
     const interval = setInterval(checkConnection, 30000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -70,7 +70,7 @@ const ConnectionStatus = () => {
           </button>
         </>
       )}
-      
+
       {connectionStatus.lastChecked && (
         <span className="text-xs text-gray-400">
           • Last checked: {connectionStatus.lastChecked.toLocaleTimeString()}

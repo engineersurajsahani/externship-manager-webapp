@@ -1,5 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
@@ -8,6 +13,7 @@ import DailyUpdates from './pages/DailyUpdates';
 import SubmitDailyUpdate from './pages/SubmitDailyUpdate';
 import Attendance from './pages/Attendance';
 import Projects from './pages/Projects';
+import Chat from './pages/Chat';
 import UserManagement from './pages/UserManagement';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -57,7 +63,6 @@ const PublicRoute = ({ children }) => {
 
 // Main Layout Component
 const MainLayout = () => {
-
   return (
     <div className="app-container flex h-screen bg-gray-50 max-w-full">
       {/* Sidebar */}
@@ -75,9 +80,13 @@ const MainLayout = () => {
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/daily-updates" element={<DailyUpdates />} />
-            <Route path="/daily-updates/submit" element={<SubmitDailyUpdate />} />
+            <Route
+              path="/daily-updates/submit"
+              element={<SubmitDailyUpdate />}
+            />
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/projects" element={<Projects />} />
+            <Route path="/chat" element={<Chat />} />
             <Route path="/users" element={<UserManagement />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
@@ -93,18 +102,24 @@ function App() {
       <Router>
         <Routes>
           {/* Public routes */}
-          <Route path="/login" element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } />
-          
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+
           {/* Protected routes */}
-          <Route path="/*" element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          } />
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </Router>
     </AuthProvider>

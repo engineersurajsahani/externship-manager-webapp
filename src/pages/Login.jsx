@@ -13,26 +13,26 @@ const DEMO_USERS = [
   { role: 'Admin', email: 'admin@example.com', password: 'admin123' },
   { role: 'Project Manager', email: 'pm@example.com', password: 'pm123456' },
   { role: 'Team Leader', email: 'tl@example.com', password: 'tl123456' },
-  { role: 'Intern', email: 'intern1@example.com', password: 'intern123' }
+  { role: 'Intern', email: 'intern1@example.com', password: 'intern123' },
 ];
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -45,9 +45,9 @@ const Login = () => {
       // Try API authentication first
       const response = await apiService.login({
         email: formData.email,
-        password: formData.password
+        password: formData.password,
       });
-      
+
       if (response.data.token) {
         // Use AuthContext login with API user data
         login(formData.email, response.data.token, response.data.user);
@@ -55,12 +55,12 @@ const Login = () => {
         return;
       }
     } catch (err) {
-      
       // Fallback to demo authentication if API fails
-      const demoUser = DEMO_USERS.find(user => 
-        user.email === formData.email && user.password === formData.password
+      const demoUser = DEMO_USERS.find(
+        (user) =>
+          user.email === formData.email && user.password === formData.password
       );
-      
+
       if (demoUser) {
         // Demo login success
         const demoToken = 'demo-token-' + Date.now();
@@ -68,27 +68,37 @@ const Login = () => {
         navigate('/dashboard');
         return;
       }
-      
+
       // If both API and demo authentication fail, show appropriate error
-      if (err.code === 'ECONNREFUSED' || err.message.includes('Network Error')) {
-        setError('Server unavailable. Try demo credentials below or ensure backend is running.');
+      if (
+        err.code === 'ECONNREFUSED' ||
+        err.message.includes('Network Error')
+      ) {
+        setError(
+          'Server unavailable. Try demo credentials below or ensure backend is running.'
+        );
       } else if (err.response?.status === 401 || !demoUser) {
-        setError('Invalid email or password. Please try the demo credentials below.');
+        setError(
+          'Invalid email or password. Please try the demo credentials below.'
+        );
       } else if (err.response?.status === 404) {
-        setError('User not found. Please check your email address or try demo credentials.');
+        setError(
+          'User not found. Please check your email address or try demo credentials.'
+        );
       } else {
-        setError('Login failed. Please try again or use demo credentials below.');
+        setError(
+          'Login failed. Please try again or use demo credentials below.'
+        );
       }
     } finally {
       setLoading(false);
     }
   };
 
-
   const fillDemoCredentials = (user) => {
     setFormData({
       email: user.email,
-      password: user.password
+      password: user.password,
     });
   };
 
@@ -123,9 +133,7 @@ const Login = () => {
               <FiUser className="w-8 h-8 text-indigo-600" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Welcome Back
-          </h1>
+          <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
           <p className="text-indigo-100">
             Sign in to your Externship Manager account
           </p>
@@ -185,8 +193,16 @@ const Login = () => {
                   className="p-3 bg-red-500/20 border border-red-300/30 rounded-lg"
                 >
                   <p className="text-red-200 text-sm flex items-center">
-                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     {error}
                   </p>
@@ -247,7 +263,9 @@ const Login = () => {
                     transition={{ delay: 0.6 + index * 0.1 }}
                   >
                     <div className="font-semibold">{user.role}</div>
-                    <div className="text-xs text-white/70 mt-1">{user.email}</div>
+                    <div className="text-xs text-white/70 mt-1">
+                      {user.email}
+                    </div>
                   </motion.button>
                 ))}
               </div>

@@ -13,7 +13,7 @@ const Card = ({
   ...props
 }) => {
   const baseClasses = 'card-premium overflow-hidden';
-  
+
   const variants = {
     default: 'bg-white border border-gray-100',
     elevated: 'bg-white shadow-xl border-0',
@@ -27,7 +27,7 @@ const Card = ({
     sm: 'p-3',
     md: 'p-6',
     lg: 'p-8',
-    xl: 'p-10'
+    xl: 'p-10',
   };
 
   const classes = `
@@ -44,7 +44,7 @@ const Card = ({
   const cardProps = {
     className: classes,
     onClick,
-    ...props
+    ...props,
   };
 
   if (hover && !onClick) {
@@ -52,7 +52,7 @@ const Card = ({
       <motion.div
         {...cardProps}
         whileHover={{ y: -2 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       >
         {children}
       </motion.div>
@@ -65,7 +65,7 @@ const Card = ({
         {...cardProps}
         whileHover={{ y: -2, scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       >
         {children}
       </motion.div>
@@ -77,7 +77,10 @@ const Card = ({
 
 // Card sub-components
 const CardHeader = ({ children, className = '', ...props }) => (
-  <div className={`pb-4 border-b border-gray-100 last:border-b-0 ${className}`} {...props}>
+  <div
+    className={`pb-4 border-b border-gray-100 last:border-b-0 ${className}`}
+    {...props}
+  >
     {children}
   </div>
 );
@@ -89,7 +92,10 @@ const CardBody = ({ children, className = '', ...props }) => (
 );
 
 const CardFooter = ({ children, className = '', ...props }) => (
-  <div className={`pt-4 border-t border-gray-100 first:border-t-0 ${className}`} {...props}>
+  <div
+    className={`pt-4 border-t border-gray-100 first:border-t-0 ${className}`}
+    {...props}
+  >
     {children}
   </div>
 );
@@ -97,7 +103,10 @@ const CardFooter = ({ children, className = '', ...props }) => (
 const CardTitle = ({ children, className = '', as = 'h3', ...props }) => {
   const Component = as;
   return (
-    <Component className={`text-lg font-semibold text-gray-900 ${className}`} {...props}>
+    <Component
+      className={`text-lg font-semibold text-gray-900 ${className}`}
+      {...props}
+    >
       {children}
     </Component>
   );
