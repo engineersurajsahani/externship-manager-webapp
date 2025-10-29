@@ -8,6 +8,7 @@ import {
   FiSearch,
 } from "react-icons/fi";
 import { useAuth } from "../contexts/AuthContext";
+import { apiService } from "../services/api";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 
@@ -31,12 +32,34 @@ const Chat = () => {
   const loadUserProjects = async () => {
     setLoading(true);
     try {
-      // TODO: Replace with actual API call
-      // const response = await apiService.getUserProjects();
-      // setProjects(response.data.projects || []);
-      
-      // For now, set empty array
-      setProjects([]);
+      const response = await apiService.getMyProjects();
+      if (response.data && response.data.success) {
+        // Map projects to shape expected by chat UI
+        const mapped = (response.data.projects || []).map((p) => ({
+          id: p._id || p.id,
+          name: p.name,
+          description: p.description,
+          participants: (p.teamMembers || [])
+            .map((m) => ({
+              id: m.user?._id || m.user?.id,
+              firstName: m.user?.firstName,
+              lastName: m.user?.lastName,
+              name:
+                (m.user?.firstName || m.user?.lastName)
+                  ? `${m.user?.firstName || ''} ${m.user?.lastName || ''}`.trim()
+                  : m.user?.email,
+              email: m.user?.email,
+              role: m.role,
+            }))
+            .filter(Boolean),
+          lastMessage: null,
+          unreadCount: 0,
+        }));
+
+        setProjects(mapped);
+      } else {
+        setProjects([]);
+      }
     } catch (error) {
       console.error("Error loading projects:", error);
       setProjects([]);
@@ -47,17 +70,22 @@ const Chat = () => {
 
   const loadProjectMessages = async (projectId) => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await apiService.getProjectMessages(projectId);
-      // setMessages(prev => ({
-      //   ...prev,
-      //   [projectId]: response.data.messages || []
-      // }));
-      
-      // For now, set empty array
-      setMessages(prev => ({
+      // Placeholder: later implement messages API
+      // Attempt to fetch messages if API available
+      if (apiService.getProjectMessages) {
+        const res = await apiService.getProjectMessages(projectId);
+        if (res.data && res.data.success) {
+          setMessages((prev) => ({
+            ...prev,
+            [projectId]: res.data.messages || [],
+          }));
+          return;
+        }
+      }
+
+      setMessages((prev) => ({
         ...prev,
-        [projectId]: []
+        [projectId]: [],
       }));
     } catch (error) {
       console.error("Error loading messages:", error);
@@ -85,30 +113,31 @@ const Chat = () => {
     setMessage(""); // Clear input immediately for better UX
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await apiService.sendMessage({
-      //   projectId: selectedProject.id,
-      //   text: messageText
-      // });
+      // Send to backend
+      const res = await apiService.sendMessage(selectedProject.id, { text: messageText });
+      if (res.data && res.data.success) {
+        const saved = res.data.message;
 
-      // For now, add message locally
-      const newMessage = {
-        id: Date.now().toString(),
-        sender: { 
-          name: `${user?.firstName} ${user?.lastName}`, 
-          role: userRole === ROLES.PROJECT_MANAGER ? "Project Manager" : 
-                userRole === ROLES.TEAM_LEADER ? "Team Leader" : "Intern",
-          email: user?.email 
-        },
-        text: messageText,
-        timestamp: new Date(),
-        isCurrentUser: true,
-      };
+        const newMessage = {
+          id: saved._id || Date.now().toString(),
+          sender: saved.sender
+            ? {
+                name: `${saved.sender.firstName || ''} ${saved.sender.lastName || ''}`.trim() || saved.sender.email,
+                role: saved.sender.role === 'project_manager' ? 'Project Manager' : saved.sender.role === 'team_leader' ? 'Team Leader' : 'Intern',
+                email: saved.sender.email,
+                id: saved.sender._id || saved.sender.id,
+              }
+            : { name: `${user?.firstName} ${user?.lastName}`, role: userRole, email: user?.email },
+          text: saved.text,
+          timestamp: new Date(saved.createdAt || Date.now()),
+          isCurrentUser: true,
+        };
 
-      setMessages(prev => ({
-        ...prev,
-        [selectedProject.id]: [...(prev[selectedProject.id] || []), newMessage],
-      }));
+        setMessages((prev) => ({
+          ...prev,
+          [selectedProject.id]: [...(prev[selectedProject.id] || []), newMessage],
+        }));
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       // Restore message in input on error

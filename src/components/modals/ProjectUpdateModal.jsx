@@ -24,6 +24,20 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasExistingUpdate, setHasExistingUpdate] = useState(false);
 
+  useEffect(() => {
+    if (!isOpen) {
+      document.body.style.overflow = "";
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
+
   const checkExistingUpdate = useCallback(async () => {
     if (!project || !user) return;
 
@@ -64,20 +78,6 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
       checkExistingUpdate();
     }
   }, [isOpen, project, checkExistingUpdate]);
-
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
-    // Cleanup on unmount
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -196,24 +196,15 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto"
-          onClick={(e) => {
-            // Close modal if clicking on backdrop
-            if (e.target === e.currentTarget) {
-              onClose();
-            }
-          }}
-        >
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col my-4 overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"
           >
             {/* Header */}
-            <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 flex-shrink-0">
+            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -243,7 +234,7 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
             </div>
 
             {/* Project Info */}
-            <div className="p-4 bg-gray-50 border-b border-gray-200 flex-shrink-0">
+            <div className="p-6 bg-gray-50 border-b border-gray-200">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -326,7 +317,7 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
             {/* Form Content */}
             <div className="flex-1 flex flex-col overflow-hidden min-h-0">
               <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
                 {/* Work Done Today */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -431,7 +422,7 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
                 </div>
 
                 {/* Form Footer */}
-                <div className="p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+                <div className="p-6 pt-4 border-t border-gray-200 bg-gray-50">
                   <div className="flex items-center justify-between">
                     <div></div>
                     <div className="flex items-center space-x-3">

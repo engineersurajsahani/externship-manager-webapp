@@ -7,7 +7,6 @@ import {
   FiUpload,
   FiCheckCircle,
   FiClock,
-  FiFolder,
 } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -24,30 +23,12 @@ const SubmitDailyUpdate = () => {
     challenges: '',
     planForTomorrow: '',
     attachments: [],
-    project: '',
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasExistingUpdate, setHasExistingUpdate] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [projects, setProjects] = useState([]);
-  const [loadingProjects, setLoadingProjects] = useState(true);
-
-  const fetchUserProjects = useCallback(async () => {
-    try {
-      setLoadingProjects(true);
-      const response = await apiService.getMyProjects();
-      if (response.data.success) {
-        setProjects(response.data.projects || []);
-      }
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-      setProjects([]);
-    } finally {
-      setLoadingProjects(false);
-    }
-  }, []);
 
   const checkExistingSubmission = useCallback(async () => {
     if (!user) return;
@@ -62,7 +43,6 @@ const SubmitDailyUpdate = () => {
           challenges: update.challenges || '',
           planForTomorrow: update.planForTomorrow || '',
           attachments: update.attachments || [],
-          project: update.project?._id || '',
         });
       }
     } catch (error) {
@@ -70,11 +50,6 @@ const SubmitDailyUpdate = () => {
       // If API call fails, we'll assume no existing submission
     }
   }, [user]);
-
-  // Fetch user projects on load
-  useEffect(() => {
-    fetchUserProjects();
-  }, [fetchUserProjects]);
 
   // Check for existing update on load
   useEffect(() => {
@@ -90,10 +65,6 @@ const SubmitDailyUpdate = () => {
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.project) {
-      newErrors.project = 'Please select a project';
-    }
 
     if (!formData.workDone.trim()) {
       newErrors.workDone = 'Work done today is required';
@@ -148,7 +119,6 @@ const SubmitDailyUpdate = () => {
         challenges: formData.challenges,
         planForTomorrow: formData.planForTomorrow,
         attachments: formData.attachments,
-        project: formData.project,
         hoursWorked: 8, // Default to 8 hours
         mood: 'neutral', // Default mood
       };
@@ -333,43 +303,6 @@ const SubmitDailyUpdate = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Project Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <FiFolder className="inline w-4 h-4 mr-1 mb-0.5" />
-                Select Project *
-              </label>
-              {loadingProjects ? (
-                <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
-                  <p className="text-sm text-gray-500">Loading projects...</p>
-                </div>
-              ) : projects.length === 0 ? (
-                <div className="w-full px-3 py-2 border border-yellow-300 rounded-lg bg-yellow-50">
-                  <p className="text-sm text-yellow-700">
-                    No projects assigned. Please contact your project manager.
-                  </p>
-                </div>
-              ) : (
-                <select
-                  value={formData.project}
-                  onChange={(e) => handleInputChange('project', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                    errors.project ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                >
-                  <option value="">-- Select a project --</option>
-                  {projects.map((project) => (
-                    <option key={project._id} value={project._id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-              {errors.project && (
-                <p className="text-red-500 text-xs mt-1">{errors.project}</p>
-              )}
-            </div>
-
             {/* Work Done Today */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

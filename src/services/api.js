@@ -57,6 +57,10 @@ export const apiService = {
   updateStudent: (id, studentData) => api.put(`/users/${id}`, studentData),
   deleteStudent: (id) => api.delete(`/users/${id}`),
 
+  // Users
+  getAllUsers: () => api.get('/users'),
+  getUsersByRole: (role) => api.get(`/users/role/${role}`),
+
   // Daily Updates
   submitDailyUpdate: (updateData) => {
     // If there are file attachments, use FormData
@@ -139,6 +143,9 @@ export const apiService = {
 
   // Test connection
   testConnection: () => api.get('/health'),
+  // Chat
+  getProjectMessages: (projectId) => api.get(`/chat/${projectId}/messages`),
+  sendMessage: (projectId, messageData) => api.post(`/chat/${projectId}/messages`, messageData),
 };
 
 export default api;

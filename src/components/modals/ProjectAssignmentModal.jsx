@@ -24,112 +24,128 @@ const ProjectAssignmentModal = ({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Helper function to get user's full name
-  const getUserName = (user) => {
-    if (user.name) return user.name;
-    if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
-    if (user.firstName) return user.firstName;
-    return user.email?.split('@')[0] || 'Unknown';
-  };
-
-  // Helper function to get user initials
-  const getUserInitials = (user) => {
-    const name = getUserName(user);
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
-  };
-
-  // Helper to get consistent user identifier
-  const getUserId = (user) => user?._id || user?.id;
-
   useEffect(() => {
-    if (isOpen && users.length > 0) {
-      console.log('ProjectAssignmentModal - users:', users);
-      
-      // Filter users by role (support both short and long role names)
-      const pms = users.filter(
-        (user) => (user.role === 'pm' || user.role === 'project_manager') && 
-                  (user.status === 'active' || !user.status)
-      );
-      const tls = users.filter(
-        (user) => (user.role === 'tl' || user.role === 'team_leader') && 
-                  (user.status === 'active' || !user.status)
-      );
-      const interns = users.filter(
-        (user) => user.role === 'intern' && 
-                  (user.status === 'active' || !user.status)
-      );
-      
-      console.log('Filtered users:', { pms, tls, interns });
+    if (!isOpen || users.length === 0) {
+      return;
+    }
 
-      setAvailableUsers({
-        projectManagers: pms,
-        teamLeaders: tls,
-        interns: interns,
-      });
+    const normalizeRole = (role) => {
+      const normalized = (role || '')
+        .toString()
+        .toLowerCase()
+        .replace(/\s+/g, '_');
 
-      // Set current assignments if project exists
-      if (project) {
-        const currentPM =
-          pms.find(
-            (user) => getUserId(user)?.toString() === project.projectManager?._id?.toString()
-          ) || null;
-        const currentTLs = project.teamLeaders || [];
-        const currentInterns = project.interns || [];
-
-        setAssignments({
-          projectManager: currentPM,
-          teamLeaders: currentTLs
-            .map((member) =>
-              tls.find(
-                (user) =>
-                  getUserId(user)?.toString() ===
-                  (member?._id || member?.user?._id || member?.user || member?.id)?.toString()
-              )
-            )
-            .filter(Boolean),
-          interns: currentInterns
-            .map((member) =>
-              interns.find(
-                (user) =>
-                  getUserId(user)?.toString() ===
-                  (member?._id || member?.user?._id || member?.user || member?.id)?.toString()
-              )
-            )
-            .filter(Boolean),
-        });
-      } else {
-        setAssignments({
-          projectManager: null,
-          teamLeaders: [],
-          interns: [],
-        });
+      if (['pm', 'project_manager', 'projectmanager'].includes(normalized)) {
+        return 'pm';
       }
+      if (['tl', 'team_leader', 'teamleader'].includes(normalized)) {
+        return 'tl';
+      }
+      if (['intern', 'interns'].includes(normalized)) {
+        return 'intern';
+      }
+
+      return normalized;
+    };
+
+    const normalizeUser = (user) => {
+      const fullName =
+        user.name ||
+        [user.firstName, user.lastName].filter(Boolean).join(' ') ||
+        user.email ||
+        'Unknown User';
+
+      return {
+        ...user,
+        id: user.id || user._id,
+        name: fullName,
+        department: user.department || 'General',
+        status: user.status ? user.status.toLowerCase() : 'active',
+        roleCategory: normalizeRole(user.role),
+      };
+    };
+
+    const normalizedUsers = users.map(normalizeUser);
+    const isActiveUser = (user) => user.status === 'active';
+
+    const projectManagers = normalizedUsers.filter(
+      (user) => user.roleCategory === 'pm' && isActiveUser(user)
+    );
+    const teamLeaders = normalizedUsers.filter(
+      (user) => user.roleCategory === 'tl' && isActiveUser(user)
+    );
+    const interns = normalizedUsers.filter(
+      (user) => user.roleCategory === 'intern' && isActiveUser(user)
+    );
+
+    setAvailableUsers({
+      projectManagers,
+      teamLeaders,
+      interns,
+    });
+
+    if (project) {
+      const currentPM =
+        projectManagers.find((user) => user.name === project.lead) || null;
+      const currentTLs = project.teamLeaders || [];
+      const currentInterns = project.interns || [];
+
+      const mapExistingMembers = (members, pool) =>
+        members
+          .map((member) => {
+            if (typeof member === 'string') {
+              return (
+                pool.find((user) => user.name === member) ||
+                pool.find((user) => user.email === member) ||
+                pool.find((user) => user.id === member)
+              );
+            }
+
+            if (member?.user) {
+              const memberUser = member.user;
+              const memberId = memberUser._id || memberUser.id;
+              return (
+                pool.find((user) => user.id === memberId) ||
+                pool.find((user) => user.email === memberUser.email) ||
+                pool.find((user) => user.name === memberUser.name)
+              );
+            }
+
+            const memberId = member?._id || member?.id;
+            return (
+              pool.find((user) => user.id === memberId) ||
+              pool.find((user) => user.email === member?.email) ||
+              pool.find((user) => user.name === member?.name)
+            );
+          })
+          .filter(Boolean);
+
+      setAssignments({
+        projectManager: currentPM,
+        teamLeaders: mapExistingMembers(currentTLs, teamLeaders),
+        interns: mapExistingMembers(currentInterns, interns),
+      });
+    } else {
+      setAssignments({
+        projectManager: null,
+        teamLeaders: [],
+        interns: [],
+      });
     }
   }, [isOpen, users, project]);
 
   const handleAssignPM = (pm) => {
     setAssignments((prev) => ({
       ...prev,
-      projectManager:
-        getUserId(prev.projectManager)?.toString() === getUserId(pm)?.toString()
-          ? null
-          : pm,
+      projectManager: prev.projectManager?.id === pm.id ? null : pm,
     }));
   };
 
   const handleToggleTL = (tl) => {
     setAssignments((prev) => ({
       ...prev,
-      teamLeaders: prev.teamLeaders.find(
-        (user) => getUserId(user)?.toString() === getUserId(tl)?.toString()
-      )
-        ? prev.teamLeaders.filter(
-            (user) => getUserId(user)?.toString() !== getUserId(tl)?.toString()
-          )
+      teamLeaders: prev.teamLeaders.find((user) => user.id === tl.id)
+        ? prev.teamLeaders.filter((user) => user.id !== tl.id)
         : [...prev.teamLeaders, tl],
     }));
   };
@@ -137,12 +153,8 @@ const ProjectAssignmentModal = ({
   const handleToggleIntern = (intern) => {
     setAssignments((prev) => ({
       ...prev,
-      interns: prev.interns.find(
-        (user) => getUserId(user)?.toString() === getUserId(intern)?.toString()
-      )
-        ? prev.interns.filter(
-            (user) => getUserId(user)?.toString() !== getUserId(intern)?.toString()
-          )
+      interns: prev.interns.find((user) => user.id === intern.id)
+        ? prev.interns.filter((user) => user.id !== intern.id)
         : [...prev.interns, intern],
     }));
   };
@@ -178,60 +190,31 @@ const ProjectAssignmentModal = ({
   const isUserAssigned = (user, role) => {
     switch (role) {
       case 'pm':
-        return (
-          getUserId(assignments.projectManager)?.toString() ===
-          getUserId(user)?.toString()
-        );
+        return assignments.projectManager?.id === user.id;
       case 'tl':
-        return assignments.teamLeaders.some(
-          (tl) => getUserId(tl)?.toString() === getUserId(user)?.toString()
-        );
+        return assignments.teamLeaders.some((tl) => tl.id === user.id);
       case 'intern':
-        return assignments.interns.some(
-          (intern) =>
-            getUserId(intern)?.toString() === getUserId(user)?.toString()
-        );
+        return assignments.interns.some((intern) => intern.id === user.id);
       default:
         return false;
     }
   };
 
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
   return (
     <AnimatePresence>
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            onClose();
-          }
-        }}
-      >
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.2 }}
-          className="w-full max-w-4xl max-h-[90vh] flex flex-col my-4"
-          onClick={(e) => e.stopPropagation()}
+          className="w-full max-w-4xl max-h-[90vh] overflow-y-auto"
         >
-          <Card className="p-0 flex flex-col max-h-full overflow-hidden">
+          <Card className="p-0">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
                   Project Team Assignment
@@ -251,7 +234,7 @@ const ProjectAssignmentModal = ({
             </div>
 
             {/* Assignment Summary */}
-            <div className="p-4 bg-gray-50 border-b border-gray-200 flex-shrink-0">
+            <div className="p-6 bg-gray-50 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center">
@@ -276,7 +259,7 @@ const ProjectAssignmentModal = ({
             </div>
 
             {/* Assignment Sections */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 overscroll-contain">
+            <div className="p-6 space-y-8">
               {/* Project Manager Section */}
               <div>
                 <div className="flex items-center mb-4">
@@ -304,12 +287,15 @@ const ProjectAssignmentModal = ({
                         <div className="flex items-center">
                           <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                             <span className="text-blue-600 font-medium text-sm">
-                              {getUserInitials(pm)}
+                              {pm.name
+                                .split(' ')
+                                .map((n) => n[0])
+                                .join('')}
                             </span>
                           </div>
                           <div>
                             <h4 className="font-medium text-gray-900">
-                              {getUserName(pm)}
+                              {pm.name}
                             </h4>
                             <p className="text-sm text-gray-500">
                               {pm.department}
@@ -352,12 +338,15 @@ const ProjectAssignmentModal = ({
                         <div className="flex items-center">
                           <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
                             <span className="text-green-600 font-medium text-sm">
-                              {getUserInitials(tl)}
+                              {tl.name
+                                .split(' ')
+                                .map((n) => n[0])
+                                .join('')}
                             </span>
                           </div>
                           <div>
                             <h4 className="font-medium text-gray-900">
-                              {getUserName(tl)}
+                              {tl.name}
                             </h4>
                             <p className="text-sm text-gray-500">
                               {tl.department}
@@ -402,12 +391,15 @@ const ProjectAssignmentModal = ({
                         <div className="flex items-center">
                           <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mr-3">
                             <span className="text-orange-600 font-medium text-sm">
-                              {getUserInitials(intern)}
+                              {intern.name
+                                .split(' ')
+                                .map((n) => n[0])
+                                .join('')}
                             </span>
                           </div>
                           <div>
                             <h4 className="font-medium text-gray-900">
-                              {getUserName(intern)}
+                              {intern.name}
                             </h4>
                             <p className="text-sm text-gray-500">
                               {intern.department}
@@ -427,7 +419,7 @@ const ProjectAssignmentModal = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-between p-4 border-t border-gray-200 flex-shrink-0 bg-white">
+            <div className="flex items-center justify-between p-6 border-t border-gray-200">
               <div className="text-sm text-gray-500">
                 {getTotalAssigned() > 0 && (
                   <span>

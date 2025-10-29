@@ -53,8 +53,15 @@ const Projects = () => {
 
   // Load projects on component mount and set up polling for real-time updates
   React.useEffect(() => {
+    // Only proceed if user is loaded
+    if (!user) return;
+
     loadProjects();
-    loadUsers();
+    
+    // Load users if user is admin, project manageri
+    if (userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER) {
+      loadUsers();
+    }
 
     // Set up polling for real-time updates every 30 seconds
     const interval = setInterval(() => {
@@ -63,7 +70,7 @@ const Projects = () => {
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user, userRole]);
 
   const loadProjects = async () => {
     try {
@@ -83,62 +90,40 @@ const Projects = () => {
 
   const loadUsers = async () => {
     try {
-      // TODO: Replace with actual API call when user management endpoints are available
-      // const response = await apiService.getAllUsers();
-      // setUsers(response.data.users);
-
-      // For now, use mock data for team assignment functionality
-      const mockUsers = [
-        {
-          _id: '1',
-          firstName: 'John',
-          lastName: 'Smith',
-          email: 'admin@example.com',
-          role: 'admin',
-          department: 'IT',
-        },
-        {
-          _id: '2',
-          firstName: 'John',
-          lastName: 'PM',
-          email: 'pm@example.com',
-          role: 'project_manager',
-          department: 'Engineering',
-        },
-        {
-          _id: '3',
-          firstName: 'Sarah',
-          lastName: 'TL',
-          email: 'tl@example.com',
-          role: 'team_leader',
-          department: 'Engineering',
-        },
-        {
-          _id: '4',
-          firstName: 'Alice',
-          lastName: 'Intern',
-          email: 'intern1@example.com',
-          role: 'intern',
-          department: 'Engineering',
-        },
-        {
-          _id: '5',
-          firstName: 'Bob',
-          lastName: 'Intern',
-          email: 'intern2@example.com',
-          role: 'intern',
-          department: 'Engineering',
-        },
-        {
-          _id: '6',
-          firstName: 'Charlie',
-          lastName: 'Intern',
-          email: 'intern3@example.com',
-          role: 'intern',
-          department: 'Design',
-        },
-      ];
-      setUsers(mockUsers);
+      let allUsers = [];
+      
+      if (userRole === ROLES.ADMIN) {
+        // Admin can load all users at once
+        const response = await apiService.getAllUsers();
+        if (response.data.success) {
+          allUsers = response.data.users || [];
+        }
+      } else if (userRole === ROLES.PROJECT_MANAGER || userRole === ROLES.TEAM_LEADER) {
+        // Project managers and team leaders can load users by role for assignments
+        try {
+          const [pmResponse, tlResponse, internResponse] = await Promise.all([
+            apiService.getUsersByRole('project_manager').catch(() => ({ data: { users: [] } })),
+            apiService.getUsersByRole('team_leader').catch(() => ({ data: { users: [] } })),
+            apiService.getUsersByRole('intern').catch(() => ({ data: { users: [] } }))
+          ]);
+          
+          allUsers = [
+            ...(pmResponse.data?.users || []),
+            ...(tlResponse.data?.users || []),
+            ...(internResponse.data?.users || [])
+          ];
+        } catch (error) {
+          console.error('Error loading users by role:', error);
+          allUsers = [];
+        }
+      }
+      
+      const normalizedUsers = allUsers.map((user) => ({
+        ...user,
+        id: user._id || user.id,
+      }));
+      
+      setUsers(normalizedUsers);
     } catch (error) {
       console.error('Error loading users:', error);
       setUsers([]);
@@ -208,23 +193,13 @@ const Projects = () => {
 
   const handleSaveProject = async (projectData, mode) => {
     try {
-      console.log('handleSaveProject called:', { mode, projectData });
-      
       if (mode === 'create') {
         const response = await apiService.createProject(projectData);
         if (response.data.success) {
           // Refresh the projects list to get the latest data
           await loadProjects();
-        } else {
-          throw new Error(response.data.message || 'Failed to create project');
         }
       } else if (mode === 'edit') {
-        console.log('Updating project with ID:', projectData._id);
-        
-        if (!projectData._id) {
-          throw new Error('Project ID is missing. Cannot update project.');
-        }
-        
         const response = await apiService.updateProject(
           projectData._id,
           projectData
@@ -232,54 +207,57 @@ const Projects = () => {
         if (response.data.success) {
           // Refresh the projects list to get the latest data
           await loadProjects();
-        } else {
-          throw new Error(response.data.message || 'Failed to update project');
         }
       }
 
       setProjectModal({ isOpen: false, mode: 'create', project: null });
     } catch (error) {
       console.error('Error saving project:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Error saving project. Please try again.';
-      alert(errorMessage);
-      // Don't close the modal so user can fix the error
-      throw error;
+      alert('Error saving project. Please try again.');
     }
   };
 
   const handleSaveAssignments = async (assignmentData) => {
     try {
-      console.log('handleSaveAssignments called:', assignmentData);
-      
-      const { teamLeaders, interns, projectId, projectManager } = assignmentData;
-
+      const { teamLeaders, interns, projectId } = assignmentData;
       if (!projectId) {
-        throw new Error('Project ID is required');
+        throw new Error('Missing project identifier for assignment');
       }
 
+      const resolveUserId = (member) => {
+        if (!member) return null;
+        if (typeof member === 'string') return member;
+
+        const directId = member._id || member.id;
+        if (directId) return directId;
+
+        const nestedUser = member.user;
+        if (!nestedUser) return null;
+        if (typeof nestedUser === 'string') return nestedUser;
+        return nestedUser._id || nestedUser.id || null;
+      };
+
       // Get the current project to determine what changes need to be made
-      const currentProject = projects.find((p) => p._id === projectId);
+      const currentProject = projects.find(
+        (p) => p._id?.toString() === projectId.toString()
+      );
       if (!currentProject) {
         throw new Error('Project not found');
       }
-
-      console.log('Current project:', currentProject);
 
       // For simplicity, we'll clear all current assignments and reassign
       // In a production system, you'd want to be more granular
 
       // Remove all current team members except the project manager
       const currentMembers = currentProject.teamMembers || [];
-      console.log('Current members:', currentMembers);
-      
       for (const member of currentMembers) {
         if (member.role !== 'project_manager') {
-          try {
-            await apiService.unassignUserFromProject(projectId, member.user._id || member.user);
-          } catch (err) {
-            console.error('Error unassigning user:', err);
-            // Continue even if unassign fails
+          const memberUserId = resolveUserId(member);
+          if (!memberUserId) {
+            console.warn('Skipping unassign for member with missing user ID', member);
+            continue;
           }
+          await apiService.unassignUserFromProject(projectId, memberUserId);
         }
       }
 
@@ -288,14 +266,16 @@ const Projects = () => {
 
       // Assign team leaders
       if (teamLeaders && teamLeaders.length > 0) {
-        console.log('Assigning team leaders:', teamLeaders);
         for (const tl of teamLeaders) {
-          const userId = tl._id || tl.id;
-          console.log('Assigning TL:', userId);
+          const tlId = resolveUserId(tl);
+          if (!tlId) {
+            console.warn('Skipping team leader assignment due to missing ID', tl);
+            continue;
+          }
           assignments.push(
             apiService.assignUserToProject(
               projectId,
-              userId,
+              tlId,
               'team_leader'
             )
           );
@@ -304,14 +284,16 @@ const Projects = () => {
 
       // Assign interns
       if (interns && interns.length > 0) {
-        console.log('Assigning interns:', interns);
         for (const intern of interns) {
-          const userId = intern._id || intern.id;
-          console.log('Assigning intern:', userId);
+          const internId = resolveUserId(intern);
+          if (!internId) {
+            console.warn('Skipping intern assignment due to missing ID', intern);
+            continue;
+          }
           assignments.push(
             apiService.assignUserToProject(
               projectId,
-              userId,
+              internId,
               'intern'
             )
           );
@@ -319,17 +301,7 @@ const Projects = () => {
       }
 
       // Wait for all assignments to complete
-      console.log('Waiting for all assignments...');
-      const results = await Promise.allSettled(assignments);
-      
-      // Check for failures
-      const failures = results.filter(r => r.status === 'rejected');
-      if (failures.length > 0) {
-        console.error('Some assignments failed:', failures);
-        throw new Error(`Failed to assign ${failures.length} team member(s)`);
-      }
-
-      console.log('All assignments successful');
+      await Promise.all(assignments);
 
       // Refresh projects to show updated team assignments
       await loadProjects();
@@ -342,8 +314,7 @@ const Projects = () => {
       );
     } catch (error) {
       console.error('Error updating assignments:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Error updating team assignments. Please try again.';
-      alert(errorMessage);
+      alert('Error updating team assignments. Please try again.');
     }
   };
 

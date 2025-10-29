@@ -7,7 +7,6 @@ import {
   FiAlertCircle,
   FiCheckCircle,
   FiClock,
-  FiFolder,
 } from 'react-icons/fi';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -20,7 +19,6 @@ const DailyUpdateForm = ({
   onSubmit,
   onCancel,
   isSubmitting = false,
-  showProjectSelector = true,
 }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
@@ -28,21 +26,9 @@ const DailyUpdateForm = ({
     challenges: '',
     planForTomorrow: '',
     attachments: [],
-    project: selectedProject?.id || '',
   });
   const [errors, setErrors] = useState({});
   const [hasExistingUpdate, setHasExistingUpdate] = useState(false);
-  const [projects, setProjects] = useState([]);
-  const [loadingProjects, setLoadingProjects] = useState(true);
-
-  useEffect(() => {
-    // Fetch user projects if project selector is enabled
-    if (showProjectSelector && !selectedProject) {
-      fetchUserProjects();
-    } else {
-      setLoadingProjects(false);
-    }
-  }, [showProjectSelector, selectedProject]);
 
   useEffect(() => {
     if (existingUpdate) {
@@ -51,38 +37,13 @@ const DailyUpdateForm = ({
         challenges: existingUpdate.challenges || '',
         planForTomorrow: existingUpdate.planForTomorrow || '',
         attachments: existingUpdate.attachments || [],
-        project: existingUpdate.project?._id || selectedProject?.id || '',
       });
       setHasExistingUpdate(true);
     } else {
       // Check if there's already a submission for today
       checkExistingSubmission();
     }
-  }, [existingUpdate, selectedProject]);
-
-  useEffect(() => {
-    if (selectedProject) {
-      setFormData(prev => ({
-        ...prev,
-        project: selectedProject.id,
-      }));
-    }
-  }, [selectedProject]);
-
-  const fetchUserProjects = async () => {
-    try {
-      setLoadingProjects(true);
-      const response = await apiService.getMyProjects();
-      if (response.data.success) {
-        setProjects(response.data.projects || []);
-      }
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-      setProjects([]);
-    } finally {
-      setLoadingProjects(false);
-    }
-  };
+  }, [existingUpdate]);
 
   const checkExistingSubmission = async () => {
     try {
@@ -96,7 +57,6 @@ const DailyUpdateForm = ({
           challenges: todaysSubmission.challenges || '',
           planForTomorrow: todaysSubmission.planForTomorrow || '',
           attachments: todaysSubmission.attachments || [],
-          project: todaysSubmission.project?._id || selectedProject?.id || '',
         });
       }
     } catch (error) {
@@ -108,10 +68,6 @@ const DailyUpdateForm = ({
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (showProjectSelector && !formData.project) {
-      newErrors.project = 'Please select a project';
-    }
 
     if (!formData.workDone.trim()) {
       newErrors.workDone = 'Work done today is required';
@@ -160,8 +116,7 @@ const DailyUpdateForm = ({
 
     const updateData = {
       ...formData,
-      project: formData.project || selectedProject?.id,
-      projectId: formData.project || selectedProject?.id,
+      projectId: selectedProject?.id,
       projectName: selectedProject?.name,
       userEmail: user?.email,
       userName: user?.email?.split('@')[0] || 'Unknown',
@@ -191,7 +146,7 @@ const DailyUpdateForm = ({
       .filter((word) => word.length > 0).length;
   };
 
-  if (!selectedProject && !showProjectSelector) {
+  if (!selectedProject) {
     return (
       <Card className="p-6">
         <div className="text-center py-8">
@@ -254,45 +209,6 @@ const DailyUpdateForm = ({
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Project Selection - Only show if enabled and no project is pre-selected */}
-        {showProjectSelector && !selectedProject && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <FiFolder className="inline w-4 h-4 mr-1 mb-0.5" />
-              Select Project *
-            </label>
-            {loadingProjects ? (
-              <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
-                <p className="text-sm text-gray-500">Loading projects...</p>
-              </div>
-            ) : projects.length === 0 ? (
-              <div className="w-full px-3 py-2 border border-yellow-300 rounded-lg bg-yellow-50">
-                <p className="text-sm text-yellow-700">
-                  No projects assigned. Please contact your project manager.
-                </p>
-              </div>
-            ) : (
-              <select
-                value={formData.project}
-                onChange={(e) => handleInputChange('project', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                  errors.project ? 'border-red-300' : 'border-gray-300'
-                }`}
-              >
-                <option value="">-- Select a project --</option>
-                {projects.map((project) => (
-                  <option key={project._id} value={project._id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            )}
-            {errors.project && (
-              <p className="text-red-500 text-xs mt-1">{errors.project}</p>
-            )}
-          </div>
-        )}
-
         {/* Work Done Today */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">

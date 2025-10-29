@@ -99,8 +99,7 @@ const ProjectModal = ({
     try {
       const projectData = {
         ...formData,
-        _id: project?._id || project?.id,
-        id: project?.id || project?._id || Date.now(),
+        id: project?.id || Date.now(),
         progress: project?.progress || 0,
         teamSize: project?.teamSize || 0,
         lead: project?.lead || '',
@@ -109,12 +108,9 @@ const ProjectModal = ({
       };
 
       await onSave(projectData, mode);
-      // Only close modal if save was successful (no error thrown)
       onClose();
     } catch (error) {
       console.error('Error saving project:', error);
-      // Don't close modal on error - let user fix the issue
-      setErrors({ submit: error.message || 'Failed to save project' });
     } finally {
       setIsSubmitting(false);
     }
@@ -422,13 +418,6 @@ const ProjectModal = ({
                   />
                 </div>
               </div>
-
-              {/* Error Message */}
-              {errors.submit && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-600 text-sm">{errors.submit}</p>
-                </div>
-              )}
 
               {/* Action Buttons */}
               {mode !== 'view' && (
