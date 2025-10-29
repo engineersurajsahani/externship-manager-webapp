@@ -1,24 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiSave, FiUpload, FiX, FiAlertCircle, FiCheckCircle, FiClock } from 'react-icons/fi';
+import {
+  FiSave,
+  FiUpload,
+  FiX,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiClock,
+} from 'react-icons/fi';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
 
-const DailyUpdateForm = ({ 
+const DailyUpdateForm = ({
   selectedProject = null,
   existingUpdate = null,
   onSubmit,
   onCancel,
-  isSubmitting = false
+  isSubmitting = false,
 }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     workDone: '',
     challenges: '',
-    planTomorrow: '',
-    attachments: []
+    planForTomorrow: '',
+    attachments: [],
   });
   const [errors, setErrors] = useState({});
   const [hasExistingUpdate, setHasExistingUpdate] = useState(false);
@@ -28,8 +35,8 @@ const DailyUpdateForm = ({
       setFormData({
         workDone: existingUpdate.workDone || '',
         challenges: existingUpdate.challenges || '',
-        planTomorrow: existingUpdate.planTomorrow || '',
-        attachments: existingUpdate.attachments || []
+        planForTomorrow: existingUpdate.planForTomorrow || '',
+        attachments: existingUpdate.attachments || [],
       });
       setHasExistingUpdate(true);
     } else {
@@ -41,15 +48,15 @@ const DailyUpdateForm = ({
   const checkExistingSubmission = async () => {
     try {
       const response = await apiService.getTodayUpdate();
-      
+
       if (response.data.success && response.data.hasSubmitted) {
         const todaysSubmission = response.data.update;
         setHasExistingUpdate(true);
         setFormData({
           workDone: todaysSubmission.workDone || '',
           challenges: todaysSubmission.challenges || '',
-          planTomorrow: todaysSubmission.planForTomorrow || '',
-          attachments: todaysSubmission.attachments || []
+          planForTomorrow: todaysSubmission.planForTomorrow || '',
+          attachments: todaysSubmission.attachments || [],
         });
       }
     } catch (error) {
@@ -68,15 +75,17 @@ const DailyUpdateForm = ({
       newErrors.workDone = 'Please provide more detail (minimum 10 characters)';
     }
 
-    if (!formData.planTomorrow.trim()) {
-      newErrors.planTomorrow = 'Plan for tomorrow is required';
-    } else if (formData.planTomorrow.trim().length < 10) {
-      newErrors.planTomorrow = 'Please provide more detail (minimum 10 characters)';
+    if (!formData.planForTomorrow.trim()) {
+      newErrors.planForTomorrow = 'Plan for tomorrow is required';
+    } else if (formData.planForTomorrow.trim().length < 10) {
+      newErrors.planForTomorrow =
+        'Please provide more detail (minimum 10 characters)';
     }
 
     // Challenges can be optional, but if provided, should have some content
     if (formData.challenges.trim() && formData.challenges.trim().length < 5) {
-      newErrors.challenges = 'Please provide more detail if mentioning challenges';
+      newErrors.challenges =
+        'Please provide more detail if mentioning challenges';
     }
 
     setErrors(newErrors);
@@ -84,23 +93,23 @@ const DailyUpdateForm = ({
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
 
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: ''
+        [field]: '',
       }));
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -113,7 +122,7 @@ const DailyUpdateForm = ({
       userName: user?.email?.split('@')[0] || 'Unknown',
       date: new Date().toISOString().split('T')[0],
       timestamp: new Date().toISOString(),
-      isUpdate: hasExistingUpdate
+      isUpdate: hasExistingUpdate,
     };
 
     onSubmit(updateData);
@@ -126,12 +135,15 @@ const DailyUpdateForm = ({
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
   const getWordCount = (text) => {
-    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+    return text
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length;
   };
 
   if (!selectedProject) {
@@ -154,7 +166,9 @@ const DailyUpdateForm = ({
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-semibold text-gray-900">
-            {hasExistingUpdate ? 'Update Today\'s Submission' : 'Submit Daily Update'}
+            {hasExistingUpdate
+              ? "Update Today's Submission"
+              : 'Submit Daily Update'}
           </h2>
           <p className="text-sm text-gray-500 mt-1">
             Project: <span className="font-medium">{selectedProject.name}</span>
@@ -257,24 +271,24 @@ const DailyUpdateForm = ({
             What do you plan to work on tomorrow? *
           </label>
           <textarea
-            value={formData.planTomorrow}
-            onChange={(e) => handleInputChange('planTomorrow', e.target.value)}
+            value={formData.planForTomorrow}
+            onChange={(e) => handleInputChange('planForTomorrow', e.target.value)}
             rows={3}
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none ${
-              errors.planTomorrow ? 'border-red-300' : 'border-gray-300'
+              errors.planForTomorrow ? 'border-red-300' : 'border-gray-300'
             }`}
             placeholder="Outline your goals and tasks for the next working day..."
           />
           <div className="flex items-center justify-between mt-1">
-            {errors.planTomorrow ? (
-              <p className="text-red-500 text-xs">{errors.planTomorrow}</p>
+            {errors.planForTomorrow ? (
+              <p className="text-red-500 text-xs">{errors.planForTomorrow}</p>
             ) : (
               <p className="text-gray-500 text-xs">
                 Outline your priorities and goals for tomorrow
               </p>
             )}
             <span className="text-xs text-gray-400">
-              {getWordCount(formData.planTomorrow)} words
+              {getWordCount(formData.planForTomorrow)} words
             </span>
           </div>
         </div>
@@ -283,14 +297,20 @@ const DailyUpdateForm = ({
         <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-6">
           <div className="text-center">
             <FiUpload className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Attach Files (Optional)</h4>
-            <p className="text-sm text-gray-500 mb-2">Screenshots, documents, or relevant files</p>
+            <h4 className="text-sm font-medium text-gray-700 mb-2">
+              Attach Files (Optional)
+            </h4>
+            <p className="text-sm text-gray-500 mb-2">
+              Screenshots, documents, or relevant files
+            </p>
             <p className="text-xs text-gray-400 mb-4">
               File upload functionality will be available in future updates
             </p>
             <div className="flex items-center justify-center space-x-2">
               <div className="bg-white px-3 py-1 rounded-md border border-gray-300">
-                <span className="text-xs text-gray-400">Supported: PNG, JPG, PDF, DOC</span>
+                <span className="text-xs text-gray-400">
+                  Supported: PNG, JPG, PDF, DOC
+                </span>
               </div>
               <div className="bg-white px-3 py-1 rounded-md border border-gray-300">
                 <span className="text-xs text-gray-400">Max: 10MB</span>

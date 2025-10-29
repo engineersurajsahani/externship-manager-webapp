@@ -2,7 +2,6 @@
 import { apiService } from '../services/api';
 
 export const DataViewer = {
-  
   // View all daily updates in console
   viewDailyUpdates: async () => {
     try {
@@ -66,29 +65,31 @@ export const DataViewer = {
   // Export data as JSON file
   exportToJSON: async () => {
     try {
-      const [updatesResponse, usersResponse, projectsResponse] = await Promise.all([
-        apiService.getAllDailyUpdates(),
-        apiService.getAllUsers(),
-        apiService.getAllProjects()
-      ]);
-      
+      const [updatesResponse, usersResponse, projectsResponse] =
+        await Promise.all([
+          apiService.getAllDailyUpdates(),
+          apiService.getAllUsers(),
+          apiService.getAllProjects(),
+        ]);
+
       const data = {
         dailyUpdates: updatesResponse.data.updates || [],
         users: usersResponse.data.users || [],
         projects: projectsResponse.data.projects || [],
-        exportDate: new Date().toISOString()
+        exportDate: new Date().toISOString(),
       };
 
       const dataStr = JSON.stringify(data, null, 2);
-      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-      
+      const dataUri =
+        'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
       const exportFileDefaultName = `externship_data_${new Date().toISOString().split('T')[0]}.json`;
-      
+
       const linkElement = document.createElement('a');
       linkElement.setAttribute('href', dataUri);
       linkElement.setAttribute('download', exportFileDefaultName);
       linkElement.click();
-      
+
       console.log('Data exported to file:', exportFileDefaultName);
     } catch (error) {
       console.error('Error exporting data:', error);
@@ -101,11 +102,13 @@ export const DataViewer = {
       const today = new Date().toISOString().split('T')[0];
       const response = await apiService.getAllDailyUpdates();
       const updates = response.data.updates || [];
-      const todayUpdates = updates.filter(update => {
-        const updateDate = new Date(update.date || update.createdAt).toISOString().split('T')[0];
+      const todayUpdates = updates.filter((update) => {
+        const updateDate = new Date(update.date || update.createdAt)
+          .toISOString()
+          .split('T')[0];
         return updateDate === today;
       });
-      
+
       console.log(`=== TODAY'S SUBMISSIONS (${today}) (MongoDB) ===`);
       console.log(`Count: ${todayUpdates.length}`);
       console.table(todayUpdates);
@@ -118,8 +121,12 @@ export const DataViewer = {
 
   // Clear all data (use with caution!) - Note: This should be implemented on the backend
   clearAllData: () => {
-    console.warn('clearAllData is not implemented for MongoDB. This operation should be performed on the backend.');
-    console.log('Contact your system administrator to reset the database if needed.');
+    console.warn(
+      'clearAllData is not implemented for MongoDB. This operation should be performed on the backend.'
+    );
+    console.log(
+      'Contact your system administrator to reset the database if needed.'
+    );
   },
 
   // Get attendance stats for a user
@@ -127,22 +134,26 @@ export const DataViewer = {
     try {
       const response = await apiService.getMyAttendance();
       const attendance = response.data.attendance || [];
-      
+
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
-      
-      const monthlyAttendance = attendance.filter(record => {
+
+      const monthlyAttendance = attendance.filter((record) => {
         const recordDate = new Date(record.date);
-        return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
+        return (
+          recordDate.getMonth() === currentMonth &&
+          recordDate.getFullYear() === currentYear
+        );
       });
-      
+
       const stats = {
         totalRecords: attendance.length,
         thisMonthRecords: monthlyAttendance.length,
         firstRecord: attendance.length > 0 ? attendance[0].date : null,
-        lastRecord: attendance.length > 0 ? attendance[attendance.length - 1].date : null
+        lastRecord:
+          attendance.length > 0 ? attendance[attendance.length - 1].date : null,
       };
-      
+
       console.log(`=== ATTENDANCE STATS FOR ${userEmail} (MongoDB) ===`);
       console.table(stats);
       return stats;
@@ -157,15 +168,15 @@ export const DataViewer = {
     try {
       const response = await apiService.getDashboardStats();
       const stats = response.data.stats || {};
-      
+
       const summary = {
         totalUpdates: stats.dailyUpdates || 0,
         totalUsers: stats.totalUsers || 0,
         totalProjects: stats.activeProjects || 0,
         attendanceRate: stats.attendanceRate || 0,
-        dataSource: 'MongoDB'
+        dataSource: 'MongoDB',
       };
-      
+
       console.log('=== DATA SUMMARY (MongoDB) ===');
       console.table(summary);
       return summary;
@@ -173,7 +184,7 @@ export const DataViewer = {
       console.error('Error fetching summary:', error);
       return { error: error.message };
     }
-  }
+  },
 };
 
 // Make it available globally in browser console

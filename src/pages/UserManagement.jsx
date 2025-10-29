@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  FiUsers, 
-  FiPlus, 
-  FiEdit3, 
+import {
+  FiUsers,
+  FiPlus,
+  FiEdit3,
   FiSearch,
   FiUserCheck,
   FiUserX,
@@ -11,7 +11,7 @@ import {
   FiCalendar,
   FiEye,
   FiTrash2,
-  FiDownload
+  FiDownload,
 } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -25,12 +25,12 @@ const UserManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  
+
   // Modal states
   const [userModal, setUserModal] = useState({
     isOpen: false,
     mode: 'create',
-    user: null
+    user: null,
   });
 
   const [users, setUsers] = useState([
@@ -44,7 +44,7 @@ const UserManagement = () => {
       lastLogin: '2024-01-15 09:30',
       projects: 5,
       phone: '+1 (555) 123-4567',
-      department: 'IT'
+      department: 'IT',
     },
     {
       id: 2,
@@ -56,7 +56,7 @@ const UserManagement = () => {
       lastLogin: '2024-01-15 08:45',
       projects: 3,
       phone: '+1 (555) 234-5678',
-      department: 'Product'
+      department: 'Product',
     },
     {
       id: 3,
@@ -68,7 +68,7 @@ const UserManagement = () => {
       lastLogin: '2024-01-14 17:20',
       projects: 2,
       phone: '+1 (555) 345-6789',
-      department: 'Engineering'
+      department: 'Engineering',
     },
     {
       id: 4,
@@ -80,7 +80,7 @@ const UserManagement = () => {
       lastLogin: '2024-01-15 10:15',
       projects: 1,
       phone: '+1 (555) 456-7890',
-      department: 'Engineering'
+      department: 'Engineering',
     },
     {
       id: 5,
@@ -92,7 +92,7 @@ const UserManagement = () => {
       lastLogin: '2024-01-12 14:30',
       projects: 1,
       phone: '+1 (555) 567-8901',
-      department: 'Design'
+      department: 'Design',
     },
     {
       id: 6,
@@ -104,8 +104,8 @@ const UserManagement = () => {
       lastLogin: '2024-01-15 11:00',
       projects: 1,
       phone: '+1 (555) 678-9012',
-      department: 'Marketing'
-    }
+      department: 'Marketing',
+    },
   ]);
 
   // CRUD Operations
@@ -113,7 +113,7 @@ const UserManagement = () => {
     setUserModal({
       isOpen: true,
       mode: 'create',
-      user: null
+      user: null,
     });
   };
 
@@ -121,7 +121,7 @@ const UserManagement = () => {
     setUserModal({
       isOpen: true,
       mode: 'edit',
-      user: user
+      user: user,
     });
   };
 
@@ -129,17 +129,17 @@ const UserManagement = () => {
     setUserModal({
       isOpen: true,
       mode: 'view',
-      user: user
+      user: user,
     });
   };
 
   const handleToggleUserStatus = (userId) => {
-    setUsers(prevUsers => 
-      prevUsers.map(user => {
+    setUsers((prevUsers) =>
+      prevUsers.map((user) => {
         if (user.id === userId) {
           return {
             ...user,
-            status: user.status === 'active' ? 'inactive' : 'active'
+            status: user.status === 'active' ? 'inactive' : 'active',
           };
         }
         return user;
@@ -148,8 +148,12 @@ const UserManagement = () => {
   };
 
   const handleDeleteUser = (userId) => {
-    if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+    if (
+      window.confirm(
+        'Are you sure you want to delete this user? This action cannot be undone.'
+      )
+    ) {
+      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
     }
   };
 
@@ -157,14 +161,12 @@ const UserManagement = () => {
     if (mode === 'create') {
       const newUser = {
         ...userData,
-        id: Math.max(...users.map(u => u.id)) + 1
+        id: Math.max(...users.map((u) => u.id)) + 1,
       };
-      setUsers(prevUsers => [...prevUsers, newUser]);
+      setUsers((prevUsers) => [...prevUsers, newUser]);
     } else if (mode === 'edit') {
-      setUsers(prevUsers => 
-        prevUsers.map(user => 
-          user.id === userData.id ? userData : user
-        )
+      setUsers((prevUsers) =>
+        prevUsers.map((user) => (user.id === userData.id ? userData : user))
       );
     }
     setUserModal({ isOpen: false, mode: 'create', user: null });
@@ -217,20 +219,22 @@ const UserManagement = () => {
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = selectedRole === 'all' || user.role === selectedRole;
-    const matchesStatus = selectedStatus === 'all' || user.status === selectedStatus;
-    
+    const matchesStatus =
+      selectedStatus === 'all' || user.status === selectedStatus;
+
     return matchesSearch && matchesRole && matchesStatus;
   });
 
   const userStats = {
     total: users.length,
-    active: users.filter(u => u.status === 'active').length,
-    admins: users.filter(u => u.role === 'admin').length,
-    interns: users.filter(u => u.role === 'intern').length
+    active: users.filter((u) => u.status === 'active').length,
+    admins: users.filter((u) => u.role === 'admin').length,
+    interns: users.filter((u) => u.role === 'intern').length,
   };
 
   return (
@@ -243,18 +247,16 @@ const UserManagement = () => {
       >
         <div>
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-2">Manage users, roles, and permissions</p>
+          <p className="text-gray-600 mt-2">
+            Manage users, roles, and permissions
+          </p>
         </div>
         <div className="flex items-center space-x-3 mt-4 sm:mt-0">
           <Button variant="outline" size="sm">
             <FiDownload className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button 
-            variant="primary" 
-            size="sm"
-            onClick={handleCreateUser}
-          >
+          <Button variant="primary" size="sm" onClick={handleCreateUser}>
             <FiPlus className="w-4 h-4 mr-2" />
             Add User
           </Button>
@@ -307,7 +309,7 @@ const UserManagement = () => {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
           </div>
-          
+
           {/* Role Filter */}
           <select
             value={selectedRole}
@@ -320,7 +322,7 @@ const UserManagement = () => {
             <option value="tl">Team Leader</option>
             <option value="intern">Intern</option>
           </select>
-          
+
           {/* Status Filter */}
           <select
             value={selectedStatus}
@@ -345,13 +347,27 @@ const UserManagement = () => {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Projects</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    User
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Role
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Department
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Projects
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Last Login
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -361,11 +377,16 @@ const UserManagement = () => {
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
                           <span className="text-indigo-600 font-medium text-sm">
-                            {user.name.split(' ').map(n => n[0]).join('')}
+                            {user.name
+                              .split(' ')
+                              .map((n) => n[0])
+                              .join('')}
                           </span>
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {user.name}
+                          </div>
                           <div className="text-sm text-gray-500 flex items-center">
                             <FiMail className="w-3 h-3 mr-1" />
                             {user.email}
@@ -380,11 +401,16 @@ const UserManagement = () => {
                     </td>
                     <td className="px-6 py-4">
                       <Badge className={getStatusColor(user.status)}>
-                        {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                        {user.status.charAt(0).toUpperCase() +
+                          user.status.slice(1)}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{user.department}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{user.projects}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {user.department}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {user.projects}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       <div className="flex items-center">
                         <FiCalendar className="w-3 h-3 mr-1" />
@@ -393,26 +419,29 @@ const UserManagement = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
-                        <button 
-                          className="text-gray-600 hover:text-gray-900" 
+                        <button
+                          className="text-gray-600 hover:text-gray-900"
                           title="View"
                           onClick={() => handleViewUser(user)}
                         >
                           <FiEye className="w-4 h-4" />
                         </button>
-                        <button 
-                          className="text-indigo-600 hover:text-indigo-900" 
+                        <button
+                          className="text-indigo-600 hover:text-indigo-900"
                           title="Edit"
                           onClick={() => handleEditUser(user)}
                         >
                           <FiEdit3 className="w-4 h-4" />
                         </button>
-                        <button 
-                          className={`${user.status === 'active' 
-                            ? 'text-red-600 hover:text-red-900' 
-                            : 'text-green-600 hover:text-green-900'
+                        <button
+                          className={`${
+                            user.status === 'active'
+                              ? 'text-red-600 hover:text-red-900'
+                              : 'text-green-600 hover:text-green-900'
                           }`}
-                          title={user.status === 'active' ? 'Deactivate' : 'Activate'}
+                          title={
+                            user.status === 'active' ? 'Deactivate' : 'Activate'
+                          }
                           onClick={() => handleToggleUserStatus(user.id)}
                         >
                           {user.status === 'active' ? (
@@ -422,8 +451,8 @@ const UserManagement = () => {
                           )}
                         </button>
                         {hasRole(ROLES.ADMIN) && (
-                          <button 
-                            className="text-red-600 hover:text-red-900" 
+                          <button
+                            className="text-red-600 hover:text-red-900"
                             title="Delete User"
                             onClick={() => handleDeleteUser(user.id)}
                           >
@@ -437,11 +466,13 @@ const UserManagement = () => {
               </tbody>
             </table>
           </div>
-          
+
           {filteredUsers.length === 0 && (
             <div className="text-center py-8">
               <FiUsers className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No users found matching your criteria.</p>
+              <p className="text-gray-500">
+                No users found matching your criteria.
+              </p>
             </div>
           )}
         </Card>
@@ -458,8 +489,12 @@ const UserManagement = () => {
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
               <FiPlus className="w-6 h-6 text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Bulk Import</h3>
-            <p className="text-gray-600 text-sm mb-4">Import multiple users from CSV file</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Bulk Import
+            </h3>
+            <p className="text-gray-600 text-sm mb-4">
+              Import multiple users from CSV file
+            </p>
             <Button variant="outline" size="sm" className="w-full">
               Import Users
             </Button>
@@ -475,8 +510,12 @@ const UserManagement = () => {
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
               <FiUserCheck className="w-6 h-6 text-green-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Role Management</h3>
-            <p className="text-gray-600 text-sm mb-4">Configure roles and permissions</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Role Management
+            </h3>
+            <p className="text-gray-600 text-sm mb-4">
+              Configure roles and permissions
+            </p>
             <Button variant="outline" size="sm" className="w-full">
               Manage Roles
             </Button>
@@ -492,8 +531,12 @@ const UserManagement = () => {
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
               <FiMail className="w-6 h-6 text-purple-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Send Invitations</h3>
-            <p className="text-gray-600 text-sm mb-4">Invite new users to join the platform</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Send Invitations
+            </h3>
+            <p className="text-gray-600 text-sm mb-4">
+              Invite new users to join the platform
+            </p>
             <Button variant="outline" size="sm" className="w-full">
               Send Invites
             </Button>

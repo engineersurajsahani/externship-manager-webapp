@@ -1,18 +1,28 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FiBriefcase, FiUsers, FiCalendar, FiArrowRight, FiEdit3 } from 'react-icons/fi';
+import {
+  FiBriefcase,
+  FiUsers,
+  FiCalendar,
+  FiArrowRight,
+  FiEdit3,
+} from 'react-icons/fi';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
 import { useAuth } from '../../contexts/AuthContext';
 
-const MyProjectsWidget = ({ userProjects = [], onSubmitUpdate, onViewProject }) => {
+const MyProjectsWidget = ({
+  userProjects = [],
+  onSubmitUpdate,
+  onViewProject,
+}) => {
   const { getUserRole, user, ROLES } = useAuth();
   const userRole = getUserRole();
 
   const getRoleInProject = (project) => {
     if (!user) return 'Member';
-    
+
     if (project.lead === user.email.split('@')[0]) {
       return 'Project Manager';
     } else if (project.teamLeaders?.includes(user.email.split('@')[0])) {
@@ -53,20 +63,32 @@ const MyProjectsWidget = ({ userProjects = [], onSubmitUpdate, onViewProject }) 
 
   const getDeadlineStatus = (endDate) => {
     if (!endDate) return null;
-    
+
     const deadline = new Date(endDate);
     const today = new Date();
     const diffTime = deadline - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays < 0) {
       return { text: 'Overdue', color: 'text-red-600', urgent: true };
     } else if (diffDays <= 7) {
-      return { text: `${diffDays} days left`, color: 'text-orange-600', urgent: true };
+      return {
+        text: `${diffDays} days left`,
+        color: 'text-orange-600',
+        urgent: true,
+      };
     } else if (diffDays <= 30) {
-      return { text: `${diffDays} days left`, color: 'text-yellow-600', urgent: false };
+      return {
+        text: `${diffDays} days left`,
+        color: 'text-yellow-600',
+        urgent: false,
+      };
     } else {
-      return { text: `${diffDays} days left`, color: 'text-gray-600', urgent: false };
+      return {
+        text: `${diffDays} days left`,
+        color: 'text-gray-600',
+        urgent: false,
+      };
     }
   };
 
@@ -81,10 +103,9 @@ const MyProjectsWidget = ({ userProjects = [], onSubmitUpdate, onViewProject }) 
           <FiBriefcase className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 mb-2">No projects assigned</p>
           <p className="text-sm text-gray-400">
-            {userRole === ROLES.INTERN 
+            {userRole === ROLES.INTERN
               ? "You'll see your assigned projects here once you're added to a project team."
-              : "You'll see projects you're managing here once they're assigned to you."
-            }
+              : "You'll see projects you're managing here once they're assigned to you."}
           </p>
         </div>
       </Card>
@@ -97,7 +118,8 @@ const MyProjectsWidget = ({ userProjects = [], onSubmitUpdate, onViewProject }) 
         <div>
           <h3 className="text-lg font-semibold text-gray-900">My Projects</h3>
           <p className="text-sm text-gray-500">
-            {userProjects.length} active project{userProjects.length !== 1 ? 's' : ''}
+            {userProjects.length} active project
+            {userProjects.length !== 1 ? 's' : ''}
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -112,7 +134,7 @@ const MyProjectsWidget = ({ userProjects = [], onSubmitUpdate, onViewProject }) 
         {userProjects.map((project, index) => {
           const deadlineStatus = getDeadlineStatus(project.endDate);
           const userRoleInProject = getRoleInProject(project);
-          
+
           return (
             <motion.div
               key={project.id}
@@ -128,23 +150,28 @@ const MyProjectsWidget = ({ userProjects = [], onSubmitUpdate, onViewProject }) 
                       {project.name}
                     </h4>
                     <Badge className={getStatusColor(project.status)}>
-                      {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                      {project.status.charAt(0).toUpperCase() +
+                        project.status.slice(1)}
                     </Badge>
                   </div>
-                  
+
                   <div className="flex items-center space-x-4 text-xs text-gray-500 mb-2">
                     <span className="flex items-center">
                       <FiUsers className="w-3 h-3 mr-1" />
                       {userRoleInProject}
                     </span>
                     {deadlineStatus && (
-                      <span className={`flex items-center ${deadlineStatus.color}`}>
+                      <span
+                        className={`flex items-center ${deadlineStatus.color}`}
+                      >
                         <FiCalendar className="w-3 h-3 mr-1" />
                         {deadlineStatus.text}
                       </span>
                     )}
                     {project.priority && (
-                      <Badge className={`${getPriorityColor(project.priority)} text-xs`}>
+                      <Badge
+                        className={`${getPriorityColor(project.priority)} text-xs`}
+                      >
                         {project.priority.toUpperCase()}
                       </Badge>
                     )}
@@ -160,7 +187,9 @@ const MyProjectsWidget = ({ userProjects = [], onSubmitUpdate, onViewProject }) 
                   <div className="mb-3">
                     <div className="flex justify-between text-xs mb-1">
                       <span className="text-gray-600">Progress</span>
-                      <span className="font-medium">{project.progress || 0}%</span>
+                      <span className="font-medium">
+                        {project.progress || 0}%
+                      </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-1.5">
                       <div
@@ -184,17 +213,18 @@ const MyProjectsWidget = ({ userProjects = [], onSubmitUpdate, onViewProject }) 
                   View Details
                 </Button>
 
-                {userRole === ROLES.INTERN && userRoleInProject === 'Intern' && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => onSubmitUpdate?.(project)}
-                    className="text-xs"
-                  >
-                    <FiEdit3 className="w-3 h-3 mr-1" />
-                    Submit Update
-                  </Button>
-                )}
+                {userRole === ROLES.INTERN &&
+                  userRoleInProject === 'Intern' && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => onSubmitUpdate?.(project)}
+                      className="text-xs"
+                    >
+                      <FiEdit3 className="w-3 h-3 mr-1" />
+                      Submit Update
+                    </Button>
+                  )}
               </div>
             </motion.div>
           );

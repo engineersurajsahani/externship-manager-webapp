@@ -20,7 +20,7 @@ const Modal = ({
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
-    full: 'max-w-full mx-4'
+    full: 'max-w-full mx-4',
   };
 
   // Handle escape key
@@ -75,7 +75,7 @@ const Modal = ({
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className={`
                 relative w-full ${sizes[size]} bg-white rounded-xl shadow-2xl
                 border border-gray-100 overflow-hidden ${className}
@@ -104,9 +104,7 @@ const Modal = ({
               )}
 
               {/* Content */}
-              <div className="relative">
-                {children}
-              </div>
+              <div className="relative">{children}</div>
             </motion.div>
           </div>
         </div>
@@ -129,7 +127,10 @@ const ModalBody = ({ children, className = '', ...props }) => (
 );
 
 const ModalFooter = ({ children, className = '', ...props }) => (
-  <div className={`p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-end space-x-3 ${className}`} {...props}>
+  <div
+    className={`p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-end space-x-3 ${className}`}
+    {...props}
+  >
     {children}
   </div>
 );

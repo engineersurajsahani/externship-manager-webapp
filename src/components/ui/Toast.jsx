@@ -1,6 +1,12 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiCheck, FiInfo, FiAlertTriangle, FiAlertCircle } from 'react-icons/fi';
+import {
+  FiX,
+  FiCheck,
+  FiInfo,
+  FiAlertTriangle,
+  FiAlertCircle,
+} from 'react-icons/fi';
 
 const Toast = ({
   id,
@@ -8,33 +14,33 @@ const Toast = ({
   type = 'info',
   duration = 5000,
   onClose,
-  position = 'top-right'
+  position = 'top-right',
 }) => {
   const types = {
     success: {
       icon: FiCheck,
       bgColor: 'bg-green-500',
       textColor: 'text-white',
-      progressColor: 'bg-green-300'
+      progressColor: 'bg-green-300',
     },
     error: {
       icon: FiAlertCircle,
       bgColor: 'bg-red-500',
       textColor: 'text-white',
-      progressColor: 'bg-red-300'
+      progressColor: 'bg-red-300',
     },
     warning: {
       icon: FiAlertTriangle,
       bgColor: 'bg-yellow-500',
       textColor: 'text-white',
-      progressColor: 'bg-yellow-300'
+      progressColor: 'bg-yellow-300',
     },
     info: {
       icon: FiInfo,
       bgColor: 'bg-blue-500',
       textColor: 'text-white',
-      progressColor: 'bg-blue-300'
-    }
+      progressColor: 'bg-blue-300',
+    },
   };
 
   const currentType = types[type];
@@ -112,7 +118,7 @@ const ToastContainer = ({ toasts, position = 'top-right', onClose }) => {
     'bottom-right': 'fixed bottom-4 right-4 z-50',
     'bottom-left': 'fixed bottom-4 left-4 z-50',
     'top-center': 'fixed top-4 left-1/2 transform -translate-x-1/2 z-50',
-    'bottom-center': 'fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50'
+    'bottom-center': 'fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50',
   };
 
   return (
@@ -141,7 +147,7 @@ export const useToast = () => {
       id,
       message,
       type,
-      duration
+      duration,
     };
 
     setToasts((prev) => [...prev, toast]);
@@ -152,10 +158,14 @@ export const useToast = () => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
-  const success = (message, duration) => addToast({ message, type: 'success', duration });
-  const error = (message, duration) => addToast({ message, type: 'error', duration });
-  const warning = (message, duration) => addToast({ message, type: 'warning', duration });
-  const info = (message, duration) => addToast({ message, type: 'info', duration });
+  const success = (message, duration) =>
+    addToast({ message, type: 'success', duration });
+  const error = (message, duration) =>
+    addToast({ message, type: 'error', duration });
+  const warning = (message, duration) =>
+    addToast({ message, type: 'warning', duration });
+  const info = (message, duration) =>
+    addToast({ message, type: 'info', duration });
 
   return {
     toasts,
@@ -166,8 +176,12 @@ export const useToast = () => {
     warning,
     info,
     ToastContainer: ({ position }) => (
-      <ToastContainer toasts={toasts} position={position} onClose={removeToast} />
-    )
+      <ToastContainer
+        toasts={toasts}
+        position={position}
+        onClose={removeToast}
+      />
+    ),
   };
 };
 

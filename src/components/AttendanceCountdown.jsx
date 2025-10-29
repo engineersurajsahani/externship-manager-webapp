@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FiClock, 
-  FiCheckCircle, 
-  FiAlertCircle, 
+import {
+  FiClock,
+  FiCheckCircle,
+  FiAlertCircle,
   FiXCircle,
-  FiEdit3
+  FiEdit3,
 } from 'react-icons/fi';
 import Button from './ui/Button';
 import Badge from './ui/Badge';
 import { dashboardHelpers } from '../utils/dashboardHelpers';
 
-const AttendanceCountdown = ({ 
-  attendanceData, 
-  onSubmitUpdate, 
-  className = '' 
+const AttendanceCountdown = ({
+  attendanceData,
+  onSubmitUpdate,
+  className = '',
 }) => {
   const [timeRemaining, setTimeRemaining] = useState('');
   const [status, setStatus] = useState('loading');
@@ -23,8 +23,8 @@ const AttendanceCountdown = ({
   // Update countdown every minute
   const updateCountdown = useCallback(() => {
     if (attendanceData?.attendanceTimeStatus) {
-      const { status: apiStatus, timeRemaining: apiTime, message, totalMs } = attendanceData.attendanceTimeStatus;
-      
+      const { status: apiStatus } = attendanceData.attendanceTimeStatus;
+
       if (apiStatus === 'submitted') {
         setStatus('submitted');
         setTimeRemaining('0h 0m');
@@ -42,29 +42,33 @@ const AttendanceCountdown = ({
           setIsUrgent(true);
         } else {
           const hours = Math.floor(msRemaining / (1000 * 60 * 60));
-          const minutes = Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
-          
+          const minutes = Math.floor(
+            (msRemaining % (1000 * 60 * 60)) / (1000 * 60)
+          );
+
           setStatus('pending');
           setTimeRemaining(`${hours}h ${minutes}m`);
-          setIsUrgent(hours < 2); // Mark as urgent if less than 2 hours remaining
+          setIsUrgent(hours < 4); // Mark as urgent if less than 4 hours remaining (after 8 PM)
         }
       }
     } else {
       // Fallback to local calculation
       const msRemaining = dashboardHelpers.getTimeRemainingMs();
       const deadlinePassed = dashboardHelpers.hasAttendanceDeadlinePassed();
-      
+
       if (deadlinePassed || msRemaining <= 0) {
         setStatus('overdue');
         setTimeRemaining('0h 0m');
         setIsUrgent(true);
       } else {
         const hours = Math.floor(msRemaining / (1000 * 60 * 60));
-        const minutes = Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
-        
+        const minutes = Math.floor(
+          (msRemaining % (1000 * 60 * 60)) / (1000 * 60)
+        );
+
         setStatus('pending');
         setTimeRemaining(`${hours}h ${minutes}m`);
-        setIsUrgent(hours < 2);
+        setIsUrgent(hours < 4); // Match the API logic
       }
     }
   }, [attendanceData]);
@@ -96,7 +100,9 @@ const AttendanceCountdown = ({
       case 'overdue':
         return 'bg-red-50 border-red-200';
       case 'pending':
-        return isUrgent ? 'bg-orange-50 border-orange-200' : 'bg-blue-50 border-blue-200';
+        return isUrgent
+          ? 'bg-orange-50 border-orange-200'
+          : 'bg-blue-50 border-blue-200';
       default:
         return 'bg-gray-50 border-gray-200';
     }
@@ -109,7 +115,11 @@ const AttendanceCountdown = ({
       case 'overdue':
         return <FiXCircle className="w-5 h-5" />;
       case 'pending':
-        return isUrgent ? <FiAlertCircle className="w-5 h-5" /> : <FiClock className="w-5 h-5" />;
+        return isUrgent ? (
+          <FiAlertCircle className="w-5 h-5" />
+        ) : (
+          <FiClock className="w-5 h-5" />
+        );
       default:
         return <FiClock className="w-5 h-5" />;
     }
@@ -135,9 +145,9 @@ const AttendanceCountdown = ({
       case 'overdue':
         return 'The attendance deadline has passed. Contact your supervisor.';
       case 'pending':
-        return isUrgent 
+        return isUrgent
           ? `Urgent: Only ${timeRemaining} left to mark attendance!`
-          : `${timeRemaining} remaining to mark attendance`;
+          : `${timeRemaining} remaining until midnight`;
       default:
         return 'Loading attendance status...';
     }
@@ -153,25 +163,28 @@ const AttendanceCountdown = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <div className={`${getStatusColor()}`}>
-            {getIcon()}
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            {getTitle()}
-          </h3>
+          <div className={`${getStatusColor()}`}>{getIcon()}</div>
+          <h3 className="text-lg font-semibold text-gray-900">{getTitle()}</h3>
         </div>
-        
-        <Badge 
+
+        <Badge
           className={`${
-            status === 'submitted' ? 'bg-green-100 text-green-800' :
-            status === 'overdue' ? 'bg-red-100 text-red-800' :
-            isUrgent ? 'bg-orange-100 text-orange-800' :
-            'bg-blue-100 text-blue-800'
+            status === 'submitted'
+              ? 'bg-green-100 text-green-800'
+              : status === 'overdue'
+                ? 'bg-red-100 text-red-800'
+                : isUrgent
+                  ? 'bg-orange-100 text-orange-800'
+                  : 'bg-blue-100 text-blue-800'
           }`}
         >
-          {status === 'submitted' ? 'Complete' : 
-           status === 'overdue' ? 'Overdue' :
-           isUrgent ? 'Urgent' : 'Pending'}
+          {status === 'submitted'
+            ? 'Complete'
+            : status === 'overdue'
+              ? 'Overdue'
+              : isUrgent
+                ? 'Urgent'
+                : 'Pending'}
         </Badge>
       </div>
 
@@ -192,14 +205,14 @@ const AttendanceCountdown = ({
               </div>
               {isUrgent && (
                 <motion.div
-                  animate={{ 
+                  animate={{
                     scale: [1, 1.05, 1],
-                    opacity: [0.7, 1, 0.7]
+                    opacity: [0.7, 1, 0.7],
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 2,
                     repeat: Infinity,
-                    ease: "easeInOut"
+                    ease: 'easeInOut',
                   }}
                   className="text-orange-600 font-medium"
                 >
@@ -208,28 +221,29 @@ const AttendanceCountdown = ({
               )}
             </div>
           )}
-          
+
           {status === 'submitted' && (
             <div className="text-center">
               <div className="text-4xl font-bold text-green-600 mb-2">
                 ✅ Done
               </div>
               <div className="text-green-700 font-medium">
-                Attendance marked at {new Date().toLocaleTimeString('en-US', { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
+                Attendance marked at{' '}
+                {new Date().toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
                 })}
               </div>
             </div>
           )}
-          
+
           {status === 'overdue' && (
             <div className="text-center">
               <div className="text-4xl font-bold text-red-600 mb-2">
                 ❌ Missed
               </div>
               <div className="text-red-700 font-medium">
-                Deadline: 6:00 PM
+                Deadline: 12:00 AM (Midnight)
               </div>
             </div>
           )}
@@ -237,21 +251,16 @@ const AttendanceCountdown = ({
       </AnimatePresence>
 
       {/* Message */}
-      <p className="text-sm text-gray-700 text-center mb-4">
-        {getMessage()}
-      </p>
+      <p className="text-sm text-gray-700 text-center mb-4">{getMessage()}</p>
 
       {/* Action Button */}
       {status === 'pending' && (
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button
             onClick={onSubmitUpdate}
             className={`w-full ${
-              isUrgent 
-                ? 'bg-orange-600 hover:bg-orange-700 border-orange-600' 
+              isUrgent
+                ? 'bg-orange-600 hover:bg-orange-700 border-orange-600'
                 : 'bg-blue-600 hover:bg-blue-700 border-blue-600'
             } text-white font-semibold py-3 transition-all duration-200`}
             size="lg"
@@ -265,7 +274,7 @@ const AttendanceCountdown = ({
       {/* Deadline Info */}
       <div className="mt-4 pt-4 border-t border-gray-200">
         <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>Daily Deadline: 6:00 PM</span>
+          <span>Daily Deadline: 12:00 AM (Midnight)</span>
           <span>Updates count as attendance</span>
         </div>
       </div>

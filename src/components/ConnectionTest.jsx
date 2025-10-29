@@ -16,7 +16,7 @@ const ConnectionTest = () => {
     setLoading(true);
     setConnectionStatus('testing');
     setError(null);
-    
+
     try {
       const response = await apiService.testConnection();
       setBackendInfo(response.data);
@@ -37,11 +37,26 @@ const ConnectionTest = () => {
   const getStatusBadge = () => {
     switch (connectionStatus) {
       case 'connected':
-        return <Badge variant="success" icon={<FiWifi />}>Connected</Badge>;
+        return (
+          <Badge variant="success" icon={<FiWifi />}>
+            Connected
+          </Badge>
+        );
       case 'disconnected':
-        return <Badge variant="danger" icon={<FiWifiOff />}>Disconnected</Badge>;
+        return (
+          <Badge variant="danger" icon={<FiWifiOff />}>
+            Disconnected
+          </Badge>
+        );
       case 'testing':
-        return <Badge variant="warning" icon={<FiRefreshCw className="animate-spin" />}>Testing...</Badge>;
+        return (
+          <Badge
+            variant="warning"
+            icon={<FiRefreshCw className="animate-spin" />}
+          >
+            Testing...
+          </Badge>
+        );
       default:
         return <Badge variant="default">Unknown</Badge>;
     }
@@ -57,11 +72,11 @@ const ConnectionTest = () => {
         <Card.Header>
           <h3 className="text-lg font-semibold">Backend Connection Status</h3>
         </Card.Header>
-        
+
         <Card.Body>
           <div className="text-center space-y-4">
             {getStatusBadge()}
-            
+
             {connectionStatus === 'connected' && backendInfo && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -75,11 +90,12 @@ const ConnectionTest = () => {
                   <strong>Environment:</strong> {backendInfo.environment}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <strong>Timestamp:</strong> {new Date(backendInfo.timestamp).toLocaleString()}
+                  <strong>Timestamp:</strong>{' '}
+                  {new Date(backendInfo.timestamp).toLocaleString()}
                 </p>
               </motion.div>
             )}
-            
+
             {error && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -94,7 +110,7 @@ const ConnectionTest = () => {
                 </p>
               </motion.div>
             )}
-            
+
             <Button
               onClick={testConnection}
               loading={loading}

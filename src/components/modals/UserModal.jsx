@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiSave } from 'react-icons/fi';
+import {
+  FiX,
+  FiUser,
+  FiMail,
+  FiPhone,
+  FiMapPin,
+  FiCalendar,
+  FiSave,
+} from 'react-icons/fi';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 
-const UserModal = ({ 
-  isOpen, 
-  onClose, 
+const UserModal = ({
+  isOpen,
+  onClose,
   mode = 'create', // 'create', 'edit', 'view'
   user = null,
-  onSave
+  onSave,
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -18,7 +26,7 @@ const UserModal = ({
     department: '',
     role: 'intern',
     status: 'active',
-    joinDate: new Date().toISOString().split('T')[0]
+    joinDate: new Date().toISOString().split('T')[0],
   });
 
   const [errors, setErrors] = useState({});
@@ -33,7 +41,7 @@ const UserModal = ({
         department: user.department || '',
         role: user.role || 'intern',
         status: user.status || 'active',
-        joinDate: user.joinDate || new Date().toISOString().split('T')[0]
+        joinDate: user.joinDate || new Date().toISOString().split('T')[0],
       });
     } else {
       setFormData({
@@ -43,7 +51,7 @@ const UserModal = ({
         department: '',
         role: 'intern',
         status: 'active',
-        joinDate: new Date().toISOString().split('T')[0]
+        joinDate: new Date().toISOString().split('T')[0],
       });
     }
     setErrors({});
@@ -76,19 +84,19 @@ const UserModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setIsSubmitting(true);
-    
+
     try {
       const userData = {
         ...formData,
         id: user?.id || Date.now(),
         projects: user?.projects || 0,
-        lastLogin: user?.lastLogin || new Date().toLocaleString()
+        lastLogin: user?.lastLogin || new Date().toLocaleString(),
       };
 
       await onSave(userData, mode);
@@ -102,16 +110,16 @@ const UserModal = ({
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
 
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: ''
+        [field]: '',
       }));
     }
   };
@@ -120,7 +128,7 @@ const UserModal = ({
     { value: 'admin', label: 'Administrator' },
     { value: 'pm', label: 'Project Manager' },
     { value: 'tl', label: 'Team Leader' },
-    { value: 'intern', label: 'Intern' }
+    { value: 'intern', label: 'Intern' },
   ];
 
   const departments = [
@@ -130,13 +138,13 @@ const UserModal = ({
     'Marketing',
     'IT',
     'HR',
-    'Finance'
+    'Finance',
   ];
 
   const statuses = [
     { value: 'active', label: 'Active' },
     { value: 'inactive', label: 'Inactive' },
-    { value: 'pending', label: 'Pending' }
+    { value: 'pending', label: 'Pending' },
   ];
 
   if (!isOpen) return null;
@@ -187,7 +195,9 @@ const UserModal = ({
                     <input
                       type="text"
                       value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('name', e.target.value)
+                      }
                       disabled={mode === 'view'}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                         errors.name ? 'border-red-300' : 'border-gray-300'
@@ -210,7 +220,9 @@ const UserModal = ({
                     <input
                       type="email"
                       value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('email', e.target.value)
+                      }
                       disabled={mode === 'view'}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                         errors.email ? 'border-red-300' : 'border-gray-300'
@@ -233,7 +245,9 @@ const UserModal = ({
                     <input
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('phone', e.target.value)
+                      }
                       disabled={mode === 'view'}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                         errors.phone ? 'border-red-300' : 'border-gray-300'
@@ -255,20 +269,26 @@ const UserModal = ({
                     <FiMapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <select
                       value={formData.department}
-                      onChange={(e) => handleInputChange('department', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('department', e.target.value)
+                      }
                       disabled={mode === 'view'}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                         errors.department ? 'border-red-300' : 'border-gray-300'
                       } ${mode === 'view' ? 'bg-gray-50' : ''}`}
                     >
                       <option value="">Select department</option>
-                      {departments.map(dept => (
-                        <option key={dept} value={dept}>{dept}</option>
+                      {departments.map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
+                        </option>
                       ))}
                     </select>
                   </div>
                   {errors.department && (
-                    <p className="text-red-500 text-sm mt-1">{errors.department}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.department}
+                    </p>
                   )}
                 </div>
 
@@ -285,8 +305,10 @@ const UserModal = ({
                       mode === 'view' ? 'bg-gray-50' : ''
                     }`}
                   >
-                    {roles.map(role => (
-                      <option key={role.value} value={role.value}>{role.label}</option>
+                    {roles.map((role) => (
+                      <option key={role.value} value={role.value}>
+                        {role.label}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -298,14 +320,18 @@ const UserModal = ({
                   </label>
                   <select
                     value={formData.status}
-                    onChange={(e) => handleInputChange('status', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange('status', e.target.value)
+                    }
                     disabled={mode === 'view'}
                     className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                       mode === 'view' ? 'bg-gray-50' : ''
                     }`}
                   >
-                    {statuses.map(status => (
-                      <option key={status.value} value={status.value}>{status.label}</option>
+                    {statuses.map((status) => (
+                      <option key={status.value} value={status.value}>
+                        {status.label}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -321,7 +347,9 @@ const UserModal = ({
                   <input
                     type="date"
                     value={formData.joinDate}
-                    onChange={(e) => handleInputChange('joinDate', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange('joinDate', e.target.value)
+                    }
                     disabled={mode === 'view'}
                     className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                       mode === 'view' ? 'bg-gray-50' : ''

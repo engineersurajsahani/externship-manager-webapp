@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiBriefcase, FiCalendar, FiFlag, FiSave, FiFileText } from 'react-icons/fi';
+import {
+  FiX,
+  FiBriefcase,
+  FiCalendar,
+  FiFlag,
+  FiSave,
+  FiFileText,
+} from 'react-icons/fi';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 
-const ProjectModal = ({ 
-  isOpen, 
-  onClose, 
+const ProjectModal = ({
+  isOpen,
+  onClose,
   mode = 'create', // 'create', 'edit', 'view'
   project = null,
-  onSave
+  onSave,
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -20,7 +27,7 @@ const ProjectModal = ({
     status: 'planning',
     budget: '',
     department: '',
-    requirements: ''
+    requirements: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -37,7 +44,7 @@ const ProjectModal = ({
         status: project.status || 'planning',
         budget: project.budget || '',
         department: project.department || '',
-        requirements: project.requirements || ''
+        requirements: project.requirements || '',
       });
     } else {
       setFormData({
@@ -49,7 +56,7 @@ const ProjectModal = ({
         status: 'planning',
         budget: '',
         department: '',
-        requirements: ''
+        requirements: '',
       });
     }
     setErrors({});
@@ -82,13 +89,13 @@ const ProjectModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setIsSubmitting(true);
-    
+
     try {
       const projectData = {
         ...formData,
@@ -97,7 +104,7 @@ const ProjectModal = ({
         teamSize: project?.teamSize || 0,
         lead: project?.lead || '',
         interns: project?.interns || [],
-        createdAt: project?.createdAt || new Date().toISOString()
+        createdAt: project?.createdAt || new Date().toISOString(),
       };
 
       await onSave(projectData, mode);
@@ -110,16 +117,16 @@ const ProjectModal = ({
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
 
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: ''
+        [field]: '',
       }));
     }
   };
@@ -128,7 +135,7 @@ const ProjectModal = ({
     { value: 'low', label: 'Low', color: 'text-green-600' },
     { value: 'medium', label: 'Medium', color: 'text-yellow-600' },
     { value: 'high', label: 'High', color: 'text-red-600' },
-    { value: 'urgent', label: 'Urgent', color: 'text-purple-600' }
+    { value: 'urgent', label: 'Urgent', color: 'text-purple-600' },
   ];
 
   const statuses = [
@@ -136,7 +143,7 @@ const ProjectModal = ({
     { value: 'active', label: 'Active' },
     { value: 'on-hold', label: 'On Hold' },
     { value: 'completed', label: 'Completed' },
-    { value: 'cancelled', label: 'Cancelled' }
+    { value: 'cancelled', label: 'Cancelled' },
   ];
 
   const departments = [
@@ -147,7 +154,7 @@ const ProjectModal = ({
     'IT',
     'HR',
     'Finance',
-    'Operations'
+    'Operations',
   ];
 
   if (!isOpen) return null;
@@ -172,7 +179,8 @@ const ProjectModal = ({
                   {mode === 'view' && 'Project Details'}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  {mode === 'create' && 'Set up a new project with timeline and requirements'}
+                  {mode === 'create' &&
+                    'Set up a new project with timeline and requirements'}
                   {mode === 'edit' && 'Update project information and settings'}
                   {mode === 'view' && 'View project details and information'}
                 </p>
@@ -198,7 +206,9 @@ const ProjectModal = ({
                     <input
                       type="text"
                       value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('name', e.target.value)
+                      }
                       disabled={mode === 'view'}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                         errors.name ? 'border-red-300' : 'border-gray-300'
@@ -220,17 +230,23 @@ const ProjectModal = ({
                     <FiFileText className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
                     <textarea
                       value={formData.description}
-                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('description', e.target.value)
+                      }
                       disabled={mode === 'view'}
                       rows={3}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                        errors.description ? 'border-red-300' : 'border-gray-300'
+                        errors.description
+                          ? 'border-red-300'
+                          : 'border-gray-300'
                       } ${mode === 'view' ? 'bg-gray-50' : ''}`}
                       placeholder="Describe the project objectives and scope"
                     />
                   </div>
                   {errors.description && (
-                    <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.description}
+                    </p>
                   )}
                 </div>
 
@@ -244,7 +260,9 @@ const ProjectModal = ({
                     <input
                       type="date"
                       value={formData.startDate}
-                      onChange={(e) => handleInputChange('startDate', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('startDate', e.target.value)
+                      }
                       disabled={mode === 'view'}
                       className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                         mode === 'view' ? 'bg-gray-50' : ''
@@ -263,7 +281,9 @@ const ProjectModal = ({
                     <input
                       type="date"
                       value={formData.endDate}
-                      onChange={(e) => handleInputChange('endDate', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('endDate', e.target.value)
+                      }
                       disabled={mode === 'view'}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                         errors.endDate ? 'border-red-300' : 'border-gray-300'
@@ -271,7 +291,9 @@ const ProjectModal = ({
                     />
                   </div>
                   {errors.endDate && (
-                    <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.endDate}
+                    </p>
                   )}
                 </div>
 
@@ -284,13 +306,15 @@ const ProjectModal = ({
                     <FiFlag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <select
                       value={formData.priority}
-                      onChange={(e) => handleInputChange('priority', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('priority', e.target.value)
+                      }
                       disabled={mode === 'view'}
                       className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                         mode === 'view' ? 'bg-gray-50' : ''
                       }`}
                     >
-                      {priorities.map(priority => (
+                      {priorities.map((priority) => (
                         <option key={priority.value} value={priority.value}>
                           {priority.label}
                         </option>
@@ -306,13 +330,15 @@ const ProjectModal = ({
                   </label>
                   <select
                     value={formData.status}
-                    onChange={(e) => handleInputChange('status', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange('status', e.target.value)
+                    }
                     disabled={mode === 'view'}
                     className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                       mode === 'view' ? 'bg-gray-50' : ''
                     }`}
                   >
-                    {statuses.map(status => (
+                    {statuses.map((status) => (
                       <option key={status.value} value={status.value}>
                         {status.label}
                       </option>
@@ -327,19 +353,25 @@ const ProjectModal = ({
                   </label>
                   <select
                     value={formData.department}
-                    onChange={(e) => handleInputChange('department', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange('department', e.target.value)
+                    }
                     disabled={mode === 'view'}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                       errors.department ? 'border-red-300' : 'border-gray-300'
                     } ${mode === 'view' ? 'bg-gray-50' : ''}`}
                   >
                     <option value="">Select department</option>
-                    {departments.map(dept => (
-                      <option key={dept} value={dept}>{dept}</option>
+                    {departments.map((dept) => (
+                      <option key={dept} value={dept}>
+                        {dept}
+                      </option>
                     ))}
                   </select>
                   {errors.department && (
-                    <p className="text-red-500 text-sm mt-1">{errors.department}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.department}
+                    </p>
                   )}
                 </div>
 
@@ -349,11 +381,15 @@ const ProjectModal = ({
                     Budget (USD)
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                      $
+                    </span>
                     <input
                       type="number"
                       value={formData.budget}
-                      onChange={(e) => handleInputChange('budget', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('budget', e.target.value)
+                      }
                       disabled={mode === 'view'}
                       className={`w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                         mode === 'view' ? 'bg-gray-50' : ''
@@ -370,7 +406,9 @@ const ProjectModal = ({
                   </label>
                   <textarea
                     value={formData.requirements}
-                    onChange={(e) => handleInputChange('requirements', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange('requirements', e.target.value)
+                    }
                     disabled={mode === 'view'}
                     rows={4}
                     className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${

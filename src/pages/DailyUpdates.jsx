@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  FiEdit3, 
-  FiCalendar, 
-  FiClock, 
-  FiEye, 
-  FiFilter, 
+  FiEdit3,
+  FiCalendar,
+  FiClock,
+  FiEye,
+  FiFilter,
   FiUser,
   FiUsers,
   FiFolder,
@@ -14,10 +14,8 @@ import {
   FiRefreshCw,
   FiTarget,
   FiCheckCircle,
-  FiAlertCircle,
-  FiCoffee,
   FiBriefcase,
-  FiX
+  FiX,
 } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -33,7 +31,9 @@ const DailyUpdates = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [teamUpdates, setTeamUpdates] = useState([]);
   const [filteredUpdates, setFilteredUpdates] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split('T')[0]
+  );
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedUpdate, setSelectedUpdate] = useState(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -45,158 +45,247 @@ const DailyUpdates = () => {
   // Recent updates filter for intern/TL
   const [recentFilter, setRecentFilter] = useState('recent3');
   const [showAllUpdates, setShowAllUpdates] = useState(false);
-  
+
   // NEW: Project-specific states for interns
   const [userProjects, setUserProjects] = useState([]);
-  const [projectUpdateModal, setProjectUpdateModal] = useState({ isOpen: false, project: null });
+  const [projectUpdateModal, setProjectUpdateModal] = useState({
+    isOpen: false,
+    project: null,
+  });
   const [todaysSubmissions, setTodaysSubmissions] = useState(new Set());
   const [loadingProjects, setLoadingProjects] = useState(false);
 
   // Load team updates data
   useEffect(() => {
     loadTeamUpdates();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Filter updates based on filters
   useEffect(() => {
+    console.log('🎀 Starting filtering process');
+    console.log('🗺 Original teamUpdates:', teamUpdates);
+    console.log('🗺 teamUpdates length:', teamUpdates.length);
+
     let filtered = teamUpdates;
 
     // Role-based filtering
     if (userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) {
+      console.log('👑 Applying INTERN/TEAM_LEADER filters');
       // For interns and team leaders, apply recent updates filter
       if (userRole === ROLES.INTERN) {
         // Interns only see their own updates
-        filtered = filtered.filter(update => update.userEmail === user?.email);
+        console.log('📱 Filtering for INTERN user:', user?.email);
+        console.log('📱 Updates before intern filter:', filtered.length);
+        filtered = filtered.filter((update) => {
+          console.log(
+            '🔍 Checking update:',
+            update.userEmail,
+            'vs',
+            user?.email
+          );
+          return update.userEmail === user?.email;
+        });
+        console.log('📱 Updates after intern filter:', filtered.length);
       }
-      
+
       if (!showAllUpdates) {
         // Apply recent filter
         const now = new Date();
         if (recentFilter === 'recent3') {
-          // Show only recent 3 updates
+          // Show only recent 3 updates - ensure we have updates before slicing
+          console.log('🔍 Applying recent3 filter, before:', filtered.length);
+          // Always slice, even if there are fewer than 3 items
           filtered = filtered.slice(0, 3);
+          console.log('🔍 After recent3 filter:', filtered.length);
         } else if (recentFilter === 'lastWeek') {
           const lastWeek = new Date(now);
           lastWeek.setDate(lastWeek.getDate() - 7);
-          filtered = filtered.filter(update => new Date(update.date) >= lastWeek);
+          filtered = filtered.filter(
+            (update) => new Date(update.date) >= lastWeek
+          );
         } else if (recentFilter === 'thisMonth') {
           const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-          filtered = filtered.filter(update => new Date(update.date) >= thisMonth);
+          filtered = filtered.filter(
+            (update) => new Date(update.date) >= thisMonth
+          );
         }
       }
     } else if (userRole === ROLES.PROJECT_MANAGER) {
       // Project filter for PM
       if (selectedProject !== 'all') {
-        filtered = filtered.filter(update => update.projectId?.toString() === selectedProject);
+        filtered = filtered.filter(
+          (update) => update.projectId?.toString() === selectedProject
+        );
       }
-      
+
       // Intern filter for PM (within selected project)
       if (selectedIntern !== 'all') {
-        filtered = filtered.filter(update => update.userEmail === selectedIntern);
+        filtered = filtered.filter(
+          (update) => update.userEmail === selectedIntern
+        );
       }
     }
 
     // Date and status filters - only apply if not intern/TL or if showing all updates
-    if (!(userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) || showAllUpdates) {
+    if (
+      !(userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) ||
+      showAllUpdates
+    ) {
       // Date filter
       if (selectedDate) {
-        filtered = filtered.filter(update => update.date === selectedDate);
+        filtered = filtered.filter((update) => update.date === selectedDate);
       }
 
       // Status filter
       if (statusFilter !== 'all') {
-        filtered = filtered.filter(update => {
-          if (statusFilter === 'pending') return !update.status || update.status === 'pending';
-          if (statusFilter === 'submitted') return update.status === 'submitted' || update.status === 'approved';
+        filtered = filtered.filter((update) => {
+          if (statusFilter === 'pending')
+            return !update.status || update.status === 'pending';
+          if (statusFilter === 'submitted')
+            return (
+              update.status === 'submitted' || update.status === 'approved'
+            );
           if (statusFilter === 'missing') return update.status === 'missing';
           return true;
         });
       }
     }
 
+    console.log('🎆 Final filtered updates:', filtered);
+    console.log('🎆 Final filtered updates length:', filtered.length);
+
     setFilteredUpdates(filtered);
-  }, [teamUpdates, selectedDate, statusFilter, selectedProject, selectedIntern, userRole, ROLES.INTERN, ROLES.TEAM_LEADER, ROLES.PROJECT_MANAGER, user, recentFilter, showAllUpdates]);
+  }, [
+    teamUpdates,
+    selectedDate,
+    statusFilter,
+    selectedProject,
+    selectedIntern,
+    userRole,
+    ROLES.INTERN,
+    ROLES.TEAM_LEADER,
+    ROLES.PROJECT_MANAGER,
+    user,
+    recentFilter,
+    showAllUpdates,
+  ]);
 
   const loadTeamUpdates = async () => {
     setIsLoading(true);
     try {
       let dailyUpdates = [];
-      
+
       // Try to fetch from API first
       try {
         let apiResponse;
-        
+
+        console.log('🔍 Fetching updates for role:', userRole);
+        console.log('📧 Current user:', user?.email);
+
         if (userRole === ROLES.INTERN) {
           // Interns only get their own updates
+          console.log('📱 Fetching MY updates as INTERN');
           apiResponse = await apiService.getMyUpdates();
         } else if (userRole === ROLES.TEAM_LEADER) {
           // Team leaders get their team's updates
+          console.log('👥 Fetching TEAM updates as TEAM_LEADER');
           apiResponse = await apiService.getTeamUpdates();
         } else if (userRole === ROLES.PROJECT_MANAGER) {
           // Project managers get all updates from their projects
+          console.log('📊 Fetching TEAM updates as PROJECT_MANAGER');
           apiResponse = await apiService.getTeamUpdates();
         } else {
           // Admin gets all updates
+          console.log('🔒 Fetching ALL updates as ADMIN');
           apiResponse = await apiService.getAllUpdates();
         }
-        
-        if (apiResponse.data.success && apiResponse.data.updates) {
-          dailyUpdates = apiResponse.data.updates.map(update => ({
+
+        console.log('🌐 API Response:', apiResponse);
+
+        if (apiResponse.data.success) {
+          console.log('📜 Raw updates from API:', apiResponse.data.updates);
+          // Ensure updates array exists
+          const updates = apiResponse.data.updates || [];
+          console.log('🔢 Number of raw updates:', updates.length);
+
+          // Process all updates regardless of length
+          dailyUpdates = updates.map((update) => ({
             id: update._id,
             userEmail: update.user?.email || 'unknown@example.com',
-            userName: update.user ? `${update.user.firstName} ${update.user.lastName}` : 'Unknown User',
+            userName: update.user
+              ? `${update.user.firstName} ${update.user.lastName}`
+              : 'Unknown User',
             userRole: update.user?.role || 'intern',
             department: update.user?.department || 'Unknown',
             date: new Date(update.date).toISOString().split('T')[0],
             timestamp: update.createdAt,
             workDone: update.workDone,
             challenges: update.challenges,
-            planTomorrow: update.planForTomorrow,
+            planForTomorrow: update.planForTomorrow,
             status: 'submitted',
             projectId: update.project?._id || null,
-            projectName: update.project?.name || 'No Project Assigned'
+            projectName: update.project?.name || 'No Project Assigned',
           }));
+
+          console.log('🔄 Processed all updates, count:', dailyUpdates.length);
+
+          console.log('🔧 Processed updates:', dailyUpdates);
+          console.log('🔢 Number of processed updates:', dailyUpdates.length);
         }
       } catch (apiError) {
         console.error('Failed to fetch updates from API:', apiError);
-        
+
         // Show user-friendly error message
-        if (apiError.code === 'ECONNREFUSED' || apiError.message.includes('Network Error')) {
-          console.warn('Cannot connect to database. Make sure your backend server is running on http://localhost:5050');
+        if (
+          apiError.code === 'ECONNREFUSED' ||
+          apiError.message.includes('Network Error')
+        ) {
+          console.warn(
+            'Cannot connect to database. Make sure your backend server is running on http://localhost:5050'
+          );
         }
-        
+
         // No fallback to localStorage since we're using MongoDB
         dailyUpdates = [];
       }
-      
+
       // Sort by date (newest first)
-      dailyUpdates.sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
-      
+      dailyUpdates.sort(
+        (a, b) =>
+          new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date)
+      );
+
+      console.log('🗒 Sorted updates:', dailyUpdates);
+      console.log('📦 Setting team updates with', dailyUpdates.length, 'items');
+
       setTeamUpdates(dailyUpdates);
-      
+
       // Set unique interns for PM filtering
-      const uniqueInterns = [...new Set(dailyUpdates.map(update => update.userEmail))]
-        .map(email => {
-          const update = dailyUpdates.find(u => u.userEmail === email);
-          return {
-            email: email,
-            name: update.userName
-          };
-        });
+      const uniqueInterns = [
+        ...new Set(dailyUpdates.map((update) => update.userEmail)),
+      ].map((email) => {
+        const update = dailyUpdates.find((u) => u.userEmail === email);
+        return {
+          email: email,
+          name: update.userName,
+        };
+      });
       setInterns(uniqueInterns);
-      
+
       // Set projects for PM filtering
-      const uniqueProjects = [...new Set(dailyUpdates.map(update => update.projectId).filter(id => id))]
-        .map(id => {
-          const update = dailyUpdates.find(u => u.projectId === id);
-          return {
-            id: id,
-            name: update.projectName
-          };
-        });
+      const uniqueProjects = [
+        ...new Set(
+          dailyUpdates.map((update) => update.projectId).filter((id) => id)
+        ),
+      ].map((id) => {
+        const update = dailyUpdates.find((u) => u.projectId === id);
+        return {
+          id: id,
+          name: update.projectName,
+        };
+      });
       setProjects(uniqueProjects);
-      
     } catch (error) {
       console.error('Error loading team updates:', error);
     } finally {
@@ -207,30 +296,38 @@ const DailyUpdates = () => {
   // NEW: Load user's assigned projects (for interns)
   const loadUserProjects = async () => {
     if (userRole !== ROLES.INTERN) return;
-    
+
     setLoadingProjects(true);
     try {
       const response = await apiService.getMyProjects();
       if (response.data.success && response.data.projects) {
-        const projectsWithDetails = response.data.projects.map(project => ({
+        const projectsWithDetails = response.data.projects.map((project) => ({
           id: project._id,
           name: project.name,
           description: project.description,
           status: project.status,
-          projectManager: project.projectManager ? {
-            name: `${project.projectManager.firstName} ${project.projectManager.lastName}`,
-            email: project.projectManager.email
-          } : null,
-          teamLeader: project.teamMembers?.find(member => member.role === 'team_leader')?.user ? {
-            name: `${project.teamMembers.find(member => member.role === 'team_leader').user.firstName} ${project.teamMembers.find(member => member.role === 'team_leader').user.lastName}`,
-            email: project.teamMembers.find(member => member.role === 'team_leader').user.email
-          } : null,
+          projectManager: project.projectManager
+            ? {
+                name: `${project.projectManager.firstName} ${project.projectManager.lastName}`,
+                email: project.projectManager.email,
+              }
+            : null,
+          teamLeader: project.teamMembers?.find(
+            (member) => member.role === 'team_leader'
+          )?.user
+            ? {
+                name: `${project.teamMembers.find((member) => member.role === 'team_leader').user.firstName} ${project.teamMembers.find((member) => member.role === 'team_leader').user.lastName}`,
+                email: project.teamMembers.find(
+                  (member) => member.role === 'team_leader'
+                ).user.email,
+              }
+            : null,
           technologies: project.technologies || [],
           startDate: project.startDate,
-          endDate: project.endDate
+          endDate: project.endDate,
         }));
         setUserProjects(projectsWithDetails);
-        
+
         // Check today's submissions for each project
         await checkTodaysSubmissions(projectsWithDetails);
       }
@@ -246,20 +343,21 @@ const DailyUpdates = () => {
     try {
       const today = new Date().toISOString().split('T')[0];
       const submissions = new Set();
-      
+
       for (const project of projects) {
         // Check if user has submitted for this project today
-        const userTodayUpdates = teamUpdates.filter(update => 
-          update.userEmail === user?.email && 
-          update.date === today &&
-          update.projectId === project.id
+        const userTodayUpdates = teamUpdates.filter(
+          (update) =>
+            update.userEmail === user?.email &&
+            update.date === today &&
+            update.projectId === project.id
         );
-        
+
         if (userTodayUpdates.length > 0) {
           submissions.add(project.id);
         }
       }
-      
+
       setTodaysSubmissions(submissions);
     } catch (error) {
       console.error('Error checking today submissions:', error);
@@ -271,7 +369,7 @@ const DailyUpdates = () => {
     if (userRole === ROLES.INTERN) {
       loadUserProjects();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userRole, teamUpdates]); // Re-run when teamUpdates changes
 
   // NEW: Handle project-specific update submission
@@ -308,7 +406,6 @@ const DailyUpdates = () => {
     setShowUpdateModal(true);
   };
 
-
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -337,16 +434,19 @@ const DailyUpdates = () => {
                 My Project Updates
               </h1>
               <p className="text-gray-600 mt-2">
-                Submit daily updates for each project you're assigned to and track your progress
+                Submit daily updates for each project you're assigned to and
+                track your progress
               </p>
             </div>
             <div className="flex items-center space-x-3 mt-4 lg:mt-0">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={loadUserProjects}
                 disabled={loadingProjects}
               >
-                <FiRefreshCw className={`w-4 h-4 mr-2 ${loadingProjects ? 'animate-spin' : ''}`} />
+                <FiRefreshCw
+                  className={`w-4 h-4 mr-2 ${loadingProjects ? 'animate-spin' : ''}`}
+                />
                 Refresh
               </Button>
             </div>
@@ -356,7 +456,7 @@ const DailyUpdates = () => {
         {/* Project Cards */}
         {loadingProjects ? (
           <div className="space-y-4">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="animate-pulse">
                 <Card className="p-6">
                   <div className="h-4 bg-gray-200 rounded w-1/3 mb-3"></div>
@@ -369,8 +469,13 @@ const DailyUpdates = () => {
         ) : userProjects.length === 0 ? (
           <Card className="p-8 text-center">
             <FiBriefcase className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Projects Assigned</h3>
-            <p className="text-gray-500">You haven't been assigned to any projects yet. Contact your team leader or project manager.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No Projects Assigned
+            </h3>
+            <p className="text-gray-500">
+              You haven't been assigned to any projects yet. Contact your team
+              leader or project manager.
+            </p>
           </Card>
         ) : (
           <div className="space-y-6">
@@ -381,8 +486,7 @@ const DailyUpdates = () => {
             >
               {userProjects.map((project, index) => {
                 const hasSubmittedToday = todaysSubmissions.has(project.id);
-                const today = new Date().toISOString().split('T')[0];
-                
+
                 return (
                   <motion.div
                     key={project.id}
@@ -390,31 +494,41 @@ const DailyUpdates = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 * index }}
                   >
-                    <Card className={`p-6 relative overflow-hidden ${
-                      hasSubmittedToday 
-                        ? 'border-green-200 bg-green-50/30' 
-                        : 'border-gray-200 hover:border-blue-300 hover:shadow-lg'
-                    } transition-all`}>
+                    <Card
+                      className={`p-6 relative overflow-hidden ${
+                        hasSubmittedToday
+                          ? 'border-green-200 bg-green-50/30'
+                          : 'border-gray-200 hover:border-blue-300 hover:shadow-lg'
+                      } transition-all`}
+                    >
                       {/* Status indicator */}
-                      <div className={`absolute top-0 right-0 w-2 h-full ${
-                        hasSubmittedToday ? 'bg-green-500' : 'bg-orange-400'
-                      }`}></div>
-                      
+                      <div
+                        className={`absolute top-0 right-0 w-2 h-full ${
+                          hasSubmittedToday ? 'bg-green-500' : 'bg-orange-400'
+                        }`}
+                      ></div>
+
                       {/* Project Header */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
                             <FiTarget className="w-5 h-5 text-blue-600" />
-                            <h3 className="text-lg font-semibold text-gray-900">{project.name}</h3>
-                            <Badge className={`${
-                              project.status === 'active' 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {project.name}
+                            </h3>
+                            <Badge
+                              className={`${
+                                project.status === 'active'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}
+                            >
                               {project.status}
                             </Badge>
                           </div>
-                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{project.description}</p>
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                            {project.description}
+                          </p>
                         </div>
                         {hasSubmittedToday && (
                           <div className="ml-4">
@@ -431,73 +545,54 @@ const DailyUpdates = () => {
                             <div className="flex items-center space-x-1">
                               <FiUser className="w-3 h-3 text-gray-400" />
                               <span className="text-gray-500">PM:</span>
-                              <span className="font-medium text-gray-700">{project.projectManager.name}</span>
+                              <span className="font-medium text-gray-700">
+                                {project.projectManager.name}
+                              </span>
                             </div>
                           )}
                           {project.teamLeader && (
                             <div className="flex items-center space-x-1">
                               <FiUser className="w-3 h-3 text-gray-400" />
                               <span className="text-gray-500">TL:</span>
-                              <span className="font-medium text-gray-700">{project.teamLeader.name}</span>
+                              <span className="font-medium text-gray-700">
+                                {project.teamLeader.name}
+                              </span>
                             </div>
                           )}
                         </div>
 
                         {/* Technologies */}
-                        {project.technologies && project.technologies.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {project.technologies.slice(0, 4).map((tech, techIndex) => (
-                              <span key={techIndex} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                                {tech}
-                              </span>
-                            ))}
-                            {project.technologies.length > 4 && (
-                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                                +{project.technologies.length - 4}
-                              </span>
-                            )}
-                          </div>
-                        )}
+                        {project.technologies &&
+                          project.technologies.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {project.technologies
+                                .slice(0, 4)
+                                .map((tech, techIndex) => (
+                                  <span
+                                    key={techIndex}
+                                    className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded"
+                                  >
+                                    {tech}
+                                  </span>
+                                ))}
+                              {project.technologies.length > 4 && (
+                                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                                  +{project.technologies.length - 4}
+                                </span>
+                              )}
+                            </div>
+                          )}
 
                         {/* Project Timeline */}
                         <div className="flex items-center text-xs text-gray-500">
                           <FiCalendar className="w-3 h-3 mr-1" />
                           <span>
-                            {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
+                            {new Date(project.startDate).toLocaleDateString()} -{' '}
+                            {new Date(project.endDate).toLocaleDateString()}
                           </span>
                         </div>
                       </div>
 
-                      {/* Attendance Status */}
-                      <div className={`p-3 rounded-lg mb-4 ${
-                        hasSubmittedToday 
-                          ? 'bg-green-100 border border-green-200'
-                          : 'bg-orange-100 border border-orange-200'
-                      }`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            {hasSubmittedToday ? (
-                              <FiCheckCircle className="w-4 h-4 text-green-600" />
-                            ) : (
-                              <FiAlertCircle className="w-4 h-4 text-orange-600" />
-                            )}
-                            <div>
-                              <p className={`text-sm font-medium ${
-                                hasSubmittedToday ? 'text-green-800' : 'text-orange-800'
-                              }`}>
-                                {hasSubmittedToday ? 'Update Submitted' : 'Update Pending'}
-                              </p>
-                              <p className={`text-xs ${
-                                hasSubmittedToday ? 'text-green-600' : 'text-orange-600'
-                              }`}>
-                                {hasSubmittedToday 
-                                  ? `Attendance marked for ${today}` 
-                                  : `Submit to mark attendance for ${today}`}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
 
                       {/* Action Button */}
                       <div className="flex items-center justify-between">
@@ -514,7 +609,9 @@ const DailyUpdates = () => {
                           size="sm"
                         >
                           <FiEdit3 className="w-4 h-4 mr-2" />
-                          {hasSubmittedToday ? 'Update Submission' : 'Submit Update'}
+                          {hasSubmittedToday
+                            ? 'Update Submission'
+                            : 'Submit Update'}
                         </Button>
                       </div>
                     </Card>
@@ -533,7 +630,9 @@ const DailyUpdates = () => {
         >
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Recent Updates</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Recent Updates
+              </h2>
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <FiFilter className="w-4 h-4 text-gray-400" />
@@ -548,14 +647,16 @@ const DailyUpdates = () => {
                     <option value="thisMonth">This Month</option>
                   </select>
                   <Button
-                    variant={showAllUpdates ? "primary" : "outline"}
+                    variant={showAllUpdates ? 'primary' : 'outline'}
                     size="sm"
                     onClick={() => setShowAllUpdates(!showAllUpdates)}
                   >
-                    {showAllUpdates ? "Show Filtered" : "Show All"}
+                    {showAllUpdates ? 'Show Filtered' : 'Show All'}
                   </Button>
                 </div>
-                <span className="text-sm text-gray-500">{filteredUpdates.length} updates found</span>
+                <span className="text-sm text-gray-500">
+                  {filteredUpdates.length} updates found
+                </span>
               </div>
             </div>
 
@@ -563,7 +664,9 @@ const DailyUpdates = () => {
               <div className="text-center py-8">
                 <FiEdit3 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">No updates found</p>
-                <p className="text-sm text-gray-400">Start submitting daily updates to see them here</p>
+                <p className="text-sm text-gray-400">
+                  Start submitting daily updates to see them here
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -581,21 +684,32 @@ const DailyUpdates = () => {
                           <FiTarget className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-gray-900">{update.projectName}</h3>
-                          <p className="text-sm text-gray-500">Daily Update Submission</p>
+                          <h3 className="font-medium text-gray-900">
+                            {update.projectName}
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            Daily Update Submission
+                          </p>
                           <div className="flex items-center space-x-2 text-xs text-gray-400">
                             <FiCalendar className="w-3 h-3" />
-                            <span>{new Date(update.date).toLocaleDateString()}</span>
+                            <span>
+                              {new Date(update.date).toLocaleDateString()}
+                            </span>
                             <span>•</span>
                             <FiClock className="w-3 h-3" />
-                            <span>{new Date(update.timestamp || update.date).toLocaleTimeString()}</span>
+                            <span>
+                              {new Date(
+                                update.timestamp || update.date
+                              ).toLocaleTimeString()}
+                            </span>
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-3">
                         <Badge className={getStatusColor(update.status)}>
-                          {update.status.charAt(0).toUpperCase() + update.status.slice(1)}
+                          {update.status.charAt(0).toUpperCase() +
+                            update.status.slice(1)}
                         </Badge>
                         <Button
                           variant="outline"
@@ -607,20 +721,32 @@ const DailyUpdates = () => {
                         </Button>
                       </div>
                     </div>
-                    
+
                     <div className="mt-4 ml-14">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                         <div>
-                          <h4 className="font-medium text-gray-700 mb-1">Work Done:</h4>
-                          <p className="text-gray-600 line-clamp-2">{update.workDone || 'No details provided'}</p>
+                          <h4 className="font-medium text-gray-700 mb-1">
+                            Work Done:
+                          </h4>
+                          <p className="text-gray-600 line-clamp-2">
+                            {update.workDone || 'No details provided'}
+                          </p>
                         </div>
                         <div>
-                          <h4 className="font-medium text-gray-700 mb-1">Challenges:</h4>
-                          <p className="text-gray-600 line-clamp-2">{update.challenges || 'None mentioned'}</p>
+                          <h4 className="font-medium text-gray-700 mb-1">
+                            Challenges:
+                          </h4>
+                          <p className="text-gray-600 line-clamp-2">
+                            {update.challenges || 'None mentioned'}
+                          </p>
                         </div>
                         <div>
-                          <h4 className="font-medium text-gray-700 mb-1">Tomorrow's Plan:</h4>
-                          <p className="text-gray-600 line-clamp-2">{update.planTomorrow || 'No plan provided'}</p>
+                          <h4 className="font-medium text-gray-700 mb-1">
+                            Tomorrow's Plan:
+                          </h4>
+                          <p className="text-gray-600 line-clamp-2">
+                            {update.planForTomorrow || 'No plan provided'}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -635,7 +761,9 @@ const DailyUpdates = () => {
         <ProjectUpdateModal
           isOpen={projectUpdateModal.isOpen}
           project={projectUpdateModal.project}
-          onClose={() => setProjectUpdateModal({ isOpen: false, project: null })}
+          onClose={() =>
+            setProjectUpdateModal({ isOpen: false, project: null })
+          }
           onSuccess={handleUpdateSuccess}
         />
 
@@ -648,7 +776,9 @@ const DailyUpdates = () => {
               className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Daily Update Details</h2>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Daily Update Details
+                </h2>
                 <button
                   onClick={() => setShowUpdateModal(false)}
                   className="text-gray-400 hover:text-gray-600"
@@ -656,46 +786,61 @@ const DailyUpdates = () => {
                   <FiX className="w-6 h-6" />
                 </button>
               </div>
-              
+
               <div className="space-y-6">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                     <FiTarget className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-gray-900">{selectedUpdate.projectName}</h3>
+                    <h3 className="font-medium text-gray-900">
+                      {selectedUpdate.projectName}
+                    </h3>
                     <p className="text-sm text-gray-500">Project Update</p>
                     <div className="flex items-center space-x-2 text-xs text-gray-400">
                       <FiCalendar className="w-3 h-3" />
-                      <span>{new Date(selectedUpdate.date).toLocaleDateString()}</span>
+                      <span>
+                        {new Date(selectedUpdate.date).toLocaleDateString()}
+                      </span>
                       <span>•</span>
                       <FiClock className="w-3 h-3" />
-                      <span>{new Date(selectedUpdate.timestamp || selectedUpdate.date).toLocaleTimeString()}</span>
+                      <span>
+                        {new Date(
+                          selectedUpdate.timestamp || selectedUpdate.date
+                        ).toLocaleTimeString()}
+                      </span>
                     </div>
                   </div>
                   <Badge className={getStatusColor(selectedUpdate.status)}>
-                    {selectedUpdate.status.charAt(0).toUpperCase() + selectedUpdate.status.slice(1)}
+                    {selectedUpdate.status.charAt(0).toUpperCase() +
+                      selectedUpdate.status.slice(1)}
                   </Badge>
                 </div>
-                
+
                 <div>
-                  <h4 className="font-medium text-gray-700 mb-2">What was accomplished:</h4>
+                  <h4 className="font-medium text-gray-700 mb-2">
+                    What was accomplished:
+                  </h4>
                   <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
                     {selectedUpdate.workDone || 'No details provided'}
                   </p>
                 </div>
-                
+
                 <div>
-                  <h4 className="font-medium text-gray-700 mb-2">Challenges faced:</h4>
+                  <h4 className="font-medium text-gray-700 mb-2">
+                    Challenges faced:
+                  </h4>
                   <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
                     {selectedUpdate.challenges || 'None mentioned'}
                   </p>
                 </div>
-                
+
                 <div>
-                  <h4 className="font-medium text-gray-700 mb-2">Plan for tomorrow:</h4>
+                  <h4 className="font-medium text-gray-700 mb-2">
+                    Plan for tomorrow:
+                  </h4>
                   <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
-                    {selectedUpdate.planTomorrow || 'No plan provided'}
+                    {selectedUpdate.planForTomorrow || 'No plan provided'}
                   </p>
                 </div>
               </div>
@@ -718,21 +863,27 @@ const DailyUpdates = () => {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              {userRole === ROLES.ADMIN ? 'All Daily Updates' :
-               userRole === ROLES.PROJECT_MANAGER ? 'Project Team Updates' :
-               userRole === ROLES.TEAM_LEADER ? 'Team Daily Updates' :
-               'Daily Updates'}
+              {userRole === ROLES.ADMIN
+                ? 'All Daily Updates'
+                : userRole === ROLES.PROJECT_MANAGER
+                  ? 'Project Team Updates'
+                  : userRole === ROLES.TEAM_LEADER
+                    ? 'Team Daily Updates'
+                    : 'Daily Updates'}
             </h1>
             <p className="text-gray-600 mt-2">
-              {userRole === ROLES.ADMIN ? 'Monitor and manage daily submissions across the entire system' :
-               userRole === ROLES.PROJECT_MANAGER ? 'Review updates from all teams in your assigned projects' :
-               userRole === ROLES.TEAM_LEADER ? 'Review daily updates from your assigned interns' :
-               'Submit your daily progress updates and track consistency'}
+              {userRole === ROLES.ADMIN
+                ? 'Monitor and manage daily submissions across the entire system'
+                : userRole === ROLES.PROJECT_MANAGER
+                  ? 'Review updates from all teams in your assigned projects'
+                  : userRole === ROLES.TEAM_LEADER
+                    ? 'Review daily updates from your assigned interns'
+                    : 'Submit your daily progress updates and track consistency'}
             </p>
           </div>
           <div className="flex items-center space-x-3 mt-4 lg:mt-0">
             {userRole === ROLES.TEAM_LEADER && (
-              <Button 
+              <Button
                 onClick={() => navigate('/daily-updates/submit')}
                 className="bg-blue-600 hover:bg-blue-700"
               >
@@ -740,12 +891,14 @@ const DailyUpdates = () => {
                 Submit Update
               </Button>
             )}
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={loadTeamUpdates}
               disabled={isLoading}
             >
-              <FiRefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              <FiRefreshCw
+                className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`}
+              />
               Refresh
             </Button>
             <Button variant="outline">
@@ -756,7 +909,6 @@ const DailyUpdates = () => {
         </div>
       </motion.div>
 
-
       {/* Updates List */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -765,10 +917,13 @@ const DailyUpdates = () => {
       >
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Update History</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Update History
+            </h2>
             <div className="flex items-center space-x-4">
               {/* Recent Updates Filter (Intern/Team Leader only) */}
-              {(userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) && (
+              {(userRole === ROLES.INTERN ||
+                userRole === ROLES.TEAM_LEADER) && (
                 <div className="flex items-center space-x-2">
                   <FiFilter className="w-4 h-4 text-gray-400" />
                   <select
@@ -782,23 +937,29 @@ const DailyUpdates = () => {
                     <option value="thisMonth">This Month</option>
                   </select>
                   <Button
-                    variant={showAllUpdates ? "primary" : "outline"}
+                    variant={showAllUpdates ? 'primary' : 'outline'}
                     size="sm"
                     onClick={() => setShowAllUpdates(!showAllUpdates)}
                   >
-                    {showAllUpdates ? "Show Filtered" : "Show All"}
+                    {showAllUpdates ? 'Show Filtered' : 'Show All'}
                   </Button>
                 </div>
               )}
-              <span className="text-sm text-gray-500">{filteredUpdates.length} updates found</span>
+              <span className="text-sm text-gray-500">
+                {filteredUpdates.length} updates found
+              </span>
             </div>
           </div>
 
           {filteredUpdates.length === 0 ? (
             <div className="text-center py-8">
               <FiEdit3 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No updates found for the selected criteria</p>
-              <p className="text-sm text-gray-400">Try adjusting your filters or search terms</p>
+              <p className="text-gray-500">
+                No updates found for the selected criteria
+              </p>
+              <p className="text-sm text-gray-400">
+                Try adjusting your filters or search terms
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -816,10 +977,16 @@ const DailyUpdates = () => {
                         <FiUser className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900">{update.userName}</h3>
-                        <p className="text-sm text-gray-500">{update.userEmail}</p>
+                        <h3 className="font-medium text-gray-900">
+                          {update.userName}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          {update.userEmail}
+                        </p>
                         <div className="flex items-center space-x-2 text-xs text-gray-400">
-                          <span>{update.department} • {update.userRole}</span>
+                          <span>
+                            {update.department} • {update.userRole}
+                          </span>
                           {update.projectName && (
                             <>
                               <span>•</span>
@@ -832,10 +999,11 @@ const DailyUpdates = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-3">
                       <Badge className={getStatusColor(update.status)}>
-                        {update.status.charAt(0).toUpperCase() + update.status.slice(1)}
+                        {update.status.charAt(0).toUpperCase() +
+                          update.status.slice(1)}
                       </Badge>
                       <div className="text-right text-sm text-gray-500">
                         <div className="flex items-center">
@@ -844,7 +1012,9 @@ const DailyUpdates = () => {
                         </div>
                         <div className="flex items-center mt-1">
                           <FiClock className="w-3 h-3 mr-1" />
-                          {new Date(update.timestamp || update.date).toLocaleTimeString()}
+                          {new Date(
+                            update.timestamp || update.date
+                          ).toLocaleTimeString()}
                         </div>
                       </div>
                       <Button
@@ -857,20 +1027,32 @@ const DailyUpdates = () => {
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="mt-4 ml-14">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                       <div>
-                        <h4 className="font-medium text-gray-700 mb-1">Work Done:</h4>
-                        <p className="text-gray-600 line-clamp-2">{update.workDone || 'No details provided'}</p>
+                        <h4 className="font-medium text-gray-700 mb-1">
+                          Work Done:
+                        </h4>
+                        <p className="text-gray-600 line-clamp-2">
+                          {update.workDone || 'No details provided'}
+                        </p>
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-700 mb-1">Challenges:</h4>
-                        <p className="text-gray-600 line-clamp-2">{update.challenges || 'None mentioned'}</p>
+                        <h4 className="font-medium text-gray-700 mb-1">
+                          Challenges:
+                        </h4>
+                        <p className="text-gray-600 line-clamp-2">
+                          {update.challenges || 'None mentioned'}
+                        </p>
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-700 mb-1">Tomorrow's Plan:</h4>
-                        <p className="text-gray-600 line-clamp-2">{update.planTomorrow || 'No plan provided'}</p>
+                        <h4 className="font-medium text-gray-700 mb-1">
+                          Tomorrow's Plan:
+                        </h4>
+                        <p className="text-gray-600 line-clamp-2">
+                          {update.planForTomorrow || 'No plan provided'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -882,7 +1064,8 @@ const DailyUpdates = () => {
       </motion.div>
 
       {/* Filters - Only show for PM/Admin or when Intern/TL clicks Show All */}
-      {(!(userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) || showAllUpdates) && (
+      {(!(userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) ||
+        showAllUpdates) && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -890,7 +1073,6 @@ const DailyUpdates = () => {
         >
           <Card className="p-6">
             <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
-              
               {/* Date Filter */}
               <div className="flex items-center space-x-2">
                 <FiCalendar className="w-4 h-4 text-gray-400" />
@@ -901,7 +1083,7 @@ const DailyUpdates = () => {
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              
+
               {/* Status Filter */}
               <div className="flex items-center space-x-2">
                 <FiFilter className="w-4 h-4 text-gray-400" />
@@ -916,7 +1098,7 @@ const DailyUpdates = () => {
                   <option value="missing">Missing</option>
                 </select>
               </div>
-            
+
               {/* Project Filter (PM only) */}
               {userRole === ROLES.PROJECT_MANAGER && (
                 <div className="flex items-center space-x-2">
@@ -931,7 +1113,7 @@ const DailyUpdates = () => {
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="all">All Projects</option>
-                    {projects.map(project => (
+                    {projects.map((project) => (
                       <option key={project.id} value={project.id.toString()}>
                         {project.name}
                       </option>
@@ -939,7 +1121,7 @@ const DailyUpdates = () => {
                   </select>
                 </div>
               )}
-              
+
               {/* Intern Filter (PM only, filtered by project) */}
               {userRole === ROLES.PROJECT_MANAGER && (
                 <div className="flex items-center space-x-2">
@@ -951,23 +1133,26 @@ const DailyUpdates = () => {
                     disabled={selectedProject === 'all'}
                   >
                     <option value="all">
-                      {selectedProject === 'all' ? 'Select Project First' : 'All Interns'}
+                      {selectedProject === 'all'
+                        ? 'Select Project First'
+                        : 'All Interns'}
                     </option>
-                    {selectedProject !== 'all' && interns
-                      .filter(intern => {
-                        // Filter interns by selected project
-                        const internUpdates = teamUpdates.filter(update => 
-                          update.userEmail === intern.email && 
-                          update.projectId?.toString() === selectedProject
-                        );
-                        return internUpdates.length > 0;
-                      })
-                      .map(intern => (
-                        <option key={intern.email} value={intern.email}>
-                          {intern.name}
-                        </option>
-                      ))
-                    }
+                    {selectedProject !== 'all' &&
+                      interns
+                        .filter((intern) => {
+                          // Filter interns by selected project
+                          const internUpdates = teamUpdates.filter(
+                            (update) =>
+                              update.userEmail === intern.email &&
+                              update.projectId?.toString() === selectedProject
+                          );
+                          return internUpdates.length > 0;
+                        })
+                        .map((intern) => (
+                          <option key={intern.email} value={intern.email}>
+                            {intern.name}
+                          </option>
+                        ))}
                   </select>
                 </div>
               )}
@@ -985,7 +1170,9 @@ const DailyUpdates = () => {
             className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Daily Update Details</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Daily Update Details
+              </h2>
               <button
                 onClick={() => setShowUpdateModal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -993,17 +1180,23 @@ const DailyUpdates = () => {
                 ×
               </button>
             </div>
-            
+
             <div className="space-y-6">
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                   <FiUser className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900">{selectedUpdate.userName}</h3>
-                  <p className="text-sm text-gray-500">{selectedUpdate.userEmail}</p>
+                  <h3 className="font-medium text-gray-900">
+                    {selectedUpdate.userName}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {selectedUpdate.userEmail}
+                  </p>
                   <div className="flex items-center space-x-2 text-xs text-gray-400">
-                    <span>{selectedUpdate.department} • {selectedUpdate.userRole}</span>
+                    <span>
+                      {selectedUpdate.department} • {selectedUpdate.userRole}
+                    </span>
                     {selectedUpdate.projectName && (
                       <>
                         <span>•</span>
@@ -1016,34 +1209,48 @@ const DailyUpdates = () => {
                   </div>
                 </div>
                 <Badge className={getStatusColor(selectedUpdate.status)}>
-                  {selectedUpdate.status.charAt(0).toUpperCase() + selectedUpdate.status.slice(1)}
+                  {selectedUpdate.status.charAt(0).toUpperCase() +
+                    selectedUpdate.status.slice(1)}
                 </Badge>
               </div>
-              
+
               <div>
-                <h4 className="font-medium text-gray-700 mb-2">What was accomplished:</h4>
+                <h4 className="font-medium text-gray-700 mb-2">
+                  What was accomplished:
+                </h4>
                 <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
                   {selectedUpdate.workDone || 'No details provided'}
                 </p>
               </div>
-              
+
               <div>
-                <h4 className="font-medium text-gray-700 mb-2">Challenges faced:</h4>
+                <h4 className="font-medium text-gray-700 mb-2">
+                  Challenges faced:
+                </h4>
                 <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
                   {selectedUpdate.challenges || 'None mentioned'}
                 </p>
               </div>
-              
+
               <div>
-                <h4 className="font-medium text-gray-700 mb-2">Plan for tomorrow:</h4>
+                <h4 className="font-medium text-gray-700 mb-2">
+                  Plan for tomorrow:
+                </h4>
                 <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
-                  {selectedUpdate.planTomorrow || 'No plan provided'}
+                  {selectedUpdate.planForTomorrow || 'No plan provided'}
                 </p>
               </div>
-              
+
               <div className="flex justify-between text-sm text-gray-500">
-                <span>Date: {new Date(selectedUpdate.date).toLocaleDateString()}</span>
-                <span>Time: {new Date(selectedUpdate.timestamp || selectedUpdate.date).toLocaleTimeString()}</span>
+                <span>
+                  Date: {new Date(selectedUpdate.date).toLocaleDateString()}
+                </span>
+                <span>
+                  Time:{' '}
+                  {new Date(
+                    selectedUpdate.timestamp || selectedUpdate.date
+                  ).toLocaleTimeString()}
+                </span>
               </div>
             </div>
           </motion.div>

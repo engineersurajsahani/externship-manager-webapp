@@ -5,7 +5,7 @@ export { default as Input } from './Input';
 export { default as Badge } from './Badge';
 export { default as Modal } from './Modal';
 export { default as Toast, ToastContainer, useToast } from './Toast';
-export { 
+export {
   default as Loading,
   Spinner,
   LoadingDots,
@@ -13,7 +13,7 @@ export {
   Skeleton,
   CardSkeleton,
   TableSkeleton,
-  LoadingButton
+  LoadingButton,
 } from './Loading';
 
 // You can now import multiple components like:

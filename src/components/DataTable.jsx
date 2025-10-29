@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiSearch, FiEdit2, FiTrash2, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import {
+  FiSearch,
+  FiEdit2,
+  FiTrash2,
+  FiEye,
+  FiChevronLeft,
+  FiChevronRight,
+} from 'react-icons/fi';
 
 const DataTable = ({ title, columns, data, actions = true }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -8,8 +15,8 @@ const DataTable = ({ title, columns, data, actions = true }) => {
   const [itemsPerPage] = useState(5);
 
   // Filter data based on search term
-  const filteredData = data.filter(item =>
-    Object.values(item).some(value =>
+  const filteredData = data.filter((item) =>
+    Object.values(item).some((value) =>
       value.toString().toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
@@ -80,9 +87,14 @@ const DataTable = ({ title, columns, data, actions = true }) => {
                 className="hover:bg-gray-50 transition-colors duration-200"
               >
                 {Object.values(item).map((value, idx) => (
-                  <td key={idx} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td
+                    key={idx}
+                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                  >
                     {typeof value === 'object' ? (
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${value.className}`}>
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${value.className}`}
+                      >
                         {value.text}
                       </span>
                     ) : (
@@ -115,7 +127,8 @@ const DataTable = ({ title, columns, data, actions = true }) => {
       <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-700">
-            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredData.length)} of{' '}
+            Showing {indexOfFirstItem + 1} to{' '}
+            {Math.min(indexOfLastItem, filteredData.length)} of{' '}
             {filteredData.length} results
           </div>
           <div className="flex space-x-2">

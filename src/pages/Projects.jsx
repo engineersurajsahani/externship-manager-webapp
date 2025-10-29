@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  FiBriefcase, 
-  FiPlus, 
-  FiEdit3, 
-  FiUsers, 
-  FiCalendar, 
+import {
+  FiBriefcase,
+  FiPlus,
+  FiEdit3,
+  FiUsers,
+  FiCalendar,
   FiClock,
   FiActivity,
   FiMoreVertical,
@@ -19,7 +19,7 @@ import {
   FiAlertCircle,
   FiTarget,
   FiSave,
-  FiX
+  FiX,
 } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -35,17 +35,17 @@ const Projects = () => {
   const userRole = getUserRole();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
-  
+
   // Modal states
   const [projectModal, setProjectModal] = useState({
     isOpen: false,
     mode: 'create',
-    project: null
+    project: null,
   });
-  
+
   const [assignmentModal, setAssignmentModal] = useState({
     isOpen: false,
-    project: null
+    project: null,
   });
 
   const [projects, setProjects] = useState([]);
@@ -53,25 +53,33 @@ const Projects = () => {
 
   // Load projects on component mount and set up polling for real-time updates
   React.useEffect(() => {
+    // Only proceed if user is loaded
+    if (!user) return;
+
     loadProjects();
-    loadUsers();
     
+    // Load users if user is admin, project manageri
+    if (userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER) {
+      loadUsers();
+    }
+
     // Set up polling for real-time updates every 30 seconds
     const interval = setInterval(() => {
       loadProjects();
     }, 30000);
 
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, userRole]);
 
   const loadProjects = async () => {
     try {
       // Admin should see ALL projects, PM should see only their assigned projects
-      const response = userRole === ROLES.ADMIN 
-        ? await apiService.getAllProjects() 
-        : await apiService.getMyProjects();
-        
+      const response =
+        userRole === ROLES.ADMIN
+          ? await apiService.getAllProjects()
+          : await apiService.getMyProjects();
+
       if (response.data.success) {
         setProjects(response.data.projects);
       }
@@ -82,20 +90,40 @@ const Projects = () => {
 
   const loadUsers = async () => {
     try {
-      // TODO: Replace with actual API call when user management endpoints are available
-      // const response = await apiService.getAllUsers();
-      // setUsers(response.data.users);
+      let allUsers = [];
       
-      // For now, use mock data for team assignment functionality
-      const mockUsers = [
-        { _id: '1', firstName: 'John', lastName: 'Smith', email: 'admin@example.com', role: 'admin', department: 'IT' },
-        { _id: '2', firstName: 'John', lastName: 'PM', email: 'pm@example.com', role: 'project_manager', department: 'Engineering' },
-        { _id: '3', firstName: 'Sarah', lastName: 'TL', email: 'tl@example.com', role: 'team_leader', department: 'Engineering' },
-        { _id: '4', firstName: 'Alice', lastName: 'Intern', email: 'intern1@example.com', role: 'intern', department: 'Engineering' },
-        { _id: '5', firstName: 'Bob', lastName: 'Intern', email: 'intern2@example.com', role: 'intern', department: 'Engineering' },
-        { _id: '6', firstName: 'Charlie', lastName: 'Intern', email: 'intern3@example.com', role: 'intern', department: 'Design' }
-      ];
-      setUsers(mockUsers);
+      if (userRole === ROLES.ADMIN) {
+        // Admin can load all users at once
+        const response = await apiService.getAllUsers();
+        if (response.data.success) {
+          allUsers = response.data.users || [];
+        }
+      } else if (userRole === ROLES.PROJECT_MANAGER || userRole === ROLES.TEAM_LEADER) {
+        // Project managers and team leaders can load users by role for assignments
+        try {
+          const [pmResponse, tlResponse, internResponse] = await Promise.all([
+            apiService.getUsersByRole('project_manager').catch(() => ({ data: { users: [] } })),
+            apiService.getUsersByRole('team_leader').catch(() => ({ data: { users: [] } })),
+            apiService.getUsersByRole('intern').catch(() => ({ data: { users: [] } }))
+          ]);
+          
+          allUsers = [
+            ...(pmResponse.data?.users || []),
+            ...(tlResponse.data?.users || []),
+            ...(internResponse.data?.users || [])
+          ];
+        } catch (error) {
+          console.error('Error loading users by role:', error);
+          allUsers = [];
+        }
+      }
+      
+      const normalizedUsers = allUsers.map((user) => ({
+        ...user,
+        id: user._id || user.id,
+      }));
+      
+      setUsers(normalizedUsers);
     } catch (error) {
       console.error('Error loading users:', error);
       setUsers([]);
@@ -107,7 +135,7 @@ const Projects = () => {
     setProjectModal({
       isOpen: true,
       mode: 'create',
-      project: null
+      project: null,
     });
   };
 
@@ -115,7 +143,7 @@ const Projects = () => {
     setProjectModal({
       isOpen: true,
       mode: 'edit',
-      project: project
+      project: project,
     });
   };
 
@@ -123,21 +151,25 @@ const Projects = () => {
     setProjectModal({
       isOpen: true,
       mode: 'view',
-      project: project
+      project: project,
     });
   };
 
   const handleManageTeam = (project) => {
     setAssignmentModal({
       isOpen: true,
-      project: project
+      project: project,
     });
   };
 
   const handleArchiveProject = (projectId) => {
-    if (window.confirm('Are you sure you want to archive this project? It will be moved to archived status.')) {
-      setProjects(prevProjects => 
-        prevProjects.map(project => {
+    if (
+      window.confirm(
+        'Are you sure you want to archive this project? It will be moved to archived status.'
+      )
+    ) {
+      setProjects((prevProjects) =>
+        prevProjects.map((project) => {
           if (project.id === projectId) {
             return { ...project, status: 'archived' };
           }
@@ -148,8 +180,14 @@ const Projects = () => {
   };
 
   const handleDeleteProject = (projectId) => {
-    if (window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-      setProjects(prevProjects => prevProjects.filter(project => project.id !== projectId));
+    if (
+      window.confirm(
+        'Are you sure you want to delete this project? This action cannot be undone.'
+      )
+    ) {
+      setProjects((prevProjects) =>
+        prevProjects.filter((project) => project.id !== projectId)
+      );
     }
   };
 
@@ -162,13 +200,16 @@ const Projects = () => {
           await loadProjects();
         }
       } else if (mode === 'edit') {
-        const response = await apiService.updateProject(projectData._id, projectData);
+        const response = await apiService.updateProject(
+          projectData._id,
+          projectData
+        );
         if (response.data.success) {
           // Refresh the projects list to get the latest data
           await loadProjects();
         }
       }
-      
+
       setProjectModal({ isOpen: false, mode: 'create', project: null });
     } catch (error) {
       console.error('Error saving project:', error);
@@ -179,51 +220,98 @@ const Projects = () => {
   const handleSaveAssignments = async (assignmentData) => {
     try {
       const { teamLeaders, interns, projectId } = assignmentData;
-      
+      if (!projectId) {
+        throw new Error('Missing project identifier for assignment');
+      }
+
+      const resolveUserId = (member) => {
+        if (!member) return null;
+        if (typeof member === 'string') return member;
+
+        const directId = member._id || member.id;
+        if (directId) return directId;
+
+        const nestedUser = member.user;
+        if (!nestedUser) return null;
+        if (typeof nestedUser === 'string') return nestedUser;
+        return nestedUser._id || nestedUser.id || null;
+      };
+
       // Get the current project to determine what changes need to be made
-      const currentProject = projects.find(p => p._id === projectId);
+      const currentProject = projects.find(
+        (p) => p._id?.toString() === projectId.toString()
+      );
       if (!currentProject) {
         throw new Error('Project not found');
       }
-      
+
       // For simplicity, we'll clear all current assignments and reassign
       // In a production system, you'd want to be more granular
-      
+
       // Remove all current team members except the project manager
       const currentMembers = currentProject.teamMembers || [];
       for (const member of currentMembers) {
         if (member.role !== 'project_manager') {
-          await apiService.unassignUserFromProject(projectId, member.user._id);
+          const memberUserId = resolveUserId(member);
+          if (!memberUserId) {
+            console.warn('Skipping unassign for member with missing user ID', member);
+            continue;
+          }
+          await apiService.unassignUserFromProject(projectId, memberUserId);
         }
       }
-      
+
       // Assign new team members
       const assignments = [];
-      
+
       // Assign team leaders
       if (teamLeaders && teamLeaders.length > 0) {
         for (const tl of teamLeaders) {
-          assignments.push(apiService.assignUserToProject(projectId, tl._id || tl.id, 'team_leader'));
+          const tlId = resolveUserId(tl);
+          if (!tlId) {
+            console.warn('Skipping team leader assignment due to missing ID', tl);
+            continue;
+          }
+          assignments.push(
+            apiService.assignUserToProject(
+              projectId,
+              tlId,
+              'team_leader'
+            )
+          );
         }
       }
-      
+
       // Assign interns
       if (interns && interns.length > 0) {
         for (const intern of interns) {
-          assignments.push(apiService.assignUserToProject(projectId, intern._id || intern.id, 'intern'));
+          const internId = resolveUserId(intern);
+          if (!internId) {
+            console.warn('Skipping intern assignment due to missing ID', intern);
+            continue;
+          }
+          assignments.push(
+            apiService.assignUserToProject(
+              projectId,
+              internId,
+              'intern'
+            )
+          );
         }
       }
-      
+
       // Wait for all assignments to complete
       await Promise.all(assignments);
-      
+
       // Refresh projects to show updated team assignments
       await loadProjects();
-      
+
       setAssignmentModal({ isOpen: false, project: null });
-      
+
       // Show success message
-      alert('Team assignments updated successfully! Changes will be visible to all users.');
+      alert(
+        'Team assignments updated successfully! Changes will be visible to all users.'
+      );
     } catch (error) {
       console.error('Error updating assignments:', error);
       alert('Error updating team assignments. Please try again.');
@@ -266,16 +354,16 @@ const Projects = () => {
     }
   };
 
-  const filteredProjects = projects.filter(project => {
+  const filteredProjects = projects.filter((project) => {
     if (selectedFilter === 'all') return true;
     return project.status === selectedFilter;
   });
 
   const projectStats = {
     total: projects.length,
-    active: projects.filter(p => p.status === 'active').length,
-    completed: projects.filter(p => p.status === 'completed').length,
-    onHold: projects.filter(p => p.status === 'on-hold').length
+    active: projects.filter((p) => p.status === 'active').length,
+    completed: projects.filter((p) => p.status === 'completed').length,
+    onHold: projects.filter((p) => p.status === 'on-hold').length,
   };
 
   // If user is an intern, show intern-specific projects view
@@ -299,8 +387,8 @@ const Projects = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Projects</h1>
           <p className="text-gray-600 mt-2">
-            {userRole === ROLES.ADMIN 
-              ? 'Manage and track all projects in the system' 
+            {userRole === ROLES.ADMIN
+              ? 'Manage and track all projects in the system'
               : 'Manage and track your assigned project initiatives'}
           </p>
         </div>
@@ -309,11 +397,7 @@ const Projects = () => {
             <FiActivity className="w-4 h-4 mr-2" />
             Activity
           </Button>
-          <Button 
-            variant="primary" 
-            size="sm"
-            onClick={handleCreateProject}
-          >
+          <Button variant="primary" size="sm" onClick={handleCreateProject}>
             <FiPlus className="w-4 h-4 mr-2" />
             New Project
           </Button>
@@ -384,7 +468,7 @@ const Projects = () => {
             Planning
           </Button>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <Button
             variant={viewMode === 'grid' ? 'primary' : 'outline'}
@@ -420,7 +504,9 @@ const Projects = () => {
                       <FiBriefcase className="w-5 h-5 text-indigo-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{project.name}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {project.name}
+                      </h3>
                       <p className="text-sm text-gray-500">{project.lead}</p>
                     </div>
                   </div>
@@ -431,15 +517,21 @@ const Projects = () => {
                   </div>
                 </div>
 
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>
+                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                  {project.description}
+                </p>
 
                 <div className="flex items-center justify-between mb-4">
                   <Badge className={getStatusColor(project.status)}>
-                    {project.status ? project.status.charAt(0).toUpperCase() + project.status.slice(1) : 'Unknown'}
+                    {project.status
+                      ? project.status.charAt(0).toUpperCase() +
+                        project.status.slice(1)
+                      : 'Unknown'}
                   </Badge>
                   {project.priority && (
                     <Badge className={getPriorityColor(project.priority)}>
-                      {project.priority.charAt(0).toUpperCase() + project.priority.slice(1)}
+                      {project.priority.charAt(0).toUpperCase() +
+                        project.priority.slice(1)}
                     </Badge>
                   )}
                 </div>
@@ -448,7 +540,9 @@ const Projects = () => {
                 <div className="mb-4">
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-600">Progress</span>
-                    <span className="font-medium">{project.progress || 0}%</span>
+                    <span className="font-medium">
+                      {project.progress || 0}%
+                    </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
@@ -465,32 +559,36 @@ const Projects = () => {
                   </div>
                   <div className="flex items-center">
                     <FiCalendar className="w-4 h-4 mr-1" />
-                    <span>{project.endDate ? new Date(project.endDate).toLocaleDateString() : 'No end date'}</span>
+                    <span>
+                      {project.endDate
+                        ? new Date(project.endDate).toLocaleDateString()
+                        : 'No end date'}
+                    </span>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="flex-1"
                     onClick={() => handleViewProject(project)}
                   >
                     <FiEye className="w-4 h-4 mr-2" />
                     View
                   </Button>
-                  <Button 
-                    variant="primary" 
-                    size="sm" 
+                  <Button
+                    variant="primary"
+                    size="sm"
                     className="flex-1"
                     onClick={() => handleEditProject(project)}
                   >
                     <FiEdit3 className="w-4 h-4 mr-2" />
                     Edit
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="flex-1"
                     onClick={() => handleManageTeam(project)}
                   >
@@ -515,31 +613,53 @@ const Projects = () => {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Project
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Progress
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Team
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Due Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredProjects.map((project) => (
-                    <tr key={project._id || project.id} className="hover:bg-gray-50">
+                    <tr
+                      key={project._id || project.id}
+                      className="hover:bg-gray-50"
+                    >
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
                             <FiBriefcase className="w-4 h-4 text-indigo-600" />
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{project.name}</div>
-                            <div className="text-sm text-gray-500">{project.lead}</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {project.name}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {project.lead}
+                            </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <Badge className={getStatusColor(project.status)}>
-                          {project.status ? project.status.charAt(0).toUpperCase() + project.status.slice(1) : 'Unknown'}
+                          {project.status
+                            ? project.status.charAt(0).toUpperCase() +
+                              project.status.slice(1)
+                            : 'Unknown'}
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
@@ -550,7 +670,9 @@ const Projects = () => {
                               style={{ width: `${project.progress || 0}%` }}
                             />
                           </div>
-                          <span className="text-sm font-medium">{project.progress || 0}%</span>
+                          <span className="text-sm font-medium">
+                            {project.progress || 0}%
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -560,42 +682,48 @@ const Projects = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {project.endDate ? new Date(project.endDate).toLocaleDateString() : 'No end date'}
+                        {project.endDate
+                          ? new Date(project.endDate).toLocaleDateString()
+                          : 'No end date'}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
-                          <button 
+                          <button
                             className="text-indigo-600 hover:text-indigo-900"
                             onClick={() => handleViewProject(project)}
                             title="View Project"
                           >
                             <FiEye className="w-4 h-4" />
                           </button>
-                          <button 
+                          <button
                             className="text-gray-600 hover:text-gray-900"
                             onClick={() => handleEditProject(project)}
                             title="Edit Project"
                           >
                             <FiEdit3 className="w-4 h-4" />
                           </button>
-                          <button 
+                          <button
                             className="text-blue-600 hover:text-blue-900"
                             onClick={() => handleManageTeam(project)}
                             title="Manage Team"
                           >
                             <FiUserPlus className="w-4 h-4" />
                           </button>
-                          <button 
+                          <button
                             className="text-orange-600 hover:text-orange-900"
-                            onClick={() => handleArchiveProject(project._id || project.id)}
+                            onClick={() =>
+                              handleArchiveProject(project._id || project.id)
+                            }
                             title="Archive Project"
                           >
                             <FiArchive className="w-4 h-4" />
                           </button>
                           {hasRole(ROLES.ADMIN) && (
-                            <button 
+                            <button
                               className="text-red-600 hover:text-red-900"
-                              onClick={() => handleDeleteProject(project._id || project.id)}
+                              onClick={() =>
+                                handleDeleteProject(project._id || project.id)
+                              }
                               title="Delete Project"
                             >
                               <FiTrash2 className="w-4 h-4" />
@@ -642,14 +770,14 @@ const InternProjectsView = ({ user }) => {
 
   React.useEffect(() => {
     loadInternProjects();
-    
+
     // Set up polling for real-time updates every 30 seconds
     const interval = setInterval(() => {
       loadInternProjects();
     }, 30000);
 
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadInternProjects = async () => {
@@ -671,20 +799,29 @@ const InternProjectsView = ({ user }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'on-hold': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'completed':
+        return 'bg-blue-100 text-blue-800';
+      case 'on-hold':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getTaskStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'in-progress': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'in-progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -705,16 +842,16 @@ const InternProjectsView = ({ user }) => {
     const now = new Date();
     const diffTime = end - now;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays < 0) {
       const overdueDays = Math.abs(diffDays);
       return `${overdueDays} days overdue`;
     }
-    
+
     if (diffDays === 0) {
       return 'Due today';
     }
-    
+
     return `${diffDays} days remaining`;
   };
 
@@ -750,12 +887,14 @@ const InternProjectsView = ({ user }) => {
             </p>
           </div>
           <div className="flex items-center space-x-3 mt-4 lg:mt-0">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={loadInternProjects}
               disabled={isLoading}
             >
-              <FiRefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              <FiRefreshCw
+                className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`}
+              />
               Refresh
             </Button>
           </div>
@@ -771,9 +910,12 @@ const InternProjectsView = ({ user }) => {
         {projects.length === 0 ? (
           <Card className="p-8 text-center">
             <FiBriefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Projects Found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No Projects Found
+            </h3>
             <p className="text-gray-600">
-              You have not been assigned to any projects yet. Contact your team leader for more information.
+              You have not been assigned to any projects yet. Contact your team
+              leader for more information.
             </p>
           </Card>
         ) : (
@@ -794,14 +936,21 @@ const InternProjectsView = ({ user }) => {
                           <FiBriefcase className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 text-lg">{project.name}</h3>
+                          <h3 className="font-semibold text-gray-900 text-lg">
+                            {project.name}
+                          </h3>
                           {project.myRole && (
-                            <p className="text-sm text-blue-600 font-medium">{project.myRole}</p>
+                            <p className="text-sm text-blue-600 font-medium">
+                              {project.myRole}
+                            </p>
                           )}
                         </div>
                       </div>
                       <Badge className={getStatusColor(project.status)}>
-                        {project.status ? project.status.charAt(0).toUpperCase() + project.status.slice(1) : 'Unknown'}
+                        {project.status
+                          ? project.status.charAt(0).toUpperCase() +
+                            project.status.slice(1)
+                          : 'Unknown'}
                       </Badge>
                     </div>
 
@@ -813,8 +962,12 @@ const InternProjectsView = ({ user }) => {
                     {/* Progress Bar */}
                     <div className="mb-4">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-gray-700">Progress</span>
-                        <span className="text-sm text-gray-600">{project.progress || 0}%</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          Progress
+                        </span>
+                        <span className="text-sm text-gray-600">
+                          {project.progress || 0}%
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
@@ -832,11 +985,15 @@ const InternProjectsView = ({ user }) => {
                           <span>Duration</span>
                         </div>
                         <div className="text-gray-900 text-right">
-                          <div>{new Date(project.startDate).toLocaleDateString()}</div>
-                          <div className="text-xs text-gray-500">to {new Date(project.endDate).toLocaleDateString()}</div>
+                          <div>
+                            {new Date(project.startDate).toLocaleDateString()}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            to {new Date(project.endDate).toLocaleDateString()}
+                          </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center text-gray-600">
                           <FiUsers className="w-4 h-4 mr-2" />
@@ -852,7 +1009,9 @@ const InternProjectsView = ({ user }) => {
                           <FiClock className="w-4 h-4 mr-2" />
                           <span>Time Left</span>
                         </div>
-                        <div className={`font-medium text-right ${calculateDaysRemaining(project.endDate).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(project.endDate).includes('remaining') && parseInt(calculateDaysRemaining(project.endDate)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}>
+                        <div
+                          className={`font-medium text-right ${calculateDaysRemaining(project.endDate).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(project.endDate).includes('remaining') && parseInt(calculateDaysRemaining(project.endDate)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}
+                        >
                           {calculateDaysRemaining(project.endDate)}
                         </div>
                       </div>
@@ -863,11 +1022,16 @@ const InternProjectsView = ({ user }) => {
                       <div className="mb-4">
                         <div className="flex items-center mb-2">
                           <FiCode className="w-4 h-4 mr-2 text-gray-600" />
-                          <span className="text-sm font-medium text-gray-700">Technologies</span>
+                          <span className="text-sm font-medium text-gray-700">
+                            Technologies
+                          </span>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {project.technologies.slice(0, 3).map((tech, i) => (
-                            <span key={i} className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium">
+                            <span
+                              key={i}
+                              className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium"
+                            >
                               {tech}
                             </span>
                           ))}
@@ -913,12 +1077,19 @@ const InternProjectsView = ({ user }) => {
                   <FiBriefcase className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedProject.name}</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {selectedProject.name}
+                  </h2>
                   {selectedProject.myRole && (
-                    <p className="text-blue-600 font-medium">{selectedProject.myRole}</p>
+                    <p className="text-blue-600 font-medium">
+                      {selectedProject.myRole}
+                    </p>
                   )}
                   <Badge className={getStatusColor(selectedProject.status)}>
-                    {selectedProject.status ? selectedProject.status.charAt(0).toUpperCase() + selectedProject.status.slice(1) : 'Unknown'}
+                    {selectedProject.status
+                      ? selectedProject.status.charAt(0).toUpperCase() +
+                        selectedProject.status.slice(1)
+                      : 'Unknown'}
                   </Badge>
                 </div>
               </div>
@@ -934,17 +1105,26 @@ const InternProjectsView = ({ user }) => {
               {/* Project Details */}
               <div className="lg:col-span-2 space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Project Description</h3>
-                  <p className="text-gray-600 leading-relaxed">{selectedProject.description}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Project Description
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {selectedProject.description}
+                  </p>
                 </div>
 
                 {/* Technologies */}
                 {selectedProject.technologies && (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Technologies</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      Technologies
+                    </h3>
                     <div className="flex flex-wrap gap-2">
                       {selectedProject.technologies.map((tech, i) => (
-                        <span key={i} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium">
+                        <span
+                          key={i}
+                          className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium"
+                        >
                           {tech}
                         </span>
                       ))}
@@ -955,10 +1135,15 @@ const InternProjectsView = ({ user }) => {
                 {/* Tasks */}
                 {selectedProject.tasks && (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">My Tasks</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      My Tasks
+                    </h3>
                     <div className="space-y-3">
                       {selectedProject.tasks.map((task) => (
-                        <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div
+                          key={task.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        >
                           <div className="flex items-center space-x-3">
                             {task.status === 'completed' ? (
                               <FiCheckCircle className="w-5 h-5 text-green-600" />
@@ -966,12 +1151,18 @@ const InternProjectsView = ({ user }) => {
                               <FiAlertCircle className="w-5 h-5 text-yellow-600" />
                             )}
                             <div>
-                              <p className="font-medium text-gray-900">{task.title}</p>
-                              <p className="text-sm text-gray-600">Due: {new Date(task.dueDate).toLocaleDateString()}</p>
+                              <p className="font-medium text-gray-900">
+                                {task.title}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Due:{' '}
+                                {new Date(task.dueDate).toLocaleDateString()}
+                              </p>
                             </div>
                           </div>
                           <Badge className={getTaskStatusColor(task.status)}>
-                            {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                            {task.status.charAt(0).toUpperCase() +
+                              task.status.slice(1)}
                           </Badge>
                         </div>
                       ))}
@@ -980,57 +1171,85 @@ const InternProjectsView = ({ user }) => {
                 )}
 
                 {/* Weekly Goals from Team Leader */}
-                {selectedProject.weeklyGoals && selectedProject.weeklyGoals.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                      <FiTarget className="w-5 h-5 inline mr-2 text-green-600" />
-                      Weekly Goals
-                    </h3>
-                    <div className="space-y-3">
-                      {selectedProject.weeklyGoals
-                        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                        .map((goal) => (
-                        <div key={goal.id} className={`p-4 border rounded-lg ${
-                          goal.status === 'current' 
-                            ? 'bg-green-50 border-green-200' 
-                            : 'bg-gray-50 border-gray-200'
-                        }`}>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className={`font-medium ${
-                              goal.status === 'current' ? 'text-green-800' : 'text-gray-700'
-                            }`}>
-                              {goal.week}
-                            </span>
-                            <div className="flex items-center space-x-2">
-                              <Badge className={goal.status === 'current' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                                {goal.status === 'current' ? 'Current Goal' : 'Completed'}
-                              </Badge>
+                {selectedProject.weeklyGoals &&
+                  selectedProject.weeklyGoals.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                        <FiTarget className="w-5 h-5 inline mr-2 text-green-600" />
+                        Weekly Goals
+                      </h3>
+                      <div className="space-y-3">
+                        {selectedProject.weeklyGoals
+                          .sort(
+                            (a, b) =>
+                              new Date(b.createdAt) - new Date(a.createdAt)
+                          )
+                          .map((goal) => (
+                            <div
+                              key={goal.id}
+                              className={`p-4 border rounded-lg ${
+                                goal.status === 'current'
+                                  ? 'bg-green-50 border-green-200'
+                                  : 'bg-gray-50 border-gray-200'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <span
+                                  className={`font-medium ${
+                                    goal.status === 'current'
+                                      ? 'text-green-800'
+                                      : 'text-gray-700'
+                                  }`}
+                                >
+                                  {goal.week}
+                                </span>
+                                <div className="flex items-center space-x-2">
+                                  <Badge
+                                    className={
+                                      goal.status === 'current'
+                                        ? 'bg-green-100 text-green-800'
+                                        : 'bg-gray-100 text-gray-800'
+                                    }
+                                  >
+                                    {goal.status === 'current'
+                                      ? 'Current Goal'
+                                      : 'Completed'}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <p className="text-gray-700 mb-2">{goal.goal}</p>
+                              <div className="flex items-center text-sm text-gray-500">
+                                <FiUsers className="w-3 h-3 mr-1" />
+                                <span>
+                                  Set by{' '}
+                                  {goal.setBy?.firstName && goal.setBy?.lastName
+                                    ? `${goal.setBy.firstName} ${goal.setBy.lastName}`
+                                    : 'Team Leader'}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                          <p className="text-gray-700 mb-2">{goal.goal}</p>
-                          <div className="flex items-center text-sm text-gray-500">
-                            <FiUsers className="w-3 h-3 mr-1" />
-                            <span>Set by {goal.setBy?.firstName && goal.setBy?.lastName 
-                              ? `${goal.setBy.firstName} ${goal.setBy.lastName}` 
-                              : 'Team Leader'}</span>
-                          </div>
-                        </div>
-                      ))}
+                          ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
 
               {/* Sidebar Info */}
               <div className="space-y-6">
                 {/* Progress */}
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-3">Progress Overview</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">
+                    Progress Overview
+                  </h4>
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between mb-1">
-                        <span className="text-sm text-gray-600">Overall Progress</span>
-                        <span className="text-sm font-medium">{selectedProject.progress || 0}%</span>
+                        <span className="text-sm text-gray-600">
+                          Overall Progress
+                        </span>
+                        <span className="text-sm font-medium">
+                          {selectedProject.progress || 0}%
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
@@ -1048,15 +1267,23 @@ const InternProjectsView = ({ user }) => {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Start Date:</span>
-                      <span className="font-medium">{new Date(selectedProject.startDate).toLocaleDateString()}</span>
+                      <span className="font-medium">
+                        {new Date(
+                          selectedProject.startDate
+                        ).toLocaleDateString()}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">End Date:</span>
-                      <span className="font-medium">{new Date(selectedProject.endDate).toLocaleDateString()}</span>
+                      <span className="font-medium">
+                        {new Date(selectedProject.endDate).toLocaleDateString()}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Status:</span>
-                      <span className={`font-medium ${calculateDaysRemaining(selectedProject.endDate).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(selectedProject.endDate).includes('remaining') && parseInt(calculateDaysRemaining(selectedProject.endDate)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}>
+                      <span
+                        className={`font-medium ${calculateDaysRemaining(selectedProject.endDate).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(selectedProject.endDate).includes('remaining') && parseInt(calculateDaysRemaining(selectedProject.endDate)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}
+                      >
                         {calculateDaysRemaining(selectedProject.endDate)}
                       </span>
                     </div>
@@ -1070,20 +1297,32 @@ const InternProjectsView = ({ user }) => {
                     {selectedProject.projectManager && (
                       <div>
                         <span className="text-gray-600">Project Manager:</span>
-                        <p className="font-medium">{selectedProject.projectManager.firstName} {selectedProject.projectManager.lastName}</p>
-                        <p className="text-gray-500">{selectedProject.projectManager.email}</p>
+                        <p className="font-medium">
+                          {selectedProject.projectManager.firstName}{' '}
+                          {selectedProject.projectManager.lastName}
+                        </p>
+                        <p className="text-gray-500">
+                          {selectedProject.projectManager.email}
+                        </p>
                       </div>
                     )}
                     {selectedProject.teamLeader && (
                       <div>
                         <span className="text-gray-600">Team Leader:</span>
-                        <p className="font-medium">{selectedProject.teamLeader.firstName} {selectedProject.teamLeader.lastName}</p>
-                        <p className="text-gray-500">{selectedProject.teamLeader.email}</p>
+                        <p className="font-medium">
+                          {selectedProject.teamLeader.firstName}{' '}
+                          {selectedProject.teamLeader.lastName}
+                        </p>
+                        <p className="text-gray-500">
+                          {selectedProject.teamLeader.email}
+                        </p>
                       </div>
                     )}
                     <div>
                       <span className="text-gray-600">Team Size:</span>
-                      <p className="font-medium">{selectedProject.teamSize} members</p>
+                      <p className="font-medium">
+                        {selectedProject.teamSize} members
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1108,14 +1347,14 @@ const TeamLeaderProjectsView = ({ user }) => {
 
   React.useEffect(() => {
     loadTeamLeaderProjects();
-    
+
     // Set up polling for real-time updates every 30 seconds
     const interval = setInterval(() => {
       loadTeamLeaderProjects();
     }, 30000);
 
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadTeamLeaderProjects = async () => {
@@ -1137,20 +1376,29 @@ const TeamLeaderProjectsView = ({ user }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'on-hold': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'completed':
+        return 'bg-blue-100 text-blue-800';
+      case 'on-hold':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getTaskStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'in-progress': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'in-progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -1171,11 +1419,14 @@ const TeamLeaderProjectsView = ({ user }) => {
     try {
       const goalData = {
         goal: goalText.trim(),
-        week: `Week of ${new Date().toLocaleDateString()}`
+        week: `Week of ${new Date().toLocaleDateString()}`,
       };
 
-      const response = await apiService.addWeeklyGoal(selectedProjectForGoal._id, goalData);
-      
+      const response = await apiService.addWeeklyGoal(
+        selectedProjectForGoal._id,
+        goalData
+      );
+
       if (response.data.success) {
         // Reload projects to get updated data
         await loadTeamLeaderProjects();
@@ -1204,16 +1455,16 @@ const TeamLeaderProjectsView = ({ user }) => {
     const now = new Date();
     const diffTime = end - now;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays < 0) {
       const overdueDays = Math.abs(diffDays);
       return `${overdueDays} days overdue`;
     }
-    
+
     if (diffDays === 0) {
       return 'Due today';
     }
-    
+
     return `${diffDays} days remaining`;
   };
 
@@ -1249,12 +1500,14 @@ const TeamLeaderProjectsView = ({ user }) => {
             </p>
           </div>
           <div className="flex items-center space-x-3 mt-4 lg:mt-0">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={loadTeamLeaderProjects}
               disabled={isLoading}
             >
-              <FiRefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              <FiRefreshCw
+                className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`}
+              />
               Refresh
             </Button>
           </div>
@@ -1270,9 +1523,12 @@ const TeamLeaderProjectsView = ({ user }) => {
         {projects.length === 0 ? (
           <Card className="p-8 text-center">
             <FiBriefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Projects Found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No Projects Found
+            </h3>
             <p className="text-gray-600">
-              You are not currently leading any projects. Contact your project manager for assignments.
+              You are not currently leading any projects. Contact your project
+              manager for assignments.
             </p>
           </Card>
         ) : (
@@ -1293,14 +1549,21 @@ const TeamLeaderProjectsView = ({ user }) => {
                           <FiBriefcase className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 text-lg">{project.name}</h3>
+                          <h3 className="font-semibold text-gray-900 text-lg">
+                            {project.name}
+                          </h3>
                           {project.myRole && (
-                            <p className="text-sm text-green-600 font-medium">{project.myRole}</p>
+                            <p className="text-sm text-green-600 font-medium">
+                              {project.myRole}
+                            </p>
                           )}
                         </div>
                       </div>
                       <Badge className={getStatusColor(project.status)}>
-                        {project.status ? project.status.charAt(0).toUpperCase() + project.status.slice(1) : 'Unknown'}
+                        {project.status
+                          ? project.status.charAt(0).toUpperCase() +
+                            project.status.slice(1)
+                          : 'Unknown'}
                       </Badge>
                     </div>
 
@@ -1312,8 +1575,12 @@ const TeamLeaderProjectsView = ({ user }) => {
                     {/* Progress Bar */}
                     <div className="mb-4">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-gray-700">Progress</span>
-                        <span className="text-sm text-gray-600">{project.progress || 0}%</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          Progress
+                        </span>
+                        <span className="text-sm text-gray-600">
+                          {project.progress || 0}%
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
@@ -1334,14 +1601,17 @@ const TeamLeaderProjectsView = ({ user }) => {
                           {project.teamMembers?.length || 0} members
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center text-gray-600">
                           <FiUsers className="w-4 h-4 mr-2" />
                           <span>Interns</span>
                         </div>
                         <div className="text-gray-900">
-                          {project.teamMembers?.filter(member => member.role === 'intern')?.length || 0} interns
+                          {project.teamMembers?.filter(
+                            (member) => member.role === 'intern'
+                          )?.length || 0}{' '}
+                          interns
                         </div>
                       </div>
 
@@ -1350,7 +1620,9 @@ const TeamLeaderProjectsView = ({ user }) => {
                           <FiClock className="w-4 h-4 mr-2" />
                           <span>Time Left</span>
                         </div>
-                        <div className={`font-medium text-right ${calculateDaysRemaining(project.endDate).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(project.endDate).includes('remaining') && parseInt(calculateDaysRemaining(project.endDate)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}>
+                        <div
+                          className={`font-medium text-right ${calculateDaysRemaining(project.endDate).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(project.endDate).includes('remaining') && parseInt(calculateDaysRemaining(project.endDate)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}
+                        >
                           {calculateDaysRemaining(project.endDate)}
                         </div>
                       </div>
@@ -1361,11 +1633,16 @@ const TeamLeaderProjectsView = ({ user }) => {
                       <div className="mb-4">
                         <div className="flex items-center mb-2">
                           <FiCode className="w-4 h-4 mr-2 text-gray-600" />
-                          <span className="text-sm font-medium text-gray-700">Technologies</span>
+                          <span className="text-sm font-medium text-gray-700">
+                            Technologies
+                          </span>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {project.technologies.slice(0, 3).map((tech, i) => (
-                            <span key={i} className="px-2 py-1 bg-green-50 text-green-700 rounded-md text-xs font-medium">
+                            <span
+                              key={i}
+                              className="px-2 py-1 bg-green-50 text-green-700 rounded-md text-xs font-medium"
+                            >
                               {tech}
                             </span>
                           ))}
@@ -1419,7 +1696,9 @@ const TeamLeaderProjectsView = ({ user }) => {
                   <FiTarget className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Set Weekly Goal</h2>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Set Weekly Goal
+                  </h2>
                   <p className="text-gray-600">{selectedProjectForGoal.name}</p>
                 </div>
               </div>
@@ -1445,10 +1724,7 @@ const TeamLeaderProjectsView = ({ user }) => {
             </div>
 
             <div className="flex items-center justify-end space-x-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowGoalModal(false)}
-              >
+              <Button variant="outline" onClick={() => setShowGoalModal(false)}>
                 Cancel
               </Button>
               <Button
@@ -1478,12 +1754,19 @@ const TeamLeaderProjectsView = ({ user }) => {
                   <FiBriefcase className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedProject.name}</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {selectedProject.name}
+                  </h2>
                   {selectedProject.myRole && (
-                    <p className="text-green-600 font-medium">{selectedProject.myRole}</p>
+                    <p className="text-green-600 font-medium">
+                      {selectedProject.myRole}
+                    </p>
                   )}
                   <Badge className={getStatusColor(selectedProject.status)}>
-                    {selectedProject.status ? selectedProject.status.charAt(0).toUpperCase() + selectedProject.status.slice(1) : 'Unknown'}
+                    {selectedProject.status
+                      ? selectedProject.status.charAt(0).toUpperCase() +
+                        selectedProject.status.slice(1)
+                      : 'Unknown'}
                   </Badge>
                 </div>
               </div>
@@ -1499,29 +1782,41 @@ const TeamLeaderProjectsView = ({ user }) => {
               {/* Main Content */}
               <div className="lg:col-span-2 space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Project Description</h3>
-                  <p className="text-gray-600 leading-relaxed">{selectedProject.description}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Project Description
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {selectedProject.description}
+                  </p>
                 </div>
 
                 {/* Team Members */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Team Members</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Team Members
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {selectedProject.teamMembers?.map((member) => (
-                      <div key={member.user._id} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                      <div
+                        key={member.user._id}
+                        className="flex items-center p-3 bg-gray-50 rounded-lg"
+                      >
                         <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
                           <span className="text-white text-sm font-medium">
-                            {member.user.firstName?.charAt(0) || member.user.email?.charAt(0)}
+                            {member.user.firstName?.charAt(0) ||
+                              member.user.email?.charAt(0)}
                           </span>
                         </div>
                         <div>
                           <p className="font-medium text-gray-900">
-                            {member.user.firstName && member.user.lastName 
-                              ? `${member.user.firstName} ${member.user.lastName}` 
+                            {member.user.firstName && member.user.lastName
+                              ? `${member.user.firstName} ${member.user.lastName}`
                               : member.user.email}
                           </p>
                           <p className="text-sm text-gray-600">
-                            {member.role?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            {member.role
+                              ?.replace('_', ' ')
+                              .replace(/\b\w/g, (l) => l.toUpperCase())}
                           </p>
                         </div>
                       </div>
@@ -1532,10 +1827,15 @@ const TeamLeaderProjectsView = ({ user }) => {
                 {/* Tasks */}
                 {selectedProject.tasks && (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Team Tasks</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      Team Tasks
+                    </h3>
                     <div className="space-y-3">
                       {selectedProject.tasks.map((task) => (
-                        <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div
+                          key={task.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        >
                           <div className="flex items-center space-x-3">
                             {task.status === 'completed' ? (
                               <FiCheckCircle className="w-5 h-5 text-green-600" />
@@ -1543,15 +1843,19 @@ const TeamLeaderProjectsView = ({ user }) => {
                               <FiAlertCircle className="w-5 h-5 text-yellow-600" />
                             )}
                             <div>
-                              <p className="font-medium text-gray-900">{task.title}</p>
+                              <p className="font-medium text-gray-900">
+                                {task.title}
+                              </p>
                               <p className="text-sm text-gray-600">
-                                Due: {new Date(task.dueDate).toLocaleDateString()} • 
+                                Due:{' '}
+                                {new Date(task.dueDate).toLocaleDateString()} •
                                 Assigned to: {task.assignedTo}
                               </p>
                             </div>
                           </div>
                           <Badge className={getTaskStatusColor(task.status)}>
-                            {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                            {task.status.charAt(0).toUpperCase() +
+                              task.status.slice(1)}
                           </Badge>
                         </div>
                       ))}
@@ -1562,14 +1866,29 @@ const TeamLeaderProjectsView = ({ user }) => {
                 {/* Weekly Goals */}
                 {selectedProject.weeklyGoals && (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Weekly Goals</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      Weekly Goals
+                    </h3>
                     <div className="space-y-3">
                       {selectedProject.weeklyGoals.map((goal) => (
-                        <div key={goal.id} className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div
+                          key={goal.id}
+                          className="p-4 bg-green-50 border border-green-200 rounded-lg"
+                        >
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-green-800">{goal.week}</span>
-                            <Badge className={goal.status === 'current' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                              {goal.status === 'current' ? 'Current' : 'Completed'}
+                            <span className="font-medium text-green-800">
+                              {goal.week}
+                            </span>
+                            <Badge
+                              className={
+                                goal.status === 'current'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }
+                            >
+                              {goal.status === 'current'
+                                ? 'Current'
+                                : 'Completed'}
                             </Badge>
                           </div>
                           <p className="text-gray-700">{goal.goal}</p>
@@ -1584,12 +1903,18 @@ const TeamLeaderProjectsView = ({ user }) => {
               <div className="space-y-6">
                 {/* Progress Overview */}
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-3">Progress Overview</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">
+                    Progress Overview
+                  </h4>
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between mb-1">
-                        <span className="text-sm text-gray-600">Overall Progress</span>
-                        <span className="text-sm font-medium">{selectedProject.progress || 0}%</span>
+                        <span className="text-sm text-gray-600">
+                          Overall Progress
+                        </span>
+                        <span className="text-sm font-medium">
+                          {selectedProject.progress || 0}%
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
@@ -1607,15 +1932,23 @@ const TeamLeaderProjectsView = ({ user }) => {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Start Date:</span>
-                      <span className="font-medium">{new Date(selectedProject.startDate).toLocaleDateString()}</span>
+                      <span className="font-medium">
+                        {new Date(
+                          selectedProject.startDate
+                        ).toLocaleDateString()}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">End Date:</span>
-                      <span className="font-medium">{new Date(selectedProject.endDate).toLocaleDateString()}</span>
+                      <span className="font-medium">
+                        {new Date(selectedProject.endDate).toLocaleDateString()}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Status:</span>
-                      <span className={`font-medium ${calculateDaysRemaining(selectedProject.endDate).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(selectedProject.endDate).includes('remaining') && parseInt(calculateDaysRemaining(selectedProject.endDate)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}>
+                      <span
+                        className={`font-medium ${calculateDaysRemaining(selectedProject.endDate).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(selectedProject.endDate).includes('remaining') && parseInt(calculateDaysRemaining(selectedProject.endDate)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}
+                      >
                         {calculateDaysRemaining(selectedProject.endDate)}
                       </span>
                     </div>
@@ -1625,10 +1958,15 @@ const TeamLeaderProjectsView = ({ user }) => {
                 {/* Technologies */}
                 {selectedProject.technologies && (
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-3">Technologies</h4>
+                    <h4 className="font-medium text-gray-900 mb-3">
+                      Technologies
+                    </h4>
                     <div className="flex flex-wrap gap-2">
                       {selectedProject.technologies.map((tech, i) => (
-                        <span key={i} className="px-3 py-1 bg-green-50 text-green-700 rounded-lg text-sm font-medium">
+                        <span
+                          key={i}
+                          className="px-3 py-1 bg-green-50 text-green-700 rounded-lg text-sm font-medium"
+                        >
                           {tech}
                         </span>
                       ))}
