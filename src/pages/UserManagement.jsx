@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   FiUsers,
@@ -19,12 +19,15 @@ import Badge from '../components/ui/Badge';
 import StatsCard from '../components/StatsCard';
 import UserModal from '../components/modals/UserModal';
 import { useAuth } from '../contexts/AuthContext';
+import { apiService } from '../services/api';
 
 const UserManagement = () => {
   const { hasRole, ROLES } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Modal states
   const [userModal, setUserModal] = useState({
@@ -33,80 +36,43 @@ const UserManagement = () => {
     user: null,
   });
 
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: 'John Smith',
-      email: 'john.smith@example.com',
-      role: 'admin',
-      status: 'active',
-      joinDate: '2023-08-15',
-      lastLogin: '2024-01-15 09:30',
-      projects: 5,
-      phone: '+1 (555) 123-4567',
-      department: 'IT',
-    },
-    {
-      id: 2,
-      name: 'Sarah Miller',
-      email: 'sarah.miller@example.com',
-      role: 'pm',
-      status: 'active',
-      joinDate: '2023-09-20',
-      lastLogin: '2024-01-15 08:45',
-      projects: 3,
-      phone: '+1 (555) 234-5678',
-      department: 'Product',
-    },
-    {
-      id: 3,
-      name: 'Mike Johnson',
-      email: 'mike.johnson@example.com',
-      role: 'tl',
-      status: 'active',
-      joinDate: '2023-10-01',
-      lastLogin: '2024-01-14 17:20',
-      projects: 2,
-      phone: '+1 (555) 345-6789',
-      department: 'Engineering',
-    },
-    {
-      id: 4,
-      name: 'Alice Johnson',
-      email: 'alice.johnson@example.com',
-      role: 'intern',
-      status: 'active',
-      joinDate: '2024-01-08',
-      lastLogin: '2024-01-15 10:15',
-      projects: 1,
-      phone: '+1 (555) 456-7890',
-      department: 'Engineering',
-    },
-    {
-      id: 5,
-      name: 'Bob Wilson',
-      email: 'bob.wilson@example.com',
-      role: 'intern',
-      status: 'inactive',
-      joinDate: '2024-01-10',
-      lastLogin: '2024-01-12 14:30',
-      projects: 1,
-      phone: '+1 (555) 567-8901',
-      department: 'Design',
-    },
-    {
-      id: 6,
-      name: 'Carol Davis',
-      email: 'carol.davis@example.com',
-      role: 'intern',
-      status: 'active',
-      joinDate: '2024-01-12',
-      lastLogin: '2024-01-15 11:00',
-      projects: 1,
-      phone: '+1 (555) 678-9012',
-      department: 'Marketing',
-    },
-  ]);
+  const [users, setUsers] = useState([]);
+
+  // Fetch users from API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.getAllUsers();
+        if (response.data && response.data.success) {
+          const userData = response.data.users || response.data.data || [];
+          // Transform user data to match UI expectations
+          const transformedUsers = userData.map(user => ({
+            id: user._id || user.id,
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.name || 'Unknown User',
+            email: user.email,
+            role: user.role === 'project_manager' ? 'pm' : user.role === 'team_leader' ? 'tl' : user.role,
+            status: user.isActive ? 'active' : 'inactive',
+            joinDate: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A',
+            lastLogin: user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never',
+            projects: user.projects || 0,
+            phone: user.phone || 'N/A',
+            department: user.department || 'General',
+          }));
+          setUsers(transformedUsers);
+        } else {
+          throw new Error(response.data?.message || 'Failed to fetch users');
+        }
+      } catch (err) {
+        console.error('Error fetching users:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   // CRUD Operations
   const handleCreateUser = () => {
@@ -133,41 +99,112 @@ const UserManagement = () => {
     });
   };
 
-  const handleToggleUserStatus = (userId) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) => {
-        if (user.id === userId) {
-          return {
-            ...user,
-            status: user.status === 'active' ? 'inactive' : 'active',
-          };
-        }
-        return user;
-      })
-    );
+  const handleToggleUserStatus = async (userId) => {
+    try {
+      const user = users.find(u => u.id === userId);
+      if (!user) return;
+
+      const updateData = {
+        isActive: user.status !== 'active',
+      };
+      
+      const response = await apiService.updateUser(userId, updateData);
+      if (response.data && response.data.success) {
+        setUsers((prevUsers) =>
+          prevUsers.map((user) => {
+            if (user.id === userId) {
+              return {
+                ...user,
+                status: user.status === 'active' ? 'inactive' : 'active',
+              };
+            }
+            return user;
+          })
+        );
+      }
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      alert('Failed to update user status: ' + error.message);
+    }
   };
 
-  const handleDeleteUser = (userId) => {
+  const handleDeleteUser = async (userId) => {
     if (
       window.confirm(
         'Are you sure you want to delete this user? This action cannot be undone.'
       )
     ) {
-      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+      try {
+        const response = await apiService.deleteUser(userId);
+        if (response.data && response.data.success) {
+          setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+        }
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        alert('Failed to delete user: ' + error.message);
+      }
     }
   };
 
   const handleSaveUser = async (userData, mode) => {
-    if (mode === 'create') {
-      const newUser = {
-        ...userData,
-        id: Math.max(...users.map((u) => u.id)) + 1,
-      };
-      setUsers((prevUsers) => [...prevUsers, newUser]);
-    } else if (mode === 'edit') {
-      setUsers((prevUsers) =>
-        prevUsers.map((user) => (user.id === userData.id ? userData : user))
-      );
+    try {
+      if (mode === 'create') {
+        // Transform role back to backend format
+        const transformedRole = userData.role === 'pm' ? 'project_manager' : userData.role === 'tl' ? 'team_leader' : userData.role;
+        const createData = {
+          firstName: userData.name?.split(' ')[0] || '',
+          lastName: userData.name?.split(' ').slice(1).join(' ') || '',
+          email: userData.email,
+          role: transformedRole,
+          department: userData.department,
+          phone: userData.phone,
+          password: userData.password || 'defaultpass123', // You might want to handle this differently
+        };
+        
+        const response = await apiService.createUser(createData);
+        if (response.data && response.data.success) {
+          // Refresh the user list
+          const usersResponse = await apiService.getAllUsers();
+          if (usersResponse.data && usersResponse.data.success) {
+            const userData = usersResponse.data.users || usersResponse.data.data || [];
+            const transformedUsers = userData.map(user => ({
+              id: user._id || user.id,
+              name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.name || 'Unknown User',
+              email: user.email,
+              role: user.role === 'project_manager' ? 'pm' : user.role === 'team_leader' ? 'tl' : user.role,
+              status: user.isActive ? 'active' : 'inactive',
+              joinDate: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A',
+              lastLogin: user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never',
+              projects: user.projects || 0,
+              phone: user.phone || 'N/A',
+              department: user.department || 'General',
+            }));
+            setUsers(transformedUsers);
+          }
+        }
+      } else if (mode === 'edit') {
+        const transformedRole = userData.role === 'pm' ? 'project_manager' : userData.role === 'tl' ? 'team_leader' : userData.role;
+        const updateData = {
+          firstName: userData.name?.split(' ')[0] || '',
+          lastName: userData.name?.split(' ').slice(1).join(' ') || '',
+          email: userData.email,
+          role: transformedRole,
+          department: userData.department,
+          phone: userData.phone,
+          isActive: userData.status === 'active',
+        };
+        
+        const response = await apiService.updateUser(userData.id, updateData);
+        if (response.data && response.data.success) {
+          // Update local state
+          setUsers((prevUsers) =>
+            prevUsers.map((user) => (user.id === userData.id ? userData : user))
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error saving user:', error);
+      alert('Failed to save user: ' + error.message);
     }
     setUserModal({ isOpen: false, mode: 'create', user: null });
   };
@@ -236,6 +273,44 @@ const UserManagement = () => {
     admins: users.filter((u) => u.role === 'admin').length,
     interns: users.filter((u) => u.role === 'intern').length,
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+          <div className="h-64 bg-gray-200 rounded-xl"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="p-6 space-y-6">
+        <Card className="p-6 text-center">
+          <div className="text-red-600 mb-4">
+            <FiUsers className="w-12 h-12 mx-auto mb-2" />
+            <p className="text-lg font-semibold">Error Loading Users</p>
+            <p className="text-sm">{error}</p>
+          </div>
+          <Button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Retry
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">

@@ -8,7 +8,7 @@ import Card from '../components/ui/Card';
 import { apiService } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
-// Demo user credentials - in real app, these would be fetched from API
+// Demo user credentials for testing
 const DEMO_USERS = [
   { role: 'Admin', email: 'admin@example.com', password: 'admin123' },
   { role: 'Project Manager', email: 'pm@example.com', password: 'pm123456' },
@@ -50,7 +50,12 @@ const Login = () => {
 
       if (response.data.token) {
         // Use AuthContext login with API user data
-        login(formData.email, response.data.token, response.data.user);
+        login(
+          formData.email, 
+          response.data.token, 
+          response.data.user,
+          response.data.refreshToken
+        );
         navigate('/dashboard');
         return;
       }

@@ -162,13 +162,20 @@ const Attendance = () => {
       setLoading(true);
       setError(null);
       try {
-        if (userRole === ROLES.ADMIN) {
-          // Admin gets team attendance stats - placeholder for now
-          setAttendanceData({
-            totalUsers: 5,
-            teamAttendanceRate: 85,
-            todaySubmissions: 4,
-          });
+        if (userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER) {
+            // Admin: fetch team & per-project attendance stats
+            const resp = await apiService.getAttendanceStats({ date: new Date().toISOString() });
+            if (resp.data && resp.data.success) {
+              const data = resp.data;
+              setAttendanceData({
+                totalUsers: data.totalUsers || 0,
+                teamAttendanceRate: data.teamAttendanceRate || 0,
+                todaySubmissions: data.todaySubmissions || 0,
+                projects: data.projects || [],
+              });
+            } else {
+              throw new Error(resp.data?.message || 'Failed to load attendance stats');
+            }
         } else {
           // Other roles get their personal attendance from daily updates
           const response = await apiService.getMyUpdates();
@@ -187,7 +194,7 @@ const Attendance = () => {
         setError(error.message);
         // Set fallback data
         const fallbackData =
-          userRole === ROLES.ADMIN
+          userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER
             ? {
                 totalUsers: 0,
                 teamAttendanceRate: 0,
@@ -276,23 +283,23 @@ const Attendance = () => {
             <FiCalendar className="w-6 h-6 text-blue-600" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {userRole === ROLES.ADMIN
-                ? 'Team Attendance Management'
-                : 'Attendance Tracking'}
-            </h1>
-            <p className="text-gray-600 mt-1">
-              {userRole === ROLES.ADMIN
-                ? 'Monitor team attendance and daily update submissions across all users'
-                : 'Monitor your daily update submissions and attendance record'}
-            </p>
+                      <h1 className="text-3xl font-bold text-gray-900">
+            {userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER
+              ? 'Team Attendance Management'
+              : 'Attendance Tracking'}
+          </h1>
+          <p className="text-gray-600 mt-1">
+            {userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER
+              ? 'Monitor team attendance and daily update submissions across all users'
+              : 'Monitor your daily update submissions and attendance record'}
+          </p>
           </div>
         </div>
       </motion.div>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {userRole === ROLES.ADMIN ? (
+        {userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER ? (
           // Admin Team Stats
           <>
             <motion.div
@@ -585,8 +592,8 @@ const Attendance = () => {
         )}
       </div>
 
-      {/* Project Attendance View for Admin */}
-      {userRole === ROLES.ADMIN ? (
+      {/* Project Attendance View for Admin/PM */}
+      {userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
