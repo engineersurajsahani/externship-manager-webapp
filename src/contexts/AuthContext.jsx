@@ -39,6 +39,7 @@ export const AuthProvider = ({ children }) => {
     const checkAuthStatus = () => {
       try {
         const token = localStorage.getItem('token');
+        const refreshToken = localStorage.getItem('refreshToken');
         const userEmail = localStorage.getItem('userEmail');
         const storedUserData = localStorage.getItem('userData');
 
@@ -95,7 +96,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login function
-  const login = (email, token, apiUserData = null) => {
+  const login = (email, token, apiUserData = null, refreshToken = null) => {
     // Use API user data if available, otherwise fall back to role mappings
     const userRole = apiUserData?.role || ROLE_MAPPINGS[email] || ROLES.INTERN;
     const userData = {
@@ -111,6 +112,9 @@ export const AuthProvider = ({ children }) => {
     // Store in localStorage
     localStorage.setItem('token', token);
     localStorage.setItem('userEmail', email);
+    if (refreshToken) {
+      localStorage.setItem('refreshToken', refreshToken);
+    }
     if (apiUserData) {
       localStorage.setItem('userData', JSON.stringify(apiUserData));
     }
@@ -126,6 +130,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     // Clear localStorage
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userData');
 
@@ -149,6 +154,33 @@ export const AuthProvider = ({ children }) => {
     return roles.includes(user?.role);
   };
 
+  // Check if token is expired (basic client-side check)
+  const isTokenExpired = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return true;
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      return payload.exp < currentTime;
+    } catch (error) {
+      return true;
+    }
+  };
+
+  // Get token expiration time
+  const getTokenExpiration = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return new Date(payload.exp * 1000);
+    } catch (error) {
+      return null;
+    }
+  };
+
   const value = {
     user,
     isAuthenticated,
@@ -158,6 +190,8 @@ export const AuthProvider = ({ children }) => {
     getUserRole,
     hasRole,
     hasAnyRole,
+    isTokenExpired,
+    getTokenExpiration,
     ROLES,
   };
 

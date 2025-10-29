@@ -212,7 +212,7 @@ const DailyUpdates = () => {
           // Process all updates regardless of length
           dailyUpdates = updates.map((update) => ({
             id: update._id,
-            userEmail: update.user?.email || 'unknown@example.com',
+            userEmail: update.user?.email || 'No Email',
             userName: update.user
               ? `${update.user.firstName} ${update.user.lastName}`
               : 'Unknown User',

@@ -88,7 +88,7 @@ const MainLayout = () => {
             <Route path="/projects" element={<Projects />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/users" element={<UserManagement />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>
         </main>
       </div>

@@ -108,7 +108,7 @@ const UserManagement = () => {
         isActive: user.status !== 'active',
       };
       
-      const response = await apiService.updateStudent(userId, updateData);
+      const response = await apiService.updateUser(userId, updateData);
       if (response.data && response.data.success) {
         setUsers((prevUsers) =>
           prevUsers.map((user) => {
@@ -135,7 +135,7 @@ const UserManagement = () => {
       )
     ) {
       try {
-        const response = await apiService.deleteStudent(userId);
+        const response = await apiService.deleteUser(userId);
         if (response.data && response.data.success) {
           setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
         }
@@ -161,7 +161,7 @@ const UserManagement = () => {
           password: userData.password || 'defaultpass123', // You might want to handle this differently
         };
         
-        const response = await apiService.createStudent(createData);
+        const response = await apiService.createUser(createData);
         if (response.data && response.data.success) {
           // Refresh the user list
           const usersResponse = await apiService.getAllUsers();
@@ -194,7 +194,7 @@ const UserManagement = () => {
           isActive: userData.status === 'active',
         };
         
-        const response = await apiService.updateStudent(userData.id, updateData);
+        const response = await apiService.updateUser(userData.id, updateData);
         if (response.data && response.data.success) {
           // Update local state
           setUsers((prevUsers) =>

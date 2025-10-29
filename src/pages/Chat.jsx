@@ -70,8 +70,7 @@ const Chat = () => {
 
   const loadProjectMessages = async (projectId) => {
     try {
-      // Placeholder: later implement messages API
-      // Attempt to fetch messages if API available
+      // Attempt to fetch messages from API
       if (apiService.getProjectMessages) {
         const res = await apiService.getProjectMessages(projectId);
         if (res.data && res.data.success) {
@@ -83,12 +82,18 @@ const Chat = () => {
         }
       }
 
+      // Initialize empty messages array if no API or no messages
       setMessages((prev) => ({
         ...prev,
         [projectId]: [],
       }));
     } catch (error) {
       console.error("Error loading messages:", error);
+      // Initialize empty messages array on error
+      setMessages((prev) => ({
+        ...prev,
+        [projectId]: [],
+      }));
     }
   };
 
