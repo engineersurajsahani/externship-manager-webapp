@@ -11,6 +11,7 @@ const ProjectAssignmentModal = ({
   project = null,
   users = [],
   onSave,
+  currentUserRole = null,
 }) => {
   const [assignments, setAssignments] = useState({
     projectManager: null,
@@ -85,45 +86,48 @@ const ProjectAssignmentModal = ({
     });
 
     if (project) {
-      const currentPM =
-        projectManagers.find((user) => user.name === project.lead) || null;
-      const currentTLs = project.teamLeaders || [];
-      const currentInterns = project.interns || [];
+      // Parse current team members from project.teamMembers array
+      const teamMembers = project.teamMembers || [];
+      
+      // Find current project manager (either from projectManager field or teamMembers with role)
+      let currentPM = null;
+      if (project.projectManager) {
+        // If projectManager is populated
+        const pmId = project.projectManager._id || project.projectManager.id || project.projectManager;
+        currentPM = projectManagers.find((user) => user.id === pmId);
+      }
+      
+      // If not found, look in teamMembers array
+      if (!currentPM) {
+        const pmMember = teamMembers.find((member) => member.role === 'project_manager');
+        if (pmMember && pmMember.user) {
+          const pmId = pmMember.user._id || pmMember.user.id || pmMember.user;
+          currentPM = projectManagers.find((user) => user.id === pmId);
+        }
+      }
 
-      const mapExistingMembers = (members, pool) =>
-        members
-          .map((member) => {
-            if (typeof member === 'string') {
-              return (
-                pool.find((user) => user.name === member) ||
-                pool.find((user) => user.email === member) ||
-                pool.find((user) => user.id === member)
-              );
-            }
+      // Get current team leaders from teamMembers
+      const currentTLMembers = teamMembers.filter((member) => member.role === 'team_leader');
+      const currentTLs = currentTLMembers
+        .map((member) => {
+          const userId = member.user?._id || member.user?.id || member.user;
+          return teamLeaders.find((user) => user.id === userId);
+        })
+        .filter(Boolean);
 
-            if (member?.user) {
-              const memberUser = member.user;
-              const memberId = memberUser._id || memberUser.id;
-              return (
-                pool.find((user) => user.id === memberId) ||
-                pool.find((user) => user.email === memberUser.email) ||
-                pool.find((user) => user.name === memberUser.name)
-              );
-            }
-
-            const memberId = member?._id || member?.id;
-            return (
-              pool.find((user) => user.id === memberId) ||
-              pool.find((user) => user.email === member?.email) ||
-              pool.find((user) => user.name === member?.name)
-            );
-          })
-          .filter(Boolean);
+      // Get current interns from teamMembers  
+      const currentInternMembers = teamMembers.filter((member) => member.role === 'intern');
+      const currentInterns = currentInternMembers
+        .map((member) => {
+          const userId = member.user?._id || member.user?.id || member.user;
+          return interns.find((user) => user.id === userId);
+        })
+        .filter(Boolean);
 
       setAssignments({
         projectManager: currentPM,
-        teamLeaders: mapExistingMembers(currentTLs, teamLeaders),
-        interns: mapExistingMembers(currentInterns, interns),
+        teamLeaders: currentTLs,
+        interns: currentInterns,
       });
     } else {
       setAssignments({
@@ -181,7 +185,7 @@ const ProjectAssignmentModal = ({
 
   const getTotalAssigned = () => {
     return (
-      (assignments.projectManager ? 1 : 0) +
+      (currentUserRole === 'admin' && assignments.projectManager ? 1 : 0) +
       assignments.teamLeaders.length +
       assignments.interns.length
     );
@@ -244,9 +248,11 @@ const ProjectAssignmentModal = ({
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Badge className="bg-blue-100 text-blue-800">
-                      PM: {assignments.projectManager ? 1 : 0}
-                    </Badge>
+                    {currentUserRole === 'admin' && (
+                      <Badge className="bg-blue-100 text-blue-800">
+                        PM: {assignments.projectManager ? 1 : 0}
+                      </Badge>
+                    )}
                     <Badge className="bg-green-100 text-green-800">
                       TL: {assignments.teamLeaders.length}
                     </Badge>
@@ -260,56 +266,58 @@ const ProjectAssignmentModal = ({
 
             {/* Assignment Sections */}
             <div className="p-6 space-y-8">
-              {/* Project Manager Section */}
-              <div>
-                <div className="flex items-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Project Manager
-                  </h3>
-                  <Badge className="ml-3 bg-blue-100 text-blue-800">
-                    {assignments.projectManager ? 'Assigned' : 'Not Assigned'}
-                  </Badge>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {availableUsers.projectManagers.map((pm) => (
-                    <motion.div
-                      key={pm.id}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        isUserAssigned(pm, 'pm')
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
-                      }`}
-                      onClick={() => handleAssignPM(pm)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                            <span className="text-blue-600 font-medium text-sm">
-                              {pm.name
-                                .split(' ')
-                                .map((n) => n[0])
-                                .join('')}
-                            </span>
+              {/* Project Manager Section - Admin Only */}
+              {currentUserRole === 'admin' && (
+                <div>
+                  <div className="flex items-center mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Project Manager
+                    </h3>
+                    <Badge className="ml-3 bg-blue-100 text-blue-800">
+                      {assignments.projectManager ? 'Assigned' : 'Not Assigned'}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {availableUsers.projectManagers.map((pm) => (
+                      <motion.div
+                        key={pm.id}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                          isUserAssigned(pm, 'pm')
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
+                        onClick={() => handleAssignPM(pm)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-blue-600 font-medium text-sm">
+                                {pm.name
+                                  .split(' ')
+                                  .map((n) => n[0])
+                                  .join('')}
+                              </span>
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900">
+                                {pm.name}
+                              </h4>
+                              <p className="text-sm text-gray-500">
+                                {pm.department}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <h4 className="font-medium text-gray-900">
-                              {pm.name}
-                            </h4>
-                            <p className="text-sm text-gray-500">
-                              {pm.department}
-                            </p>
-                          </div>
+                          {isUserAssigned(pm, 'pm') && (
+                            <FiCheck className="w-5 h-5 text-blue-600" />
+                          )}
                         </div>
-                        {isUserAssigned(pm, 'pm') && (
-                          <FiCheck className="w-5 h-5 text-blue-600" />
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Team Leaders Section */}
               <div>

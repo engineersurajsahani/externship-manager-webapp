@@ -7,6 +7,7 @@ import {
   FiUpload,
   FiCheckCircle,
   FiClock,
+  FiFolder,
 } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -24,6 +25,8 @@ const SubmitDailyUpdate = () => {
     planForTomorrow: '',
     attachments: [],
   });
+  const [userProjects, setUserProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState('');
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,7 +57,24 @@ const SubmitDailyUpdate = () => {
   // Check for existing update on load
   useEffect(() => {
     checkExistingSubmission();
-  }, [checkExistingSubmission]);
+    // Load user's projects for interns so we can attach project-specific attendance
+    const loadUserProjects = async () => {
+      try {
+        const resp = await apiService.getMyProjects();
+        if (resp.data && resp.data.projects) {
+          setUserProjects(resp.data.projects.map((p) => ({ id: p._id, name: p.name })));
+          // If the user only has one project, select it by default
+          if (resp.data.projects.length === 1) {
+            setSelectedProject(resp.data.projects[0]._id);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading user projects:', err);
+      }
+    };
+
+    if (userRole === ROLES.INTERN) loadUserProjects();
+  }, [checkExistingSubmission, userRole, ROLES.INTERN]);
 
   // Redirect if user doesn't have permission
   useEffect(() => {
@@ -86,6 +106,12 @@ const SubmitDailyUpdate = () => {
     }
 
     setErrors(newErrors);
+    // Require project selection for interns with multiple projects
+    if (userRole === ROLES.INTERN && userProjects.length > 1 && !selectedProject) {
+      setErrors((prev) => ({ ...prev, project: 'Please select a project for this update' }));
+      return false;
+    }
+
     return Object.keys(newErrors).length === 0;
   };
 
@@ -121,6 +147,8 @@ const SubmitDailyUpdate = () => {
         attachments: formData.attachments,
         hoursWorked: 8, // Default to 8 hours
         mood: 'neutral', // Default mood
+        // For interns, prefer the selected project (if any) so attendance can be project-specific
+        project: selectedProject || '',
       };
 
       const response = await apiService.submitDailyUpdate(updateData);
@@ -304,7 +332,33 @@ const SubmitDailyUpdate = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Work Done Today */}
-            <div>
+              {/* Project selector for interns working on multiple projects */}
+              {userRole === ROLES.INTERN && userProjects.length > 0 && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Project (select the project you're submitting an update for)</label>
+                  <div className="flex items-center space-x-2">
+                    <FiFolder className="w-4 h-4 text-gray-400" />
+                    <select
+                      value={selectedProject}
+                      onChange={(e) => {
+                        setSelectedProject(e.target.value);
+                        if (errors.project) setErrors((prev) => ({ ...prev, project: '' }));
+                      }}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                      <option value="">Select Project</option>
+                      {userProjects.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {errors.project && (
+                    <p className="text-red-500 text-xs mt-1">{errors.project}</p>
+                  )}
+                </div>
+              )}
+
+              <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 What did you work on today? *
               </label>

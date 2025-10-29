@@ -756,6 +756,7 @@ const Projects = () => {
         project={assignmentModal.project}
         users={users}
         onSave={handleSaveAssignments}
+        currentUserRole={getUserRole()}
       />
     </div>
   );
