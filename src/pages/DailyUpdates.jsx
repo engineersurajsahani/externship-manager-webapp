@@ -909,6 +909,104 @@ const DailyUpdates = () => {
         </div>
       </motion.div>
 
+      {/* Filters - Only show for PM/Admin or when Intern/TL clicks Show All */}
+      {(!(userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) ||
+        showAllUpdates) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
+              {/* Date Filter */}
+              <div className="flex items-center space-x-2">
+                <FiCalendar className="w-4 h-4 text-gray-400" />
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <div className="flex items-center space-x-2">
+                <FiFilter className="w-4 h-4 text-gray-400" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">All Status</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="pending">Pending</option>
+                  <option value="missing">Missing</option>
+                </select>
+              </div>
+
+              {/* Project Filter (PM only) */}
+              {userRole === ROLES.PROJECT_MANAGER && (
+                <div className="flex items-center space-x-2">
+                  <FiFolder className="w-4 h-4 text-gray-400" />
+                  <select
+                    value={selectedProject}
+                    onChange={(e) => {
+                      setSelectedProject(e.target.value);
+                      // Reset intern filter when project changes
+                      setSelectedIntern('all');
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="all">All Projects</option>
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id.toString()}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Intern Filter (PM only, filtered by project) */}
+              {userRole === ROLES.PROJECT_MANAGER && (
+                <div className="flex items-center space-x-2">
+                  <FiUsers className="w-4 h-4 text-gray-400" />
+                  <select
+                    value={selectedIntern}
+                    onChange={(e) => setSelectedIntern(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={selectedProject === 'all'}
+                  >
+                    <option value="all">
+                      {selectedProject === 'all'
+                        ? 'Select Project First'
+                        : 'All Interns'}
+                    </option>
+                    {selectedProject !== 'all' &&
+                      interns
+                        .filter((intern) => {
+                          // Filter interns by selected project
+                          const internUpdates = teamUpdates.filter(
+                            (update) =>
+                              update.userEmail === intern.email &&
+                              update.projectId?.toString() === selectedProject
+                          );
+                          return internUpdates.length > 0;
+                        })
+                        .map((intern) => (
+                          <option key={intern.email} value={intern.email}>
+                            {intern.name}
+                          </option>
+                        ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Updates List */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -1062,104 +1160,6 @@ const DailyUpdates = () => {
           )}
         </Card>
       </motion.div>
-
-      {/* Filters - Only show for PM/Admin or when Intern/TL clicks Show All */}
-      {(!(userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) ||
-        showAllUpdates) && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <Card className="p-6">
-            <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
-              {/* Date Filter */}
-              <div className="flex items-center space-x-2">
-                <FiCalendar className="w-4 h-4 text-gray-400" />
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Status Filter */}
-              <div className="flex items-center space-x-2">
-                <FiFilter className="w-4 h-4 text-gray-400" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">All Status</option>
-                  <option value="submitted">Submitted</option>
-                  <option value="pending">Pending</option>
-                  <option value="missing">Missing</option>
-                </select>
-              </div>
-
-              {/* Project Filter (PM only) */}
-              {userRole === ROLES.PROJECT_MANAGER && (
-                <div className="flex items-center space-x-2">
-                  <FiFolder className="w-4 h-4 text-gray-400" />
-                  <select
-                    value={selectedProject}
-                    onChange={(e) => {
-                      setSelectedProject(e.target.value);
-                      // Reset intern filter when project changes
-                      setSelectedIntern('all');
-                    }}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">All Projects</option>
-                    {projects.map((project) => (
-                      <option key={project.id} value={project.id.toString()}>
-                        {project.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Intern Filter (PM only, filtered by project) */}
-              {userRole === ROLES.PROJECT_MANAGER && (
-                <div className="flex items-center space-x-2">
-                  <FiUsers className="w-4 h-4 text-gray-400" />
-                  <select
-                    value={selectedIntern}
-                    onChange={(e) => setSelectedIntern(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    disabled={selectedProject === 'all'}
-                  >
-                    <option value="all">
-                      {selectedProject === 'all'
-                        ? 'Select Project First'
-                        : 'All Interns'}
-                    </option>
-                    {selectedProject !== 'all' &&
-                      interns
-                        .filter((intern) => {
-                          // Filter interns by selected project
-                          const internUpdates = teamUpdates.filter(
-                            (update) =>
-                              update.userEmail === intern.email &&
-                              update.projectId?.toString() === selectedProject
-                          );
-                          return internUpdates.length > 0;
-                        })
-                        .map((intern) => (
-                          <option key={intern.email} value={intern.email}>
-                            {intern.name}
-                          </option>
-                        ))}
-                  </select>
-                </div>
-              )}
-            </div>
-          </Card>
-        </motion.div>
-      )}
 
       {/* Update Detail Modal */}
       {showUpdateModal && selectedUpdate && (
