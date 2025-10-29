@@ -12,24 +12,9 @@ import {
   FiArrowRight,
   FiAward,
   FiActivity,
-  FiPieChart,
   FiRefreshCw,
 } from 'react-icons/fi';
-import {
-  AreaChart,
-  Area,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+
 import StatsCard from '../components/StatsCard';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -49,7 +34,7 @@ const Dashboard = () => {
     recentActivity: [],
     notifications: [],
   });
-  const [selectedChartType, setSelectedChartType] = useState('area');
+
 
   // Get empty stats based on user role when API is unavailable
   const getEmptyStats = useCallback(
@@ -98,7 +83,7 @@ const Dashboard = () => {
       // When API is unavailable, show minimal fallback data
       const emptyData = {
         stats: getEmptyStats(userRole, attendanceStatus),
-        charts: { timeline: [], distribution: generateDistributionData() },
+        charts: { timeline: [] },
         recentActivity: [],
         notifications: [],
         attendance: { percentage: 0, presentDays: 0, absentDays: 0, total: 0 },
@@ -171,8 +156,6 @@ const Dashboard = () => {
       stats: enhancedStats,
       charts: {
         timeline: apiData.charts?.timeline || [],
-        distribution:
-          apiData.charts?.distribution || generateDistributionData(),
       },
       recentActivity: apiData.recentActivity || [],
       notifications: apiData.notifications || [],
@@ -203,13 +186,7 @@ const Dashboard = () => {
     }
   }, [loadDashboardData, userRole, ROLES.INTERN]);
 
-  const generateDistributionData = () => {
-    return [
-      { name: 'Completed', value: 65, color: '#10b981' },
-      { name: 'In Progress', value: 25, color: '#3b82f6' },
-      { name: 'Pending', value: 10, color: '#f59e0b' },
-    ];
-  };
+
 
   const handleQuickAction = (action) => {
     switch (action) {
@@ -513,184 +490,7 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Interactive Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Activity Timeline Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-        >
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {userRole === ROLES.INTERN
-                  ? 'Your Activity'
-                  : userRole === ROLES.TEAM_LEADER
-                    ? 'Team Activity'
-                    : 'Platform Activity'}
-              </h3>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant={selectedChartType === 'area' ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedChartType('area')}
-                >
-                  <FiActivity className="w-3 h-3" />
-                </Button>
-                <Button
-                  variant={selectedChartType === 'line' ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedChartType('line')}
-                >
-                  <FiTrendingUp className="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
 
-            <ResponsiveContainer width="100%" height={300}>
-              {selectedChartType === 'area' ? (
-                <AreaChart data={dashboardData.charts?.timeline || []}>
-                  <defs>
-                    <linearGradient
-                      id="colorUpdates"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                      <stop
-                        offset="95%"
-                        stopColor="#3b82f6"
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                    axisLine={{ stroke: '#e5e7eb' }}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                    axisLine={{ stroke: '#e5e7eb' }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                      color: '#374151',
-                    }}
-                    labelStyle={{ color: '#111827', fontWeight: '600' }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="updates"
-                    stroke="#3b82f6"
-                    fillOpacity={1}
-                    fill="url(#colorUpdates)"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              ) : (
-                <LineChart data={dashboardData.charts?.timeline || []}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                    axisLine={{ stroke: '#e5e7eb' }}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                    axisLine={{ stroke: '#e5e7eb' }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                      color: '#374151',
-                    }}
-                    labelStyle={{ color: '#111827', fontWeight: '600' }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="updates"
-                    stroke="#3b82f6"
-                    strokeWidth={3}
-                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
-                  />
-                </LineChart>
-              )}
-            </ResponsiveContainer>
-          </Card>
-        </motion.div>
-
-        {/* Status Distribution */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
-        >
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Status Distribution
-              </h3>
-              <FiPieChart className="w-5 h-5 text-gray-400" />
-            </div>
-
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={dashboardData.charts?.distribution || []}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                  label={({ name, percent }) =>
-                    `${(percent * 100).toFixed(0)}%`
-                  }
-                  labelLine={false}
-                  labelStyle={{
-                    fill: '#374151',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                  }}
-                >
-                  {dashboardData.charts?.distribution?.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                    color: '#374151',
-                  }}
-                  labelStyle={{ color: '#111827', fontWeight: '600' }}
-                />
-                <Legend
-                  wrapperStyle={{
-                    paddingTop: '20px',
-                    fontSize: '14px',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </Card>
-        </motion.div>
-      </div>
 
       {/* Recent Activity Feed */}
       <motion.div
