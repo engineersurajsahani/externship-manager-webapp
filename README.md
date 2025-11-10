@@ -421,13 +421,3 @@ npm test -- --watchAll=false
 # Run with coverage
 npm test -- --coverage
 ```
-
-### Testing Structure
-- **Unit Tests**: Individual component testing
-- **Integration Tests**: Component interaction testing
-- **E2E Tests**: Full user journey testing (if implemented)
-
-### Testing Tools
-- **Jest**: JavaScript testing framework
-- **React Testing Library**: React component testing utilities
-- **User Event**: Simulate user interactions
