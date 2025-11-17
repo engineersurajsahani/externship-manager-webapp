@@ -35,14 +35,39 @@ const ProjectModal = ({
 
   useEffect(() => {
     if (project && mode !== 'create') {
+      const formatDateForInput = (d) => {
+        if (!d) return '';
+        // If value is a Date object
+        if (d instanceof Date) return d.toISOString().split('T')[0];
+        // If value is a number (timestamp)
+        if (typeof d === 'number') return new Date(d).toISOString().split('T')[0];
+        // If value is an ISO string, strip time portion
+        if (typeof d === 'string') {
+          const idx = d.indexOf('T');
+          return idx > -1 ? d.split('T')[0] : d;
+        }
+        return '';
+      };
+
+      // Normalize status coming from backend (e.g. 'on_hold') to frontend form value ('on-hold')
+      const normalizeStatusForForm = (s) => {
+        if (!s) return 'planning';
+        return String(s).replace('_', '-');
+      };
+
       setFormData({
         name: project.name || '',
         description: project.description || '',
-        startDate: project.startDate || new Date().toISOString().split('T')[0],
-        endDate: project.endDate || '',
+        startDate:
+          formatDateForInput(project.startDate) ||
+          new Date().toISOString().split('T')[0],
+        endDate: formatDateForInput(project.endDate) || '',
         priority: project.priority || 'medium',
-        status: project.status || 'planning',
-        budget: project.budget || '',
+        status: normalizeStatusForForm(project.status) || 'planning',
+        budget:
+          project.budget !== undefined && project.budget !== null
+            ? String(project.budget)
+            : '',
         department: project.department || '',
         requirements: project.requirements || '',
       });
@@ -97,9 +122,17 @@ const ProjectModal = ({
     setIsSubmitting(true);
 
     try {
+      // Convert form status back to backend format (e.g. 'on-hold' -> 'on_hold')
+      const normalizeStatusForBackend = (s) => (s ? String(s).replace('-', '_') : s);
+
       const projectData = {
         ...formData,
-        id: project?.id || Date.now(),
+        status: normalizeStatusForBackend(formData.status),
+        // Ensure dates are ISO strings accepted by backend
+        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
+        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null,
+        _id: project?._id || project?.id,
+        id: project?.id || project?._id || Date.now(),
         progress: project?.progress || 0,
         teamSize: project?.teamSize || 0,
         lead: project?.lead || '',

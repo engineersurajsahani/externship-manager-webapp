@@ -7,9 +7,7 @@ export const DataViewer = {
     try {
       const response = await apiService.getAllDailyUpdates();
       const updates = response.data.updates || [];
-      console.log('=== DAILY UPDATES DATA (MongoDB) ===');
-      console.log(`Total Updates: ${updates.length}`);
-      console.table(updates);
+  // debug output removed
       return updates;
     } catch (error) {
       console.error('Error fetching daily updates:', error);
@@ -22,9 +20,7 @@ export const DataViewer = {
     try {
       const response = await apiService.getMyDailyUpdates();
       const userUpdates = response.data.updates || [];
-      console.log(`=== DAILY UPDATES FOR ${userEmail} (MongoDB) ===`);
-      console.log(`User Updates: ${userUpdates.length}`);
-      console.table(userUpdates);
+  // debug output removed
       return userUpdates;
     } catch (error) {
       console.error('Error fetching user updates:', error);
@@ -37,9 +33,7 @@ export const DataViewer = {
     try {
       const response = await apiService.getAllUsers();
       const users = response.data.users || [];
-      console.log('=== USERS DATA (MongoDB) ===');
-      console.log(`Total Users: ${users.length}`);
-      console.table(users);
+  // debug output removed
       return users;
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -52,9 +46,7 @@ export const DataViewer = {
     try {
       const response = await apiService.getAllProjects();
       const projects = response.data.projects || [];
-      console.log('=== PROJECTS DATA (MongoDB) ===');
-      console.log(`Total Projects: ${projects.length}`);
-      console.table(projects);
+  // debug output removed
       return projects;
     } catch (error) {
       console.error('Error fetching projects:', error);
@@ -90,7 +82,7 @@ export const DataViewer = {
       linkElement.setAttribute('download', exportFileDefaultName);
       linkElement.click();
 
-      console.log('Data exported to file:', exportFileDefaultName);
+  // debug output removed
     } catch (error) {
       console.error('Error exporting data:', error);
     }
@@ -109,9 +101,7 @@ export const DataViewer = {
         return updateDate === today;
       });
 
-      console.log(`=== TODAY'S SUBMISSIONS (${today}) (MongoDB) ===`);
-      console.log(`Count: ${todayUpdates.length}`);
-      console.table(todayUpdates);
+  // debug output removed
       return todayUpdates;
     } catch (error) {
       console.error('Error fetching today submissions:', error);
@@ -124,9 +114,7 @@ export const DataViewer = {
     console.warn(
       'clearAllData is not implemented for MongoDB. This operation should be performed on the backend.'
     );
-    console.log(
-      'Contact your system administrator to reset the database if needed.'
-    );
+    // debug output removed
   },
 
   // Get attendance stats for a user
@@ -154,8 +142,7 @@ export const DataViewer = {
           attendance.length > 0 ? attendance[attendance.length - 1].date : null,
       };
 
-      console.log(`=== ATTENDANCE STATS FOR ${userEmail} (MongoDB) ===`);
-      console.table(stats);
+  // debug output removed
       return stats;
     } catch (error) {
       console.error('Error fetching attendance stats:', error);
@@ -177,8 +164,7 @@ export const DataViewer = {
         dataSource: 'MongoDB',
       };
 
-      console.log('=== DATA SUMMARY (MongoDB) ===');
-      console.table(summary);
+  // debug output removed
       return summary;
     } catch (error) {
       console.error('Error fetching summary:', error);

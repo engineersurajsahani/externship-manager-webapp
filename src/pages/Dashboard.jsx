@@ -13,7 +13,9 @@ import {
   FiAward,
   FiActivity,
   FiRefreshCw,
+  FiCalendar,
 } from 'react-icons/fi';
+import UpcomingDeadlinesModal from '../components/modals/UpcomingDeadlinesModal';
 
 import StatsCard from '../components/StatsCard';
 import Card from '../components/ui/Card';
@@ -24,7 +26,7 @@ import { apiService } from '../services/api';
 import { dashboardHelpers } from '../utils/dashboardHelpers';
 
 const Dashboard = () => {
-  const { getUserRole, ROLES } = useAuth();
+  const { getUserRole, ROLES, user } = useAuth();
   const navigate = useNavigate();
   const userRole = getUserRole();
   const [isLoading, setIsLoading] = useState(true);
@@ -34,9 +36,11 @@ const Dashboard = () => {
     recentActivity: [],
     notifications: [],
   });
+  const [showUpcomingDeadlines, setShowUpcomingDeadlines] = useState(false);
+  const [weeklyGoal, setWeeklyGoal] = useState(null);
+  const [weeklyGoalProject, setWeeklyGoalProject] = useState(null);
 
 
-  // Get empty stats based on user role when API is unavailable
   const getEmptyStats = useCallback(
     (role, attendanceStatus = null) => {
       const baseStats = {
@@ -54,9 +58,7 @@ const Dashboard = () => {
         },
         [ROLES.TEAM_LEADER]: {
           teamSize: 0,
-          projectsManaged: 0,
           teamAttendance: 0,
-          pendingReviews: 0,
         },
         [ROLES.PROJECT_MANAGER]: {
           totalTeamMembers: 0,
@@ -77,7 +79,6 @@ const Dashboard = () => {
     [ROLES]
   );
 
-  // Generate fallback data when API is unavailable
   const generateFallbackData = useCallback(
     (attendanceStatus = null) => {
       // When API is unavailable, show minimal fallback data
@@ -94,28 +95,21 @@ const Dashboard = () => {
     [userRole, getEmptyStats]
   );
 
-  // Load dashboard data function with API attendance support
   const loadDashboardData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Try to get today's attendance status from API first
       let attendanceStatus = null;
       try {
-        attendanceStatus =
-          await dashboardHelpers.apiHelpers.getTodayAttendanceStatus();
-      } catch (apiError) {}
+        attendanceStatus = await dashboardHelpers.apiHelpers.getTodayAttendanceStatus();
+      } catch (e) {}
 
-      // Try to fetch dashboard stats from API
       let apiData = null;
       try {
         const response = await apiService.getDashboardStats();
         apiData = response.data;
-      } catch (apiError) {}
+      } catch (e) {}
 
-      // Generate data from API or show fallback
-      const data = apiData
-        ? processApiData(apiData, attendanceStatus)
-        : generateFallbackData(attendanceStatus);
+      const data = apiData ? processApiData(apiData, attendanceStatus) : generateFallbackData(attendanceStatus);
       setDashboardData(data);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -139,7 +133,6 @@ const Dashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generateFallbackData]);
 
-  // Process API data into dashboard format
   const processApiData = (apiData, attendanceStatus = null) => {
     // If we have attendance status from API, use it to enhance the data
     let enhancedStats = apiData.stats || {};
@@ -151,13 +144,74 @@ const Dashboard = () => {
       };
     }
 
+    let rawRecent =
+      (apiData.stats && (apiData.stats.recentActivity || apiData.stats.recentUpdates)) ||
+      apiData.recentActivity || [];
+
+    // For interns and team leaders, only show their submitted work
+    if (userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) {
+      try {
+        rawRecent = (rawRecent || []).filter((a) => {
+          // Determine whether the activity is an update-like item
+          const isUpdateLike =
+            a.type === 'update' || !!a.workDone || !!a.project || !!a.projectName || (typeof a.message === 'string' && a.message.toLowerCase().includes('submit'));
+
+          if (!isUpdateLike) return false;
+
+          // Try to resolve the activity owner (email or id)
+          const ownerEmail = a.user?.email || a.email || a.userEmail || a.userEmail;
+          const ownerId = a.user?._id || a.user?.id || a.userId || a.user_id;
+
+          if (!user) return false;
+
+          const isOwner = (ownerEmail && user.email && ownerEmail === user.email) || (ownerId && user.id && ownerId === user.id) || (ownerId && user.id && ownerId === user.id);
+
+          return !!isOwner;
+        });
+      } catch (err) {
+        // fallback: if filtering fails, keep rawRecent as-is but log for debugging
+        console.error('Error filtering recent activity for role-limited view:', err);
+      }
+    }
+
+    // Map backend activity shape to frontend expected shape
+    const recentActivity = (rawRecent || [])
+      .map((a, idx) => {
+      // Normalize varying backend shapes
+      const timestamp = a.timestamp || a.date || a.createdAt || a.time || null;
+      const title = a.title || a.message || (a.type === 'update' ? 'Daily update' : a.type || 'Activity');
+      const description = a.description || a.messageDetail || a.message || '';
+      const isUpdateLike =
+        a.type === 'update' ||
+        !!a.user ||
+        !!a.userName ||
+        !!a.project ||
+        !!a.projectName ||
+        !!a.workDone ||
+        (typeof a.message === 'string' && a.message.toLowerCase().includes('submit'));
+
+      const status = a.status || (isUpdateLike ? 'completed' : 'pending');
+      const user = a.user || a.email || a.by || null;
+
+      return {
+        id: a.id || a._id || `${timestamp || Date.now()}-${idx}`,
+        title,
+        description,
+        timestamp,
+        status,
+        user,
+        raw: a,
+      };
+      })
+      .slice(0, 3); // only show the most recent 3 activities
+
     // Transform API response to match our dashboard data structure
     return {
       stats: enhancedStats,
       charts: {
         timeline: apiData.charts?.timeline || [],
       },
-      recentActivity: apiData.recentActivity || [],
+      recentActivity,
       notifications: apiData.notifications || [],
       attendance: apiData.attendance || {
         percentage: 0,
@@ -169,7 +223,6 @@ const Dashboard = () => {
     };
   };
 
-  // Data loading on component mount and periodic refresh for interns
   useEffect(() => {
     loadDashboardData();
 
@@ -185,6 +238,45 @@ const Dashboard = () => {
       return () => clearInterval(interval);
     }
   }, [loadDashboardData, userRole, ROLES.INTERN]);
+
+  // Load weekly goal for interns and team leaders
+  useEffect(() => {
+    const loadWeeklyGoal = async () => {
+      if (userRole !== ROLES.INTERN && userRole !== ROLES.TEAM_LEADER) return;
+
+      try {
+        const resp = await apiService.getMyProjects();
+        if (resp.data && resp.data.success && resp.data.projects) {
+          const projects = resp.data.projects;
+          let found = false;
+          for (const project of projects) {
+            const goals = project.weeklyGoals || project.weeklyGoals?.length ? project.weeklyGoals : project.weeklyGoals || [];
+            if (goals && goals.length > 0) {
+              // Prefer the current status goal if available
+              const current = goals.find((g) => g.status === 'current') || goals[0];
+              if (current) {
+                setWeeklyGoal(current);
+                setWeeklyGoalProject(project.name || project.title || 'Project');
+                found = true;
+                break;
+              }
+            }
+          }
+
+          if (!found) {
+            setWeeklyGoal(null);
+            setWeeklyGoalProject(null);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading weekly goal:', err);
+        setWeeklyGoal(null);
+        setWeeklyGoalProject(null);
+      }
+    };
+
+    loadWeeklyGoal();
+  }, [userRole]);
 
 
 
@@ -257,6 +349,8 @@ const Dashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         </div>
 
+        {/* Weekly Goal (Interns / Team Leaders) */}
+          {/* (Weekly goal moved into the stats grid for better alignment) */}
         <div className="flex items-center space-x-4 mt-4 lg:mt-0">
           <Button
             variant="outline"
@@ -309,16 +403,49 @@ const Dashboard = () => {
         </motion.div>
       )}
 
+      {/* Upcoming Deadlines Modal */}
+      {showUpcomingDeadlines && (
+        <UpcomingDeadlinesModal
+          projects={dashboardData.stats?.upcomingDeadlineProjects || []}
+          onClose={() => setShowUpcomingDeadlines(false)}
+        />
+      )}
+
       {/* Role-based Stats Grid */}
       <div
         className={`grid gap-6 ${
           userRole === ROLES.INTERN
-            ? 'grid-cols-1 md:grid-cols-3 lg:grid-cols-3'
+            ? 'grid-cols-1 md:grid-cols-4 lg:grid-cols-4'
             : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
         }`}
       >
         {userRole === ROLES.INTERN && (
           <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="h-full"
+            >
+              <Card className="p-4 h-full">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-semibold">Weekly Goal</h4>
+                  {weeklyGoalProject && (
+                    <div className="text-xs text-gray-400">{weeklyGoalProject}</div>
+                  )}
+                </div>
+                {weeklyGoal ? (
+                  <div className="text-sm text-gray-700">
+                    {weeklyGoal.goal || weeklyGoal.title}
+                    {weeklyGoal.week && (
+                      <div className="text-xs text-gray-500 mt-2">{weeklyGoal.week}</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">No weekly goal set</div>
+                )}
+              </Card>
+            </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -382,8 +509,8 @@ const Dashboard = () => {
                 className="h-full"
                 subtitle={
                   dashboardData?.stats?.todayStatus === 'Submitted'
-                    ? 'Attendance marked'
-                    : 'Click to submit'
+                    ? ''
+                    : ''
                 }
               />
             </motion.div>
@@ -392,6 +519,31 @@ const Dashboard = () => {
 
         {userRole === ROLES.TEAM_LEADER && (
           <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="h-full"
+            >
+              <Card className="p-4 h-full">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-semibold">Weekly Goal</h4>
+                  {weeklyGoalProject && (
+                    <div className="text-xs text-gray-400">{weeklyGoalProject}</div>
+                  )}
+                </div>
+                {weeklyGoal ? (
+                  <div className="text-sm text-gray-700">
+                    {weeklyGoal.goal || weeklyGoal.title}
+                    {weeklyGoal.week && (
+                      <div className="text-xs text-gray-500 mt-2">{weeklyGoal.week}</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">No weekly goal set</div>
+                )}
+              </Card>
+            </motion.div>
             <StatsCard
               title="Team Size"
               value={dashboardData?.stats?.teamSize?.toString() || '0'}
@@ -400,24 +552,33 @@ const Dashboard = () => {
               delay={0.1}
             />
             <StatsCard
-              title="Projects Managed"
-              value={dashboardData?.stats?.projectsManaged?.toString() || '0'}
-              icon={FiBriefcase}
-              color="purple"
+              title="Attendance Rate"
+              value={`${dashboardData?.attendance?.percentage ?? dashboardData?.stats?.teamAttendance ?? 0}%`}
+              icon={FiCheckCircle}
+              color={
+                (dashboardData?.attendance?.percentage ?? dashboardData?.stats?.teamAttendance ?? 0) >= 90
+                  ? 'green'
+                  : 'orange'
+              }
               delay={0.2}
             />
             <StatsCard
-              title="Team Attendance"
-              value={`${dashboardData?.stats?.teamAttendance || 0}%`}
-              icon={FiCheckCircle}
-              color="green"
-              delay={0.3}
-            />
-            <StatsCard
-              title="Pending Reviews"
-              value={dashboardData?.stats?.pendingReviews?.toString() || '0'}
-              icon={FiAlertCircle}
-              color="orange"
+              title="Today's Status"
+              value={
+                dashboardData?.attendanceStatus?.hasSubmitted
+                  ? 'Done'
+                  : dashboardData?.attendanceStatus?.timeRemaining
+                    ? dashboardHelpers.getTimeRemainingToday()
+                    : 'Pending'
+              }
+              icon={
+                dashboardData?.attendanceStatus?.hasSubmitted ? FiCheckCircle : FiClock
+              }
+              color={
+                dashboardData?.attendanceStatus?.hasSubmitted
+                  ? 'green'
+                  : 'orange'
+              }
               delay={0.4}
             />
           </>
@@ -558,15 +719,14 @@ const Dashboard = () => {
                       {activity.description}
                     </p>
                     <p className="text-xs text-gray-400">
-                      {new Date(activity.timestamp).toLocaleDateString(
-                        'en-US',
-                        {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        }
-                      )}
+                      {activity.timestamp
+                        ? new Date(activity.timestamp).toLocaleString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : '—'}
                     </p>
                   </div>
 
@@ -618,13 +778,18 @@ const Dashboard = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 1.2 }}
           >
-            <Card className="p-6 bg-gradient-to-br from-green-500 to-green-600 text-white">
+            <Card
+              className="p-6 bg-gradient-to-br from-green-500 to-green-600 text-white cursor-pointer"
+              onClick={() => setShowUpcomingDeadlines(true)}
+            >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Project Progress</h3>
-                <FiBriefcase className="w-6 h-6" />
+                <h3 className="text-lg font-semibold">Upcoming Deadlines</h3>
+                <FiCalendar className="w-6 h-6" />
               </div>
-              <p className="text-3xl font-bold mb-2">78%</p>
-              <p className="text-green-100">Average completion rate</p>
+              <p className="text-3xl font-bold mb-2">
+                {dashboardData.stats?.upcomingDeadlines ?? 0}
+              </p>
+              <p className="text-green-100">Projects due this week</p>
             </Card>
           </motion.div>
 
@@ -647,93 +812,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Admin Team Attendance Overview */}
-      {userRole === ROLES.ADMIN &&
-        dashboardData.attendance?.attendanceByUser && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.4 }}
-          >
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Team Attendance Overview
-                </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/attendance')}
-                >
-                  View Details <FiArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {dashboardData.attendance.attendanceByUser
-                  .slice(0, 6)
-                  .map((userAttendance, index) => (
-                    <motion.div
-                      key={userAttendance.email}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 * index }}
-                      className="p-4 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-gray-900 truncate">
-                          {userAttendance.user}
-                        </h4>
-                        <Badge
-                          className={`${
-                            userAttendance.status === 'excellent'
-                              ? 'bg-green-100 text-green-800'
-                              : userAttendance.status === 'good'
-                                ? 'bg-blue-100 text-blue-800'
-                                : userAttendance.status === 'average'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {userAttendance.percentage}%
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        {userAttendance.presentDays} of{' '}
-                        {userAttendance.totalDays} days
-                      </p>
-                      <div className="mt-2 bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${
-                            userAttendance.status === 'excellent'
-                              ? 'bg-green-500'
-                              : userAttendance.status === 'good'
-                                ? 'bg-blue-500'
-                                : userAttendance.status === 'average'
-                                  ? 'bg-yellow-500'
-                                  : 'bg-red-500'
-                          }`}
-                          style={{ width: `${userAttendance.percentage}%` }}
-                        ></div>
-                      </div>
-                    </motion.div>
-                  ))}
-              </div>
-
-              {dashboardData.attendance.attendanceByUser.length > 6 && (
-                <div className="mt-4 text-center">
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate('/attendance')}
-                  >
-                    View All {dashboardData.attendance.attendanceByUser.length}{' '}
-                    Members
-                  </Button>
-                </div>
-              )}
-            </Card>
-          </motion.div>
-        )}
+      {/* Admin team attendance overview removed */}
     </div>
   );
 };

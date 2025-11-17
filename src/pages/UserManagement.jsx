@@ -11,7 +11,6 @@ import {
   FiCalendar,
   FiEye,
   FiTrash2,
-  FiDownload,
 } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -39,42 +38,56 @@ const UserManagement = () => {
   const [users, setUsers] = useState([]);
 
   // Fetch users from API
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        const response = await apiService.getAllUsers();
-        if (response.data && response.data.success) {
-          const userData = response.data.users || response.data.data || [];
-          // Transform user data to match UI expectations
-          const transformedUsers = userData.map(user => ({
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getAllUsers();
+      if (response.data && response.data.success) {
+        const userData = response.data.users || response.data.data || [];
+        // Transform user data to match UI expectations and keep backend-like fields
+        const transformedUsers = userData.map((user) => {
+          // Determine user status
+          let status = 'inactive';
+          if (user.isActive) {
+            status = user.lastLogin ? 'active' : 'pending';
+          }
+
+          return {
             id: user._id || user.id,
-            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.name || 'Unknown User',
+            // backend-like fields for modals
+            firstName: user.firstName || (user.name ? user.name.split(' ')[0] : '') || '',
+            lastName: user.lastName || (user.name ? user.name.split(' ').slice(1).join(' ') : '') || '',
             email: user.email,
-            role: user.role === 'project_manager' ? 'pm' : user.role === 'team_leader' ? 'tl' : user.role,
-            status: user.isActive ? 'active' : 'inactive',
-            joinDate: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A',
-            lastLogin: user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never',
+            role: user.role,
+            status: status,
+            isActive: !!user.isActive,
+            // joinDate: ISO for forms; joinDateDisplay for table
+            joinDate: user.createdAt ? new Date(user.createdAt).toISOString() : null,
+            joinDateDisplay: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A',
+            lastLogin: user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never',
             projects: user.projects || 0,
-            phone: user.phone || 'N/A',
+            phone: user.phone || user.phoneNumber || 'N/A',
+            phoneNumber: user.phoneNumber || user.phone || '',
             department: user.department || 'General',
-          }));
-          setUsers(transformedUsers);
-        } else {
-          throw new Error(response.data?.message || 'Failed to fetch users');
-        }
-      } catch (err) {
-        console.error('Error fetching users:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+            // human friendly
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.name || 'Unknown User',
+          };
+        });
+        setUsers(transformedUsers);
+      } else {
+        throw new Error(response.data?.message || 'Failed to fetch users');
       }
-    };
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchUsers();
-  }, []);
-
-  // CRUD Operations
+  }, []);  // CRUD Operations
   const handleCreateUser = () => {
     setUserModal({
       isOpen: true,
@@ -146,67 +159,40 @@ const UserManagement = () => {
     }
   };
 
-  const handleSaveUser = async (userData, mode) => {
+  const handleSaveUser = async (userData) => {
     try {
-      if (mode === 'create') {
-        // Transform role back to backend format
-        const transformedRole = userData.role === 'pm' ? 'project_manager' : userData.role === 'tl' ? 'team_leader' : userData.role;
-        const createData = {
-          firstName: userData.name?.split(' ')[0] || '',
-          lastName: userData.name?.split(' ').slice(1).join(' ') || '',
-          email: userData.email,
-          role: transformedRole,
-          department: userData.department,
-          phone: userData.phone,
-          password: userData.password || 'defaultpass123', // You might want to handle this differently
-        };
-        
-        const response = await apiService.createUser(createData);
-        if (response.data && response.data.success) {
-          // Refresh the user list
-          const usersResponse = await apiService.getAllUsers();
-          if (usersResponse.data && usersResponse.data.success) {
-            const userData = usersResponse.data.users || usersResponse.data.data || [];
-            const transformedUsers = userData.map(user => ({
-              id: user._id || user.id,
-              name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.name || 'Unknown User',
-              email: user.email,
-              role: user.role === 'project_manager' ? 'pm' : user.role === 'team_leader' ? 'tl' : user.role,
-              status: user.isActive ? 'active' : 'inactive',
-              joinDate: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A',
-              lastLogin: user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never',
-              projects: user.projects || 0,
-              phone: user.phone || 'N/A',
-              department: user.department || 'General',
-            }));
-            setUsers(transformedUsers);
-          }
-        }
-      } else if (mode === 'edit') {
-        const transformedRole = userData.role === 'pm' ? 'project_manager' : userData.role === 'tl' ? 'team_leader' : userData.role;
-        const updateData = {
-          firstName: userData.name?.split(' ')[0] || '',
-          lastName: userData.name?.split(' ').slice(1).join(' ') || '',
-          email: userData.email,
-          role: transformedRole,
-          department: userData.department,
-          phone: userData.phone,
-          isActive: userData.status === 'active',
-        };
-        
-        const response = await apiService.updateUser(userData.id, updateData);
-        if (response.data && response.data.success) {
-          // Update local state
-          setUsers((prevUsers) =>
-            prevUsers.map((user) => (user.id === userData.id ? userData : user))
-          );
-        }
+      setLoading(true);
+      let response;
+
+      if (userModal.mode === 'create') {
+        // Create new user
+        response = await apiService.createUser(userData);
+      } else if (userModal.mode === 'edit') {
+        // Update existing user
+        response = await apiService.updateUser(userModal.user.id, userData);
+      }
+
+      if (response.data && response.data.success) {
+        alert(
+          userModal.mode === 'create' 
+            ? 'User created successfully!' 
+            : 'User updated successfully!'
+        );
+        setUserModal({
+          isOpen: false,
+          mode: 'create',
+          user: null,
+        });
+        await fetchUsers(); // Refresh the user list
+      } else {
+        throw new Error(response.data.message || 'Operation failed');
       }
     } catch (error) {
       console.error('Error saving user:', error);
-      alert('Failed to save user: ' + error.message);
+      alert(error.response?.data?.message || error.message || 'Failed to save user');
+    } finally {
+      setLoading(false);
     }
-    setUserModal({ isOpen: false, mode: 'create', user: null });
   };
 
   const handleCloseModal = () => {
@@ -217,9 +203,9 @@ const UserManagement = () => {
     switch (role) {
       case 'admin':
         return 'bg-purple-100 text-purple-800';
-      case 'pm':
+      case 'project_manager':
         return 'bg-blue-100 text-blue-800';
-      case 'tl':
+      case 'team_leader':
         return 'bg-green-100 text-green-800';
       case 'intern':
         return 'bg-orange-100 text-orange-800';
@@ -270,7 +256,10 @@ const UserManagement = () => {
   const userStats = {
     total: users.length,
     active: users.filter((u) => u.status === 'active').length,
+    pending: users.filter((u) => u.status === 'pending').length,
+    inactive: users.filter((u) => u.status === 'inactive').length,
     admins: users.filter((u) => u.role === 'admin').length,
+    projectManagers: users.filter((u) => u.role === 'project_manager' && u.status === 'active').length,
     interns: users.filter((u) => u.role === 'intern').length,
   };
 
@@ -327,10 +316,6 @@ const UserManagement = () => {
           </p>
         </div>
         <div className="flex items-center space-x-3 mt-4 sm:mt-0">
-          <Button variant="outline" size="sm">
-            <FiDownload className="w-4 h-4 mr-2" />
-            Export
-          </Button>
           <Button variant="primary" size="sm" onClick={handleCreateUser}>
             <FiPlus className="w-4 h-4 mr-2" />
             Add User
@@ -355,11 +340,18 @@ const UserManagement = () => {
           delay={0.1}
         />
         <StatsCard
-          title="Administrators"
-          value={userStats.admins.toString()}
-          icon={FiUserCheck}
-          color="purple"
+          title="Pending Users"
+          value={userStats.pending.toString()}
+          icon={FiUserX}
+          color="yellow"
           delay={0.2}
+        />
+        <StatsCard
+          title="Project Managers"
+          value={userStats.projectManagers.toString()}
+          icon={FiUsers}
+          color="purple"
+          delay={0.3}
         />
         <StatsCard
           title="Interns"
@@ -553,71 +545,7 @@ const UserManagement = () => {
         </Card>
       </motion.div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Card className="p-6 text-center">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <FiPlus className="w-6 h-6 text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Bulk Import
-            </h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Import multiple users from CSV file
-            </p>
-            <Button variant="outline" size="sm" className="w-full">
-              Import Users
-            </Button>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <Card className="p-6 text-center">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <FiUserCheck className="w-6 h-6 text-green-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Role Management
-            </h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Configure roles and permissions
-            </p>
-            <Button variant="outline" size="sm" className="w-full">
-              Manage Roles
-            </Button>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <Card className="p-6 text-center">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <FiMail className="w-6 h-6 text-purple-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Send Invitations
-            </h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Invite new users to join the platform
-            </p>
-            <Button variant="outline" size="sm" className="w-full">
-              Send Invites
-            </Button>
-          </Card>
-        </motion.div>
-      </div>
+      {/* Quick Actions removed */}
 
       {/* User Modal */}
       <UserModal

@@ -1,10 +1,11 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { FiHome, FiBriefcase, FiUsers, FiClock, FiEdit3, FiMessageSquare } from 'react-icons/fi';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { FiHome, FiBriefcase, FiUsers, FiClock, FiEdit3, FiMessageSquare, FiLogOut } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = () => {
-  const { getUserRole, ROLES } = useAuth();
+  const { getUserRole, ROLES, user, logout } = useAuth();
+  const navigate = useNavigate();
   const userRole = getUserRole();
 
   const allMenuItems = [
@@ -195,6 +196,41 @@ const Sidebar = () => {
           ))}
         </div>
       </nav>
+
+      {/* Sidebar Footer - user initials and logout */}
+      <div className="px-4 py-4 border-t border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+              {user && (user.firstName || user.lastName)
+                ? `${(user.firstName || '').charAt(0) || ''}${(user.lastName || '').charAt(0) || ''}`.toUpperCase()
+                : user && user.email
+                ? user.email.split('@')[0].substring(0, 2).toUpperCase()
+                : 'AD'}
+            </div>
+            <div>
+              <div className="text-sm font-medium text-gray-700">
+                {user && (user.firstName || user.lastName)
+                  ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                  : user && user.email
+                  ? user.email.split('@')[0]
+                  : 'Admin'}
+              </div>
+              <div className="text-xs text-gray-400">{getRoleSubtitle().toUpperCase()}</div>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              logout();
+              navigate('/login');
+            }}
+            className="flex items-center space-x-2 text-sm text-red-600 hover:text-red-800"
+          >
+            <FiLogOut className="w-4 h-4" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
     </aside>
   );
 };

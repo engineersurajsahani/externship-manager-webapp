@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
 
 // Role constants
 export const ROLES = {
@@ -36,7 +37,7 @@ export const AuthProvider = ({ children }) => {
 
   // Check if user is already logged in on app load
   useEffect(() => {
-    const checkAuthStatus = () => {
+    const checkAuthStatus = async () => {
       try {
         const token = localStorage.getItem('token');
         const refreshToken = localStorage.getItem('refreshToken');
@@ -44,42 +45,68 @@ export const AuthProvider = ({ children }) => {
         const storedUserData = localStorage.getItem('userData');
 
         if (token && userEmail) {
-          let userData;
+          try {
+            // Verify token with backend to ensure it's valid (prevents fake/demo tokens from granting access)
+            const resp = await api.get('/auth/me');
+            const apiUser = resp.data?.user;
 
-          // Try to use stored API user data first
-          if (storedUserData) {
-            try {
-              const parsedUserData = JSON.parse(storedUserData);
-              userData = {
-                id: parsedUserData.id,
-                email: userEmail,
-                firstName: parsedUserData.firstName,
-                lastName: parsedUserData.lastName,
-                role: parsedUserData.role,
-                department: parsedUserData.department,
-                token: token,
-              };
-            } catch (e) {
-              // Fall back to role mappings if stored data is corrupted
-              const userRole = ROLE_MAPPINGS[userEmail] || ROLES.INTERN;
-              userData = {
-                email: userEmail,
+            if (apiUser) {
+              const userRole = apiUser.role || ROLE_MAPPINGS[userEmail] || ROLES.INTERN;
+              const userData = {
+                id: apiUser._id || apiUser.id,
+                email: apiUser.email || userEmail,
+                firstName: apiUser.firstName,
+                lastName: apiUser.lastName,
                 role: userRole,
-                token: token,
+                department: apiUser.department,
+                token,
               };
-            }
-          } else {
-            // Fall back to role mappings if no stored data
-            const userRole = ROLE_MAPPINGS[userEmail] || ROLES.INTERN;
-            userData = {
-              email: userEmail,
-              role: userRole,
-              token: token,
-            };
-          }
 
-          setUser(userData);
-          setIsAuthenticated(true);
+              // Persist cleaned API user data
+              localStorage.setItem('userData', JSON.stringify(apiUser));
+              setUser(userData);
+              setIsAuthenticated(true);
+            } else {
+              // If backend does not return user (token invalid), clear storage
+              localStorage.removeItem('token');
+              localStorage.removeItem('refreshToken');
+              localStorage.removeItem('userEmail');
+              localStorage.removeItem('userData');
+              setUser(null);
+              setIsAuthenticated(false);
+            }
+          } catch (err) {
+            // If server is unreachable, fall back to client-side stored user (useful for offline/dev/demo)
+            // But do not trust arbitrary tokens — only restore if we have stored userData
+            if (storedUserData) {
+              try {
+                const parsedUserData = JSON.parse(storedUserData);
+                const userData = {
+                  id: parsedUserData.id,
+                  email: userEmail,
+                  firstName: parsedUserData.firstName,
+                  lastName: parsedUserData.lastName,
+                  role: parsedUserData.role || ROLE_MAPPINGS[userEmail] || ROLES.INTERN,
+                  department: parsedUserData.department,
+                  token,
+                };
+                setUser(userData);
+                setIsAuthenticated(true);
+              } catch (e) {
+                // corrupted stored data — clear it
+                localStorage.removeItem('userData');
+                setUser(null);
+                setIsAuthenticated(false);
+              }
+            } else {
+              setUser(null);
+              setIsAuthenticated(false);
+            }
+          }
+        } else {
+          // No token/userEmail present — ensure logged out state
+          setUser(null);
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Error checking auth status:', error);
@@ -87,6 +114,8 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         localStorage.removeItem('userEmail');
         localStorage.removeItem('userData');
+        setUser(null);
+        setIsAuthenticated(false);
       } finally {
         setLoading(false);
       }

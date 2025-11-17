@@ -11,6 +11,7 @@ import {
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
+import Portal from '../ui/Portal';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
 
@@ -69,6 +70,19 @@ const CalendarAttendanceView = () => {
 
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+  // Helpers to produce/parse local YYYY-MM-DD strings (avoids UTC timezone shifts)
+  const formatLocalDate = (date) => {
+    const d = new Date(date);
+    const y = d.getFullYear();
+    const m = `${d.getMonth() + 1}`.padStart(2, '0');
+    const day = `${d.getDate()}`.padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const parseLocalDateString = (s) => {
+    const [y, m, d] = s.split('-').map((v) => parseInt(v, 10));
+    return new Date(y, m - 1, d);
+  };
   useEffect(() => {
     loadAttendanceData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -76,16 +90,20 @@ const CalendarAttendanceView = () => {
 
   const loadAttendanceData = async () => {
     try {
-      const response = await apiService.getMyUpdates();
-      const userUpdates = response.data.updates || [];
-      processAttendanceData(userUpdates);
+      // Use attendance API instead of daily updates
+      const response = await apiService.getMyAttendance();
+      if (response.data && response.data.success) {
+        processAttendanceData(response.data.attendance);
+      } else {
+        throw new Error('Failed to load attendance data');
+      }
     } catch (error) {
       console.error('Error loading attendance data:', error);
       processAttendanceData([]);
     }
   };
 
-  const processAttendanceData = (userUpdates) => {
+  const processAttendanceData = (attendanceRecords) => {
     const attendanceMap = {};
 
     // Get calendar bounds for current month view
@@ -99,6 +117,8 @@ const CalendarAttendanceView = () => {
       currentDate.getMonth() + 1,
       0
     );
+
+  // Month bounds (used for debugging): firstDayOfMonth, lastDayOfMonth
     const startCalendar = new Date(firstDayOfMonth);
     startCalendar.setDate(startCalendar.getDate() - firstDayOfMonth.getDay());
     const endCalendar = new Date(lastDayOfMonth);
@@ -110,15 +130,16 @@ const CalendarAttendanceView = () => {
       d <= endCalendar;
       d.setDate(d.getDate() + 1)
     ) {
-      const dateString = d.toISOString().split('T')[0];
+      // Use local date string to avoid UTC offset causing previous/next day
+      const dateString = formatLocalDate(d);
       const dayOfWeek = d.getDay();
-      const isWeekend = dayOfWeek === 0; // Only Sunday is weekend now
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday (0) and Saturday (6) are weekends
       const isCurrentMonth = d.getMonth() === currentDate.getMonth();
 
-      // Find update for this date
-      const update = userUpdates.find((update) => {
-        const updateDate = new Date(update.date).toISOString().split('T')[0];
-        return updateDate === dateString;
+      // Find attendance record for this date
+      const attendanceRecord = attendanceRecords.find((record) => {
+        const recordDate = formatLocalDate(new Date(record.date));
+        return recordDate === dateString;
       });
 
       let status = 'none'; // Default for weekends and future dates
@@ -128,10 +149,14 @@ const CalendarAttendanceView = () => {
         const isToday = d.toDateString() === today.toDateString();
         const isPast = d < today && !isToday;
 
-        if (isPast) {
-          status = update ? 'present' : 'absent';
+        if (attendanceRecord) {
+          // Use the attendance record status
+          status = attendanceRecord.status; // 'present', 'absent', 'leave', 'holiday'
+        } else if (isPast) {
+          // If no record exists for a past working day, consider it absent
+          status = 'absent';
         } else if (isToday) {
-          status = update ? 'present' : 'pending';
+          status = 'pending';
         } else {
           status = 'future';
         }
@@ -142,7 +167,7 @@ const CalendarAttendanceView = () => {
         status,
         isCurrentMonth,
         isWeekend,
-        update,
+        attendanceRecord,
         day: d.getDate(),
       };
     }
@@ -228,42 +253,190 @@ const CalendarAttendanceView = () => {
     }
   };
 
+  // Modal state for viewing an inline daily update
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewModalData, setViewModalData] = useState(null);
+  const [listModalOpen, setListModalOpen] = useState(false);
+  const [listModalUpdates, setListModalUpdates] = useState([]);
+
+  const handleViewDetails = async (attendanceRecord) => {
+    try {
+      // If the attendance record already includes a populated dailyUpdate, use it directly
+      if (attendanceRecord?.dailyUpdate) {
+        const du = attendanceRecord.dailyUpdate;
+        const mappedDirect = {
+          id: du._id || du.id || null,
+          projectName: (du.project && du.project.name) || 'No Project Assigned',
+          date: du.date || attendanceRecord.date || null,
+          timestamp: du.createdAt || du.updatedAt || null,
+          workDone: du.workDone || 'No details provided',
+          challenges: du.challenges || '',
+          planForTomorrow: du.planForTomorrow || '',
+          user: du.user || null,
+        };
+        setViewModalData(mappedDirect);
+        setViewModalOpen(true);
+        return;
+      }
+
+      // If project-specific attendance contains a linked dailyUpdate, use that
+      if (attendanceRecord?.projectAttendance && attendanceRecord.projectAttendance.length > 0) {
+        const paWithUpdate = attendanceRecord.projectAttendance.find((pa) => pa.dailyUpdate);
+        if (paWithUpdate && paWithUpdate.dailyUpdate) {
+          const du = paWithUpdate.dailyUpdate;
+          const mappedPA = {
+            id: du._id || du.id || null,
+            projectName: (paWithUpdate.project && paWithUpdate.project.name) || 'No Project Assigned',
+            date: du.date || attendanceRecord.date || null,
+            timestamp: du.createdAt || du.updatedAt || null,
+            workDone: du.workDone || 'No details provided',
+            challenges: du.challenges || '',
+            planForTomorrow: du.planForTomorrow || '',
+            user: du.user || null,
+          };
+          setViewModalData(mappedPA);
+          setViewModalOpen(true);
+          return;
+        }
+      }
+      // attendanceRecord.dailyUpdate may be an id or an object
+      const updateId =
+        attendanceRecord?.dailyUpdate?._id || attendanceRecord?.dailyUpdate;
+
+      console.debug('handleViewDetails called with attendanceRecord:', attendanceRecord);
+      console.debug('Derived updateId:', updateId);
+
+      let resp;
+
+      if (updateId) {
+        // If we have an explicit id, fetch that update
+        resp = await apiService.getUpdate(updateId);
+        console.debug('Fetched update by id response:', resp);
+      } else {
+        // Fallback: try to fetch the user's updates for that date (do not redirect)
+        try {
+          if (attendanceRecord?.date) {
+            const dateOnly = formatLocalDate(attendanceRecord.date);
+            console.debug('Attempting fallback getMyUpdates for date:', dateOnly);
+            const listResp = await apiService.getMyUpdates({ startDate: dateOnly, endDate: dateOnly, limit: 10 });
+            console.debug('getMyUpdates fallback response:', listResp);
+
+            if (listResp.data && listResp.data.success && listResp.data.updates && listResp.data.updates.length > 0) {
+              // If there's a single update, open it inline; if multiple, show a small list modal
+              if (listResp.data.updates.length === 1) {
+                resp = { data: { success: true, update: listResp.data.updates[0] } };
+              } else {
+                setListModalUpdates(listResp.data.updates);
+                setListModalOpen(true);
+                resp = null;
+              }
+            } else {
+              resp = null;
+            }
+          } else {
+            // As a last resort ask for today's update
+            console.debug('No date on attendanceRecord; trying getTodayUpdate fallback');
+            const todayResp = await apiService.getTodayUpdate();
+            console.debug('getTodayUpdate response:', todayResp);
+            if (todayResp.data && todayResp.data.success && todayResp.data.update) {
+              resp = { data: { success: true, update: todayResp.data.update } };
+            } else {
+              resp = null;
+            }
+          }
+        } catch (innerErr) {
+          console.error('Fallback fetch failed:', innerErr);
+          resp = null;
+        }
+      }
+
+      if (!resp || !resp.data) {
+        // No single update available to open inline. If list modal was opened, just return.
+        if (listModalOpen) return;
+        // Otherwise show a friendly message inside a modal
+        setViewModalData({
+          projectName: 'Daily update submitted',
+          user: null,
+          date: attendanceRecord?.date || selectedDate || formatLocalDate(new Date()),
+          timestamp: null,
+          workDone: 'Daily update was submitted but details are not available.',
+          challenges: '',
+          planForTomorrow: '',
+        });
+        setViewModalOpen(true);
+        return;
+      }
+      if (resp.data && resp.data.success && resp.data.update) {
+        const u = resp.data.update;
+        const mapped = {
+          id: u._id,
+          projectName: u.project?.name || 'No Project Assigned',
+          date: u.date,
+          timestamp: u.createdAt,
+          workDone: u.workDone,
+          challenges: u.challenges,
+          planForTomorrow: u.planForTomorrow,
+          user: u.user || null,
+        };
+        setViewModalData(mapped);
+        setViewModalOpen(true);
+      } else {
+        // Fallback: show friendly placeholder modal
+        setViewModalData({
+          projectName: 'Daily update submitted',
+          user: null,
+          date: attendanceRecord?.date || selectedDate || formatLocalDate(new Date()),
+          timestamp: null,
+          workDone: 'Daily update was submitted but details are not available.',
+          challenges: '',
+          planForTomorrow: '',
+        });
+        setViewModalOpen(true);
+      }
+    } catch (err) {
+      console.error('Failed to fetch update details:', err);
+      alert('Failed to load update details');
+    }
+  };
+
   const getMonthlyStats = () => {
+    // Filter for current month working days only
     const monthData = Object.values(attendanceData).filter(
       (day) => day.isCurrentMonth && !day.isWeekend
     );
 
-    // Calculate actual working days in the month
-    const totalWorkingDays = getWorkingDaysInMonth(
-      currentDate.getFullYear(),
-      currentDate.getMonth()
-    );
-
-    const total = monthData.filter((day) =>
-      ['present', 'absent'].includes(day.status)
-    ).length;
+    // Calculate working days until today in current month
+    const today = new Date();
+    const firstOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const workingDaysUntilToday = getWorkingDaysUntilToday(firstOfMonth, today);
+    
     const present = monthData.filter((day) => day.status === 'present').length;
     const absent = monthData.filter((day) => day.status === 'absent').length;
+    const leaves = monthData.filter((day) => day.status === 'leave').length;
     const pending = monthData.filter((day) => day.status === 'pending').length;
+    
+    // Total should be working days until today, not all working days in month
+    const total = workingDaysUntilToday;
     const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
 
-    return { total, present, absent, pending, percentage, totalWorkingDays };
+    return { total, present, absent, leaves, pending, percentage };
   };
 
-  // Helper function to calculate working days in a month
-  const getWorkingDaysInMonth = (year, month) => {
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+  // Helper function to calculate working days until today
+  const getWorkingDaysUntilToday = (startDate, endDate) => {
     let workingDays = 0;
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0) {
-        // Only Sunday is non-working day (Saturday is working)
+    let currentDate = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Ensure we're counting up to and including today
+    while (currentDate <= end) {
+      const dayOfWeek = currentDate.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
         workingDays++;
       }
+      currentDate.setDate(currentDate.getDate() + 1);
     }
-
+    
     return workingDays;
   };
 
@@ -289,6 +462,7 @@ const CalendarAttendanceView = () => {
   };
 
   const selectedDayData = selectedDate ? attendanceData[selectedDate] : null;
+  const selectedLocalDate = selectedDate ? parseLocalDateString(selectedDate) : null;
   const stats = getMonthlyStats();
   const calendarDays = generateCalendarDays();
 
@@ -365,11 +539,11 @@ const CalendarAttendanceView = () => {
           <div className="flex items-center justify-center mb-2">
             <div className="w-5 h-5 bg-blue-600 rounded-full mr-2"></div>
             <p className="text-2xl font-bold text-blue-700">
-              {stats.totalWorkingDays}
+              {stats.total}
             </p>
           </div>
           <p className="text-sm font-medium text-blue-600">
-            Total Working Days
+            Working Days Until Today
           </p>
         </motion.div>
       </div>
@@ -382,11 +556,9 @@ const CalendarAttendanceView = () => {
             <div
               key={day}
               className={`p-3 text-center text-sm font-semibold rounded-lg ${
-                index === 0
-                  ? 'text-gray-400 bg-gray-50'
-                  : index === 6
-                    ? 'text-blue-700 bg-blue-100'
-                    : 'text-gray-700 bg-blue-50'
+                index === 0 || index === 6
+                  ? 'text-gray-400 bg-gray-50'  // Sunday and Saturday
+                  : 'text-gray-700 bg-blue-50' // Monday to Friday
               }`}
             >
               {day}
@@ -397,7 +569,7 @@ const CalendarAttendanceView = () => {
         {/* Calendar Days */}
         <div className="grid grid-cols-7 gap-2 p-4 bg-gray-50 rounded-2xl">
           {calendarDays.map((day, index) => {
-            const dateString = day.toISOString().split('T')[0];
+            const dateString = formatLocalDate(day);
             const status = getDayStatus(dateString);
             const dayData = attendanceData[dateString];
             const isToday = new Date().toDateString() === day.toDateString();
@@ -445,57 +617,69 @@ const CalendarAttendanceView = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h4 className="font-semibold text-gray-900 text-lg">
-                {new Date(selectedDate).toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
+                {selectedLocalDate
+                  ? selectedLocalDate.toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })
+                  : ''}
               </h4>
               <p className="text-sm text-gray-600 mt-1">
                 Click on any working day to see details
               </p>
             </div>
-            <Badge
-              className={`px-3 py-1 text-sm font-medium ${
-                selectedDayData.status === 'present'
-                  ? 'bg-green-100 text-green-800 border border-green-200'
-                  : selectedDayData.status === 'absent'
-                    ? 'bg-red-100 text-red-800 border border-red-200'
-                    : selectedDayData.status === 'pending'
-                      ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                      : 'bg-gray-100 text-gray-800 border border-gray-200'
-              }`}
-            >
-              {selectedDayData.status.charAt(0).toUpperCase() +
-                selectedDayData.status.slice(1)}
-            </Badge>
+            <div className="flex items-center space-x-3">
+              <Badge
+                className={`px-3 py-1 text-sm font-medium ${
+                  selectedDayData.status === 'present'
+                    ? 'bg-green-100 text-green-800 border border-green-200'
+                    : selectedDayData.status === 'absent'
+                      ? 'bg-red-100 text-red-800 border border-red-200'
+                      : selectedDayData.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                        : 'bg-gray-100 text-gray-800 border border-gray-200'
+                }`}
+              >
+                {selectedDayData.status.charAt(0).toUpperCase() +
+                  selectedDayData.status.slice(1)}
+              </Badge>
+
+              {/* Always show View Details when an attendanceRecord exists or status is present */}
+              {(selectedDayData.attendanceRecord || selectedDayData.status === 'present') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleViewDetails(selectedDayData.attendanceRecord || {})}
+                  className="bg-white hover:bg-gray-50 border-gray-300"
+                >
+                  <FiEye className="w-3 h-3 mr-1" />
+                  View Details
+                </Button>
+              )}
+            </div>
           </div>
 
-          {selectedDayData.update && (
+          {selectedDayData.attendanceRecord && (selectedDayData.attendanceRecord.dailyUpdate || selectedDayData.attendanceRecord.hasSubmittedUpdate) && (
             <div className="bg-white rounded-lg p-4 space-y-3 border border-blue-100">
-              <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <p className="text-sm text-gray-600 font-medium">
-                    Daily update submitted at{' '}
-                    {new Date(
-                      selectedDayData.update.timestamp
-                    ).toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    Daily update submitted
+                    {selectedDayData.attendanceRecord.checkInTime && 
+                      ` at ${new Date(selectedDayData.attendanceRecord.checkInTime).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}`
+                    }
                   </p>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    const update = selectedDayData.update;
-                    alert(
-                      `Daily Update Details:\n\nWork Done:\n${update.workDone}\n\nChallenges:\n${update.challenges}\n\nPlan for Tomorrow:\n${update.planForTomorrow}`
-                    );
-                  }}
+                  onClick={() => handleViewDetails(selectedDayData.attendanceRecord)}
                   className="bg-white hover:bg-gray-50 border-gray-300"
                 >
                   <FiEye className="w-3 h-3 mr-1" />
@@ -503,6 +687,126 @@ const CalendarAttendanceView = () => {
                 </Button>
               </div>
             </div>
+          )}
+
+          {/* Inline Update Details Modal */}
+          {viewModalOpen && viewModalData && (
+            <Portal>
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-semibold text-gray-900">Daily Update Details</h2>
+                    <button
+                      onClick={() => { setViewModalOpen(false); setViewModalData(null); }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <FiEye className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-gray-900">{viewModalData.projectName}</h3>
+                        <p className="text-sm text-gray-500">
+                          {viewModalData.user?.email || ''}
+                        </p>
+                        <div className="flex items-center space-x-2 text-xs text-gray-400">
+                          <span>
+                            {viewModalData.date ? new Date(viewModalData.date).toLocaleDateString() : ''}
+                          </span>
+                          <span>•</span>
+                          <span>
+                            {viewModalData.timestamp ? new Date(viewModalData.timestamp).toLocaleTimeString() : ''}
+                          </span>
+                        </div>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">Submitted</Badge>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium text-gray-700 mb-2">What was accomplished:</h4>
+                      <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{viewModalData.workDone || 'No details provided'}</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium text-gray-700 mb-2">Challenges faced:</h4>
+                      <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{viewModalData.challenges || 'None mentioned'}</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium text-gray-700 mb-2">Plan for tomorrow:</h4>
+                      <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{viewModalData.planForTomorrow || 'No plan provided'}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            </Portal>
+          )}
+
+          {/* List modal when multiple updates exist for same date */}
+          {listModalOpen && listModalUpdates && (
+            <Portal>
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold">Select an update</h2>
+                    <button
+                      onClick={() => { setListModalOpen(false); setListModalUpdates([]); }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {listModalUpdates.map((u) => (
+                      <div key={u._id} className="border border-gray-200 rounded-lg p-3 flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-gray-900">{u.project?.name || 'No Project'}</div>
+                          <div className="text-xs text-gray-500">{u.user ? `${u.user.firstName} ${u.user.lastName}` : u.user?.email}</div>
+                          <div className="text-xs text-gray-400">{new Date(u.date).toLocaleDateString()} • {new Date(u.createdAt || u.date).toLocaleTimeString()}</div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            className="px-3 py-1 bg-blue-600 text-white rounded"
+                            onClick={() => {
+                              const mapped = {
+                                id: u._id,
+                                projectName: u.project?.name || 'No Project Assigned',
+                                date: u.date,
+                                timestamp: u.createdAt,
+                                workDone: u.workDone,
+                                challenges: u.challenges,
+                                planForTomorrow: u.planForTomorrow,
+                                user: u.user || null,
+                              };
+                              setViewModalData(mapped);
+                              setViewModalOpen(true);
+                              setListModalOpen(false);
+                              setListModalUpdates([]);
+                            }}
+                          >
+                            View
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              </div>
+            </Portal>
           )}
 
           {selectedDayData.status === 'pending' && (
@@ -583,12 +887,12 @@ const CalendarAttendanceView = () => {
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-4 h-4 bg-gray-100 rounded"></div>
-            <span className="text-gray-600">Future/Sunday</span>
+            <span className="text-gray-600">Future/Weekend</span>
           </div>
         </div>
         <div className="mt-3 pt-3 border-t border-gray-100">
           <p className="text-center text-xs text-gray-500">
-            Working days: Monday to Saturday • Sunday is off
+            Working days: Monday to Friday • Saturday and Sunday are off
           </p>
         </div>
       </div>

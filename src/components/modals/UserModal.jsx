@@ -8,6 +8,7 @@ import {
   FiMapPin,
   FiCalendar,
   FiSave,
+  FiLock,
 } from 'react-icons/fi';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -23,35 +24,44 @@ const UserModal = ({
     name: '',
     email: '',
     phone: '',
-    department: '',
+    department: 'Engineering', // Set default department
     role: 'intern',
     status: 'active',
     joinDate: new Date().toISOString().split('T')[0],
+    password: '',
+    confirmPassword: '',
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (user && mode !== 'create') {
+    if (mode === 'edit' || mode === 'view') {
       setFormData({
-        name: user.name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        department: user.department || '',
-        role: user.role || 'intern',
-        status: user.status || 'active',
-        joinDate: user.joinDate || new Date().toISOString().split('T')[0],
+        name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
+        email: user?.email || '',
+        phone: user?.phoneNumber || '',
+        department: user?.department || '',
+        role: user?.role || 'intern',
+        status: user?.isActive ? 'active' : 'inactive',
+        joinDate: user?.joinDate
+          ? new Date(user.joinDate).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        password: '',
+        confirmPassword: '',
       });
     } else {
+      // Reset form for create mode
       setFormData({
         name: '',
         email: '',
         phone: '',
-        department: '',
+        department: 'Engineering', // Set default department
         role: 'intern',
         status: 'active',
         joinDate: new Date().toISOString().split('T')[0],
+        password: '',
+        confirmPassword: '',
       });
     }
     setErrors({});
@@ -60,29 +70,45 @@ const UserModal = ({
   const validateForm = () => {
     const newErrors = {};
 
+    // Name validation
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = 'Full name is required';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Name must be at least 2 characters';
     }
 
+    // Email validation
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email is invalid';
     }
 
-    if (!formData.department.trim()) {
-      newErrors.department = 'Department is required';
-    }
-
+    // Phone validation
     if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone is required';
+      newErrors.phone = 'Phone number is required';
+    } else if (!/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
+      newErrors.phone = 'Phone number must be exactly 10 digits';
+    }
+
+    // Password validation (only for create mode)
+    if (mode === 'create') {
+      if (!formData.password) {
+        newErrors.password = 'Password is required';
+      } else if (formData.password.length < 6) {
+        newErrors.password = 'Password must be at least 6 characters';
+      }
+
+      if (!formData.confirmPassword) {
+        newErrors.confirmPassword = 'Please confirm your password';
+      } else if (formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = 'Passwords do not match';
+      }
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
+  };    const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -92,24 +118,42 @@ const UserModal = ({
     setIsSubmitting(true);
 
     try {
+      // Split name into firstName and lastName
+      const nameParts = formData.name.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || firstName; // Use firstName if lastName is empty
+
       const userData = {
-        ...formData,
-        id: user?.id || Date.now(),
-        projects: user?.projects || 0,
-        lastLogin: user?.lastLogin || new Date().toLocaleString(),
+        firstName,
+        lastName,
+        email: formData.email,
+        phoneNumber: formData.phone,
+        department: formData.department || 'General',
+        role: formData.role,
+        isActive: formData.status === 'active',
+        joinDate: formData.joinDate,
       };
 
-      await onSave(userData, mode);
-      onClose();
+      // Add password for create mode
+      if (mode === 'create') {
+        userData.password = formData.password;
+      }
+
+      await onSave(userData);
     } catch (error) {
-      console.error('Error saving user:', error);
-      // Handle error (show toast, etc.)
+      console.error('Submit error:', error);
+      // Error handling is done in parent component
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleInputChange = (field, value) => {
+    // Format phone number to only allow digits and limit to 10
+    if (field === 'phone') {
+      value = value.replace(/\D/g, '').substring(0, 10);
+    }
+
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -126,8 +170,8 @@ const UserModal = ({
 
   const roles = [
     { value: 'admin', label: 'Administrator' },
-    { value: 'pm', label: 'Project Manager' },
-    { value: 'tl', label: 'Team Leader' },
+    { value: 'project_manager', label: 'Project Manager' },
+    { value: 'team_leader', label: 'Team Leader' },
     { value: 'intern', label: 'Intern' },
   ];
 
@@ -252,7 +296,9 @@ const UserModal = ({
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                         errors.phone ? 'border-red-300' : 'border-gray-300'
                       } ${mode === 'view' ? 'bg-gray-50' : ''}`}
-                      placeholder="Enter phone number"
+                      placeholder="Enter 10-digit phone number"
+                      maxLength="10"
+                      pattern="[0-9]{10}"
                     />
                   </div>
                   {errors.phone && (
@@ -291,6 +337,58 @@ const UserModal = ({
                     </p>
                   )}
                 </div>
+
+                {/* Password - Only show in create mode */}
+                {mode === 'create' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Password *
+                    </label>
+                    <div className="relative">
+                      <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) =>
+                          handleInputChange('password', e.target.value)
+                        }
+                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                          errors.password ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter password (min 6 characters)"
+                      />
+                    </div>
+                    {errors.password && (
+                      <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Confirm Password - Only show in create mode */}
+                {mode === 'create' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Confirm Password *
+                    </label>
+                    <div className="relative">
+                      <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input
+                        type="password"
+                        value={formData.confirmPassword}
+                        onChange={(e) =>
+                          handleInputChange('confirmPassword', e.target.value)
+                        }
+                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                          errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        placeholder="Confirm password"
+                      />
+                    </div>
+                    {errors.confirmPassword && (
+                      <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Role */}
                 <div>

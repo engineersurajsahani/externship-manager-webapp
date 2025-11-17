@@ -15,6 +15,3 @@ export {
   TableSkeleton,
   LoadingButton,
 } from './Loading';
-
-// You can now import multiple components like:
-// import { Button, Card, Input, Badge } from './components/ui';

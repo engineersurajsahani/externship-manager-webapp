@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   FiEdit3,
@@ -10,7 +10,6 @@ import {
   FiUser,
   FiUsers,
   FiFolder,
-  FiDownload,
   FiRefreshCw,
   FiTarget,
   FiCheckCircle,
@@ -23,6 +22,8 @@ import Badge from '../components/ui/Badge';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import ProjectUpdateModal from '../components/modals/ProjectUpdateModal';
+import Portal from '../components/ui/Portal';
+import { lockScroll, unlockScroll } from '../utils/scrollLock';
 
 const DailyUpdates = () => {
   const { getUserRole, ROLES, user } = useAuth();
@@ -31,22 +32,33 @@ const DailyUpdates = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [teamUpdates, setTeamUpdates] = useState([]);
   const [filteredUpdates, setFilteredUpdates] = useState([]);
+  const formatLocalDateForInput = (d) => {
+    const dateObj = new Date(d);
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split('T')[0]
+    formatLocalDateForInput(new Date())
   );
-  const [statusFilter, setStatusFilter] = useState('all');
+  
   const [selectedUpdate, setSelectedUpdate] = useState(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  // PM-specific filters
+  const { id: routeUpdateId } = useParams();
+  const location = useLocation();
+  const queryDate = new URLSearchParams(location.search).get('date');
+  
   const [selectedProject, setSelectedProject] = useState('all');
   const [selectedIntern, setSelectedIntern] = useState('all');
   const [projects, setProjects] = useState([]);
   const [interns, setInterns] = useState([]);
-  // Recent updates filter for intern/TL
+  
   const [recentFilter, setRecentFilter] = useState('recent3');
-  const [showAllUpdates, setShowAllUpdates] = useState(false);
+  const [showAllUpdates, setShowAllUpdates] = useState(true);
 
-  // NEW: Project-specific states for interns
+  
   const [userProjects, setUserProjects] = useState([]);
   const [projectUpdateModal, setProjectUpdateModal] = useState({
     isOpen: false,
@@ -55,111 +67,116 @@ const DailyUpdates = () => {
   const [todaysSubmissions, setTodaysSubmissions] = useState(new Set());
   const [loadingProjects, setLoadingProjects] = useState(false);
 
-  // Load team updates data
+  
   useEffect(() => {
     loadTeamUpdates();
+    // If route contains an update id, attempt to open it
+    const openRouteUpdate = async () => {
+      if (routeUpdateId) {
+        try {
+          const resp = await apiService.getUpdate(routeUpdateId);
+          if (resp.data && resp.data.success && resp.data.update) {
+            const u = resp.data.update;
+            const mapped = {
+              id: u._id,
+              userEmail: u.user?.email || 'No Email',
+              userName: u.user ? `${u.user.firstName} ${u.user.lastName}` : 'Unknown User',
+              userRole: u.user?.role || 'intern',
+              department: u.user?.department || 'Unknown',
+              date: u.date ? formatLocalDateForInput(u.date) : null,
+              timestamp: u.createdAt,
+              workDone: u.workDone,
+              challenges: u.challenges,
+              planForTomorrow: u.planForTomorrow,
+              status: 'submitted',
+              projectId: u.project?._id || null,
+              projectName: u.project?.name || 'No Project Assigned',
+            };
+            setSelectedUpdate(mapped);
+            setShowUpdateModal(true);
+          }
+        } catch (err) {
+          console.error('Failed to load update from route id:', err);
+        }
+      }
+    };
+
+    openRouteUpdate();
+
+    // If a date query param is provided, set the selected date so the page filters to that date
+    if (queryDate) {
+      setSelectedDate(queryDate);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // If the page was opened via ?date=YYYY-MM-DD and the filtered results narrow to one update,
+  // open it automatically to provide a smooth fallback from the calendar view.
+  useEffect(() => {
+    if (!routeUpdateId && queryDate && filteredUpdates && filteredUpdates.length === 1 && !showUpdateModal) {
+      setSelectedUpdate(filteredUpdates[0]);
+      setShowUpdateModal(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredUpdates, queryDate, routeUpdateId]);
+
   // Filter updates based on filters
   useEffect(() => {
-    console.log('🎀 Starting filtering process');
-    console.log('🗺 Original teamUpdates:', teamUpdates);
-    console.log('🗺 teamUpdates length:', teamUpdates.length);
-
     let filtered = teamUpdates;
+    const todayStr = formatLocalDateForInput(new Date());
 
     // Role-based filtering
     if (userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) {
-      console.log('👑 Applying INTERN/TEAM_LEADER filters');
       // For interns and team leaders, apply recent updates filter
       if (userRole === ROLES.INTERN) {
         // Interns only see their own updates
-        console.log('📱 Filtering for INTERN user:', user?.email);
-        console.log('📱 Updates before intern filter:', filtered.length);
-        filtered = filtered.filter((update) => {
-          console.log(
-            '🔍 Checking update:',
-            update.userEmail,
-            'vs',
-            user?.email
-          );
-          return update.userEmail === user?.email;
-        });
-        console.log('📱 Updates after intern filter:', filtered.length);
+        filtered = filtered.filter((update) => update.userEmail === user?.email);
       }
 
       if (!showAllUpdates) {
         // Apply recent filter
         const now = new Date();
         if (recentFilter === 'recent3') {
-          // Show only recent 3 updates - ensure we have updates before slicing
-          console.log('🔍 Applying recent3 filter, before:', filtered.length);
           // Always slice, even if there are fewer than 3 items
           filtered = filtered.slice(0, 3);
-          console.log('🔍 After recent3 filter:', filtered.length);
         } else if (recentFilter === 'lastWeek') {
           const lastWeek = new Date(now);
           lastWeek.setDate(lastWeek.getDate() - 7);
-          filtered = filtered.filter(
-            (update) => new Date(update.date) >= lastWeek
-          );
+          filtered = filtered.filter((update) => new Date(update.date) >= lastWeek);
         } else if (recentFilter === 'thisMonth') {
           const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-          filtered = filtered.filter(
-            (update) => new Date(update.date) >= thisMonth
-          );
+          filtered = filtered.filter((update) => new Date(update.date) >= thisMonth);
         }
       }
     } else if (userRole === ROLES.PROJECT_MANAGER) {
       // Project filter for PM
       if (selectedProject !== 'all') {
-        filtered = filtered.filter(
-          (update) => update.projectId?.toString() === selectedProject
-        );
+        filtered = filtered.filter((update) => update.projectId?.toString() === selectedProject);
       }
 
       // Intern filter for PM (within selected project)
       if (selectedIntern !== 'all') {
-        filtered = filtered.filter(
-          (update) => update.userEmail === selectedIntern
-        );
+        filtered = filtered.filter((update) => update.userEmail === selectedIntern);
       }
     }
 
-    // Date and status filters - only apply if not intern/TL or if showing all updates
-    if (
+    // Date filter - apply when allowed or when selected date is today
+    const shouldApplyDateFilter =
       !(userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) ||
-      showAllUpdates
-    ) {
+      showAllUpdates ||
+      selectedDate === todayStr;
+
+    if (shouldApplyDateFilter) {
       // Date filter
       if (selectedDate) {
         filtered = filtered.filter((update) => update.date === selectedDate);
       }
-
-      // Status filter
-      if (statusFilter !== 'all') {
-        filtered = filtered.filter((update) => {
-          if (statusFilter === 'pending')
-            return !update.status || update.status === 'pending';
-          if (statusFilter === 'submitted')
-            return (
-              update.status === 'submitted' || update.status === 'approved'
-            );
-          if (statusFilter === 'missing') return update.status === 'missing';
-          return true;
-        });
-      }
     }
-
-    console.log('🎆 Final filtered updates:', filtered);
-    console.log('🎆 Final filtered updates length:', filtered.length);
 
     setFilteredUpdates(filtered);
   }, [
     teamUpdates,
     selectedDate,
-    statusFilter,
     selectedProject,
     selectedIntern,
     userRole,
@@ -176,40 +193,28 @@ const DailyUpdates = () => {
     try {
       let dailyUpdates = [];
 
-      // Try to fetch from API first
       try {
         let apiResponse;
-
-        console.log('🔍 Fetching updates for role:', userRole);
-        console.log('📧 Current user:', user?.email);
-
         if (userRole === ROLES.INTERN) {
           // Interns only get their own updates
-          console.log('📱 Fetching MY updates as INTERN');
           apiResponse = await apiService.getMyUpdates();
         } else if (userRole === ROLES.TEAM_LEADER) {
           // Team leaders get their team's updates
-          console.log('👥 Fetching TEAM updates as TEAM_LEADER');
           apiResponse = await apiService.getTeamUpdates();
         } else if (userRole === ROLES.PROJECT_MANAGER) {
           // Project managers get all updates from their projects
-          console.log('📊 Fetching TEAM updates as PROJECT_MANAGER');
           apiResponse = await apiService.getTeamUpdates();
         } else {
           // Admin gets all updates
-          console.log('🔒 Fetching ALL updates as ADMIN');
           apiResponse = await apiService.getAllUpdates();
         }
 
-        console.log('🌐 API Response:', apiResponse);
-
         if (apiResponse.data.success) {
-          console.log('📜 Raw updates from API:', apiResponse.data.updates);
-          // Ensure updates array exists
+          
           const updates = apiResponse.data.updates || [];
-          console.log('🔢 Number of raw updates:', updates.length);
+          console.debug('API returned updates:', updates.length, updates);
 
-          // Process all updates regardless of length
+          
           dailyUpdates = updates.map((update) => ({
             id: update._id,
             userEmail: update.user?.email || 'No Email',
@@ -218,7 +223,7 @@ const DailyUpdates = () => {
               : 'Unknown User',
             userRole: update.user?.role || 'intern',
             department: update.user?.department || 'Unknown',
-            date: new Date(update.date).toISOString().split('T')[0],
+            date: formatLocalDateForInput(update.date),
             timestamp: update.createdAt,
             workDone: update.workDone,
             challenges: update.challenges,
@@ -228,15 +233,12 @@ const DailyUpdates = () => {
             projectName: update.project?.name || 'No Project Assigned',
           }));
 
-          console.log('🔄 Processed all updates, count:', dailyUpdates.length);
-
-          console.log('🔧 Processed updates:', dailyUpdates);
-          console.log('🔢 Number of processed updates:', dailyUpdates.length);
+          
         }
       } catch (apiError) {
         console.error('Failed to fetch updates from API:', apiError);
 
-        // Show user-friendly error message
+        
         if (
           apiError.code === 'ECONNREFUSED' ||
           apiError.message.includes('Network Error')
@@ -246,18 +248,17 @@ const DailyUpdates = () => {
           );
         }
 
-        // No fallback to localStorage since we're using MongoDB
+        
         dailyUpdates = [];
       }
 
-      // Sort by date (newest first)
+      
       dailyUpdates.sort(
         (a, b) =>
           new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date)
       );
 
-      console.log('🗒 Sorted updates:', dailyUpdates);
-      console.log('📦 Setting team updates with', dailyUpdates.length, 'items');
+      console.debug('Final processed updates:', dailyUpdates.length, dailyUpdates);
 
       setTeamUpdates(dailyUpdates);
 
@@ -293,7 +294,7 @@ const DailyUpdates = () => {
     }
   };
 
-  // NEW: Load user's assigned projects (for interns)
+  
   const loadUserProjects = async () => {
     if (userRole !== ROLES.INTERN) return;
 
@@ -301,7 +302,15 @@ const DailyUpdates = () => {
     try {
       const response = await apiService.getMyProjects();
       if (response.data.success && response.data.projects) {
-        const projectsWithDetails = response.data.projects.map((project) => ({
+        const projectsWithDetails = response.data.projects
+          .filter((project) => {
+            // For interns and team leaders, exclude completed projects
+            if (userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) {
+              return project.status !== 'completed';
+            }
+            return true; // Project managers and admins see all projects
+          })
+          .map((project) => ({
           id: project._id,
           name: project.name,
           description: project.description,
@@ -328,7 +337,7 @@ const DailyUpdates = () => {
         }));
         setUserProjects(projectsWithDetails);
 
-        // Check today's submissions for each project
+        
         await checkTodaysSubmissions(projectsWithDetails);
       }
     } catch (error) {
@@ -338,14 +347,37 @@ const DailyUpdates = () => {
     }
   };
 
-  // NEW: Check which projects have today's submissions
+  
   const checkTodaysSubmissions = async (projects) => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = formatLocalDateForInput(new Date());
       const submissions = new Set();
 
+      
+      const response = await apiService.getMyAttendance();
+      if (response.data.success && response.data.attendance) {
+        const todayAttendance = response.data.attendance.find((record) =>
+          formatLocalDateForInput(record.date) === today
+        );
+
+        if (todayAttendance && todayAttendance.projectAttendance) {
+          
+          todayAttendance.projectAttendance.forEach((projectAtt) => {
+            if (projectAtt.hasSubmittedUpdate && projectAtt.status === 'present') {
+              submissions.add(projectAtt.project.toString());
+            }
+          });
+        }
+      }
+
+      setTodaysSubmissions(submissions);
+    } catch (error) {
+      console.error('Error checking today submissions:', error);
+      
+      const today = formatLocalDateForInput(new Date());
+      const submissions = new Set();
+      
       for (const project of projects) {
-        // Check if user has submitted for this project today
         const userTodayUpdates = teamUpdates.filter(
           (update) =>
             update.userEmail === user?.email &&
@@ -357,14 +389,11 @@ const DailyUpdates = () => {
           submissions.add(project.id);
         }
       }
-
       setTodaysSubmissions(submissions);
-    } catch (error) {
-      console.error('Error checking today submissions:', error);
     }
   };
 
-  // NEW: Load projects when component mounts (for interns)
+  
   useEffect(() => {
     if (userRole === ROLES.INTERN) {
       loadUserProjects();
@@ -372,12 +401,12 @@ const DailyUpdates = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userRole, teamUpdates]); // Re-run when teamUpdates changes
 
-  // NEW: Handle project-specific update submission
+  
   const handleProjectUpdateSubmit = (project) => {
     setProjectUpdateModal({ isOpen: true, project });
   };
 
-  // NEW: Handle update submission success
+  
   const handleUpdateSuccess = () => {
     setProjectUpdateModal({ isOpen: false, project: null });
     // Reload data
@@ -405,6 +434,13 @@ const DailyUpdates = () => {
     setSelectedUpdate(update);
     setShowUpdateModal(true);
   };
+
+  
+  useEffect(() => {
+    if (showUpdateModal) lockScroll();
+    else unlockScroll();
+    return () => unlockScroll();
+  }, [showUpdateModal]);
 
   if (isLoading) {
     return (
@@ -769,12 +805,13 @@ const DailyUpdates = () => {
 
         {/* Update Detail Modal */}
         {showUpdateModal && selectedUpdate && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-40">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
-            >
+          <Portal>
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+              >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">
                   Daily Update Details
@@ -844,8 +881,9 @@ const DailyUpdates = () => {
                   </p>
                 </div>
               </div>
-            </motion.div>
-          </div>
+              </motion.div>
+            </div>
+          </Portal>
         )}
       </div>
     );
@@ -901,10 +939,6 @@ const DailyUpdates = () => {
               />
               Refresh
             </Button>
-            <Button variant="outline">
-              <FiDownload className="w-4 h-4 mr-2" />
-              Export
-            </Button>
           </div>
         </div>
       </motion.div>
@@ -930,20 +964,7 @@ const DailyUpdates = () => {
                 />
               </div>
 
-              {/* Status Filter */}
-              <div className="flex items-center space-x-2">
-                <FiFilter className="w-4 h-4 text-gray-400" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">All Status</option>
-                  <option value="submitted">Submitted</option>
-                  <option value="pending">Pending</option>
-                  <option value="missing">Missing</option>
-                </select>
-              </div>
+              {/* Status filter removed — only date filter is displayed */}
 
               {/* Project Filter (PM only) */}
               {userRole === ROLES.PROJECT_MANAGER && (

@@ -60,40 +60,16 @@ const Login = () => {
         return;
       }
     } catch (err) {
-      // Fallback to demo authentication if API fails
-      const demoUser = DEMO_USERS.find(
-        (user) =>
-          user.email === formData.email && user.password === formData.password
-      );
-
-      if (demoUser) {
-        // Demo login success
-        const demoToken = 'demo-token-' + Date.now();
-        login(formData.email, demoToken);
-        navigate('/dashboard');
-        return;
-      }
-
-      // If both API and demo authentication fail, show appropriate error
-      if (
-        err.code === 'ECONNREFUSED' ||
-        err.message.includes('Network Error')
-      ) {
-        setError(
-          'Server unavailable. Try demo credentials below or ensure backend is running.'
-        );
-      } else if (err.response?.status === 401 || !demoUser) {
-        setError(
-          'Invalid email or password. Please try the demo credentials below.'
-        );
+      // Do NOT fall back to a client-side demo login automatically.
+      // Only show an informative error so authentication must come from the server.
+      if (err.code === 'ECONNREFUSED' || err.message.includes('Network Error')) {
+        setError('Server unavailable. Please ensure the backend is running.');
+      } else if (err.response?.status === 401) {
+        setError('Invalid email or password.');
       } else if (err.response?.status === 404) {
-        setError(
-          'User not found. Please check your email address or try demo credentials.'
-        );
+        setError('User not found. Please check your email address.');
       } else {
-        setError(
-          'Login failed. Please try again or use demo credentials below.'
-        );
+        setError('Login failed. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -222,12 +198,8 @@ const Login = () => {
                   />
                   <span className="ml-2 text-white/80">Remember me</span>
                 </label>
-                <button
-                  type="button"
-                  className="text-white/80 hover:text-white transition-colors"
-                >
-                  Forgot password?
-                </button>
+                {/* Forgot password removed - only admin demo login is allowed from this page */}
+                <div />
               </div>
 
               <Button
@@ -260,7 +232,7 @@ const Login = () => {
                   <motion.button
                     key={user.role}
                     onClick={() => fillDemoCredentials(user)}
-                    className="p-3 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm font-medium transition-all duration-200 border border-white/20 hover:border-white/40"
+                    className="p-3 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm font-medium transition-all duration-200 border border-white/20 hover:border-white/40 w-full text-left"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     initial={{ opacity: 0, y: 10 }}
@@ -268,9 +240,8 @@ const Login = () => {
                     transition={{ delay: 0.6 + index * 0.1 }}
                   >
                     <div className="font-semibold">{user.role}</div>
-                    <div className="text-xs text-white/70 mt-1">
-                      {user.email}
-                    </div>
+                    <div className="text-xs text-white/70 mt-1">{user.email}</div>
+                    <div className="text-xs text-white/70 mt-1">Password: {user.password}</div>
                   </motion.button>
                 ))}
               </div>

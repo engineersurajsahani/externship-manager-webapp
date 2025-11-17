@@ -51,7 +51,7 @@ export const seedProjectData = async () => {
       }
     }
 
-    console.log(`Seeded ${createdProjects.length} projects to MongoDB`);
+  // debug output removed: seeded projects count
     return createdProjects;
   } catch (error) {
     console.error('Error seeding project data:', error);
@@ -65,9 +65,6 @@ export const seedPMUsers = async () => {
   console.warn(
     'seedPMUsers: User creation should be handled through proper registration/admin panels.'
   );
-  console.log(
-    'Please use the user management interface to create Project Manager accounts.'
-  );
 
   // For development only - in production this should not be used
   try {
@@ -79,9 +76,7 @@ export const seedPMUsers = async () => {
     );
 
     if (existingPMs.length === 0) {
-      console.log(
-        'No Project Managers found. Please create PM accounts through the user management system.'
-      );
+      // debug output removed: no project managers found
     }
 
     return existingUsers;
@@ -94,12 +89,7 @@ export const seedPMUsers = async () => {
 // Enhanced daily updates seeding is no longer needed with MongoDB
 // Daily updates should be created naturally by users through the interface
 export const seedEnhancedDailyUpdates = async () => {
-  console.log(
-    'seedEnhancedDailyUpdates: Daily updates are now managed through MongoDB.'
-  );
-  console.log(
-    'Users will create daily updates naturally through the application interface.'
-  );
+  // debug output removed: seedEnhancedDailyUpdates is deprecated
 
   // This function is deprecated in the MongoDB setup
   return [];
