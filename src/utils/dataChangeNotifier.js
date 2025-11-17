@@ -15,9 +15,7 @@ export const notifyDataChange = (
   });
 
   window.dispatchEvent(event);
-
-  // Log for debugging
-  console.log(`Data change notified: ${dataType} - ${operation}`, data);
+  // Debug log removed
 };
 
 // API-based data change notifier for MongoDB architecture

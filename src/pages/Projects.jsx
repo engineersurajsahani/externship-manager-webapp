@@ -27,6 +27,8 @@ import Badge from '../components/ui/Badge';
 import StatsCard from '../components/StatsCard';
 import ProjectModal from '../components/modals/ProjectModal';
 import ProjectAssignmentModal from '../components/modals/ProjectAssignmentModal';
+import Portal from '../components/ui/Portal';
+import { lockScroll, unlockScroll } from '../utils/scrollLock';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 
@@ -170,7 +172,7 @@ const Projects = () => {
     ) {
       setProjects((prevProjects) =>
         prevProjects.map((project) => {
-          if (project.id === projectId) {
+          if (project._id === projectId || project.id === projectId) {
             return { ...project, status: 'archived' };
           }
           return project;
@@ -497,8 +499,9 @@ const Projects = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="p-6 hover:shadow-lg transition-shadow">
-                <div className="flex items-start justify-between mb-4">
+              <Card className="p-6 hover:shadow-lg transition-shadow h-full">
+                <div className="flex flex-col h-full">
+                  <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center">
                     <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
                       <FiBriefcase className="w-5 h-5 text-indigo-600" />
@@ -536,22 +539,6 @@ const Projects = () => {
                   )}
                 </div>
 
-                {/* Progress Bar */}
-                <div className="mb-4">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">Progress</span>
-                    <span className="font-medium">
-                      {project.progress || 0}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${project.progress || 0}%` }}
-                    />
-                  </div>
-                </div>
-
                 <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                   <div className="flex items-center">
                     <FiUsers className="w-4 h-4 mr-1" />
@@ -567,7 +554,7 @@ const Projects = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 mt-auto">
                   <Button
                     variant="outline"
                     size="sm"
@@ -595,6 +582,7 @@ const Projects = () => {
                     <FiUserPlus className="w-4 h-4 mr-2" />
                     Team
                   </Button>
+                </div>
                 </div>
               </Card>
             </motion.div>
@@ -781,6 +769,14 @@ const InternProjectsView = ({ user }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  React.useEffect(() => {
+    if (showProjectModal) {
+      lockScroll();
+      return () => unlockScroll();
+    }
+    return undefined;
+  }, [showProjectModal]);
+
   const loadInternProjects = async () => {
     setIsLoading(true);
     try {
@@ -838,7 +834,11 @@ const InternProjectsView = ({ user }) => {
     return 'bg-red-500';
   };
 
-  const calculateDaysRemaining = (endDate) => {
+  const calculateDaysRemaining = (endDate, status) => {
+    if (status === 'completed') return 'Completed';
+
+    if (!endDate) return 'No end date';
+
     const end = new Date(endDate);
     const now = new Date();
     const diffTime = end - now;
@@ -960,23 +960,7 @@ const InternProjectsView = ({ user }) => {
                       {project.description}
                     </p>
 
-                    {/* Progress Bar */}
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-gray-700">
-                          Progress
-                        </span>
-                        <span className="text-sm text-gray-600">
-                          {project.progress || 0}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${getProgressColor(project.progress)} transition-all duration-300`}
-                          style={{ width: `${project.progress || 0}%` }}
-                        ></div>
-                      </div>
-                    </div>
+                    {/* Progress removed from cards */}
 
                     {/* Project Details */}
                     <div className="space-y-3 mb-4">
@@ -1011,9 +995,9 @@ const InternProjectsView = ({ user }) => {
                           <span>Time Left</span>
                         </div>
                         <div
-                          className={`font-medium text-right ${calculateDaysRemaining(project.endDate).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(project.endDate).includes('remaining') && parseInt(calculateDaysRemaining(project.endDate)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}
+                          className={`font-medium text-right ${calculateDaysRemaining(project.endDate, project.status).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(project.endDate, project.status).includes('remaining') && parseInt(calculateDaysRemaining(project.endDate, project.status)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}
                         >
-                          {calculateDaysRemaining(project.endDate)}
+                          {calculateDaysRemaining(project.endDate, project.status)}
                         </div>
                       </div>
                     </div>
@@ -1066,271 +1050,273 @@ const InternProjectsView = ({ user }) => {
 
       {/* Project Detail Modal */}
       {showProjectModal && selectedProject && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <FiBriefcase className="w-8 h-8 text-white" />
+        <Portal>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <FiBriefcase className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {selectedProject.name}
+                    </h2>
+                    {selectedProject.myRole && (
+                      <p className="text-blue-600 font-medium">
+                        {selectedProject.myRole}
+                      </p>
+                    )}
+                    <Badge className={getStatusColor(selectedProject.status)}>
+                      {selectedProject.status
+                        ? selectedProject.status.charAt(0).toUpperCase() +
+                          selectedProject.status.slice(1)
+                        : 'Unknown'}
+                    </Badge>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {selectedProject.name}
-                  </h2>
-                  {selectedProject.myRole && (
-                    <p className="text-blue-600 font-medium">
-                      {selectedProject.myRole}
-                    </p>
-                  )}
-                  <Badge className={getStatusColor(selectedProject.status)}>
-                    {selectedProject.status
-                      ? selectedProject.status.charAt(0).toUpperCase() +
-                        selectedProject.status.slice(1)
-                      : 'Unknown'}
-                  </Badge>
-                </div>
+                <button
+                  onClick={() => setShowProjectModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
               </div>
-              <button
-                onClick={() => setShowProjectModal(false)}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
-              >
-                ×
-              </button>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Project Details */}
-              <div className="lg:col-span-2 space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Project Description
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    {selectedProject.description}
-                  </p>
-                </div>
-
-                {/* Technologies */}
-                {selectedProject.technologies && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Project Details */}
+                <div className="lg:col-span-2 space-y-6">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                      Technologies
+                      Project Description
                     </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedProject.technologies.map((tech, i) => (
-                        <span
-                          key={i}
-                          className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium"
-                        >
-                          {tech}
-                        </span>
-                      ))}
-                    </div>
+                    <p className="text-gray-600 leading-relaxed">
+                      {selectedProject.description}
+                    </p>
                   </div>
-                )}
 
-                {/* Tasks */}
-                {selectedProject.tasks && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                      My Tasks
-                    </h3>
-                    <div className="space-y-3">
-                      {selectedProject.tasks.map((task) => (
-                        <div
-                          key={task.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                        >
-                          <div className="flex items-center space-x-3">
-                            {task.status === 'completed' ? (
-                              <FiCheckCircle className="w-5 h-5 text-green-600" />
-                            ) : (
-                              <FiAlertCircle className="w-5 h-5 text-yellow-600" />
-                            )}
-                            <div>
-                              <p className="font-medium text-gray-900">
-                                {task.title}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                Due:{' '}
-                                {new Date(task.dueDate).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge className={getTaskStatusColor(task.status)}>
-                            {task.status.charAt(0).toUpperCase() +
-                              task.status.slice(1)}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Weekly Goals from Team Leader */}
-                {selectedProject.weeklyGoals &&
-                  selectedProject.weeklyGoals.length > 0 && (
+                  {/* Technologies */}
+                  {selectedProject.technologies && (
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                        <FiTarget className="w-5 h-5 inline mr-2 text-green-600" />
-                        Weekly Goals
+                        Technologies
                       </h3>
-                      <div className="space-y-3">
-                        {selectedProject.weeklyGoals
-                          .sort(
-                            (a, b) =>
-                              new Date(b.createdAt) - new Date(a.createdAt)
-                          )
-                          .map((goal) => (
-                            <div
-                              key={goal.id}
-                              className={`p-4 border rounded-lg ${
-                                goal.status === 'current'
-                                  ? 'bg-green-50 border-green-200'
-                                  : 'bg-gray-50 border-gray-200'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <span
-                                  className={`font-medium ${
-                                    goal.status === 'current'
-                                      ? 'text-green-800'
-                                      : 'text-gray-700'
-                                  }`}
-                                >
-                                  {goal.week}
-                                </span>
-                                <div className="flex items-center space-x-2">
-                                  <Badge
-                                    className={
-                                      goal.status === 'current'
-                                        ? 'bg-green-100 text-green-800'
-                                        : 'bg-gray-100 text-gray-800'
-                                    }
-                                  >
-                                    {goal.status === 'current'
-                                      ? 'Current Goal'
-                                      : 'Completed'}
-                                  </Badge>
-                                </div>
-                              </div>
-                              <p className="text-gray-700 mb-2">{goal.goal}</p>
-                              <div className="flex items-center text-sm text-gray-500">
-                                <FiUsers className="w-3 h-3 mr-1" />
-                                <span>
-                                  Set by{' '}
-                                  {goal.setBy?.firstName && goal.setBy?.lastName
-                                    ? `${goal.setBy.firstName} ${goal.setBy.lastName}`
-                                    : 'Team Leader'}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
+                      <div className="flex flex-wrap gap-2">
+                        {selectedProject.technologies.map((tech, i) => (
+                          <span
+                            key={i}
+                            className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium"
+                          >
+                            {tech}
+                          </span>
+                        ))}
                       </div>
                     </div>
                   )}
-              </div>
 
-              {/* Sidebar Info */}
-              <div className="space-y-6">
-                {/* Progress */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-3">
-                    Progress Overview
-                  </h4>
-                  <div className="space-y-3">
+                  {/* Tasks */}
+                  {selectedProject.tasks && (
                     <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm text-gray-600">
-                          Overall Progress
-                        </span>
-                        <span className="text-sm font-medium">
-                          {selectedProject.progress || 0}%
-                        </span>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                        My Tasks
+                      </h3>
+                      <div className="space-y-3">
+                        {selectedProject.tasks.map((task) => (
+                          <div
+                            key={task.id}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                          >
+                            <div className="flex items-center space-x-3">
+                              {task.status === 'completed' ? (
+                                <FiCheckCircle className="w-5 h-5 text-green-600" />
+                              ) : (
+                                <FiAlertCircle className="w-5 h-5 text-yellow-600" />
+                              )}
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  {task.title}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  Due:{' '}
+                                  {new Date(task.dueDate).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge className={getTaskStatusColor(task.status)}>
+                              {task.status.charAt(0).toUpperCase() +
+                                task.status.slice(1)}
+                            </Badge>
+                          </div>
+                        ))}
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${getProgressColor(selectedProject.progress)}`}
-                          style={{ width: `${selectedProject.progress || 0}%` }}
-                        ></div>
-                      </div>
                     </div>
-                  </div>
-                </div>
+                  )}
 
-                {/* Project Timeline */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-3">Timeline</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Start Date:</span>
-                      <span className="font-medium">
-                        {new Date(
-                          selectedProject.startDate
-                        ).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">End Date:</span>
-                      <span className="font-medium">
-                        {new Date(selectedProject.endDate).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Status:</span>
-                      <span
-                        className={`font-medium ${calculateDaysRemaining(selectedProject.endDate).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(selectedProject.endDate).includes('remaining') && parseInt(calculateDaysRemaining(selectedProject.endDate)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}
-                      >
-                        {calculateDaysRemaining(selectedProject.endDate)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Team Information */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-3">Team</h4>
-                  <div className="space-y-3 text-sm">
-                    {selectedProject.projectManager && (
+                  {/* Weekly Goals from Team Leader */}
+                  {selectedProject.weeklyGoals &&
+                    selectedProject.weeklyGoals.length > 0 && (
                       <div>
-                        <span className="text-gray-600">Project Manager:</span>
-                        <p className="font-medium">
-                          {selectedProject.projectManager.firstName}{' '}
-                          {selectedProject.projectManager.lastName}
-                        </p>
-                        <p className="text-gray-500">
-                          {selectedProject.projectManager.email}
-                        </p>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                          <FiTarget className="w-5 h-5 inline mr-2 text-green-600" />
+                          Weekly Goals
+                        </h3>
+                        <div className="space-y-3">
+                          {selectedProject.weeklyGoals
+                            .sort(
+                              (a, b) =>
+                                new Date(b.createdAt) - new Date(a.createdAt)
+                            )
+                            .map((goal) => (
+                              <div
+                                key={goal.id}
+                                className={`p-4 border rounded-lg ${
+                                  goal.status === 'current'
+                                    ? 'bg-green-50 border-green-200'
+                                    : 'bg-gray-50 border-gray-200'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <span
+                                    className={`font-medium ${
+                                      goal.status === 'current'
+                                        ? 'text-green-800'
+                                        : 'text-gray-700'
+                                    }`}
+                                  >
+                                    {goal.week}
+                                  </span>
+                                  <div className="flex items-center space-x-2">
+                                    <Badge
+                                      className={
+                                        goal.status === 'current'
+                                          ? 'bg-green-100 text-green-800'
+                                          : 'bg-gray-100 text-gray-800'
+                                      }
+                                    >
+                                      {goal.status === 'current'
+                                        ? 'Current Goal'
+                                        : 'Completed'}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <p className="text-gray-700 mb-2">{goal.goal}</p>
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <FiUsers className="w-3 h-3 mr-1" />
+                                  <span>
+                                    Set by{' '}
+                                    {goal.setBy?.firstName && goal.setBy?.lastName
+                                      ? `${goal.setBy.firstName} ${goal.setBy.lastName}`
+                                      : 'Team Leader'}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
                       </div>
                     )}
-                    {selectedProject.teamLeader && (
+                </div>
+
+                {/* Sidebar Info */}
+                <div className="space-y-6">
+                  {/* Progress */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-3">
+                      Progress Overview
+                    </h4>
+                    <div className="space-y-3">
                       <div>
-                        <span className="text-gray-600">Team Leader:</span>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm text-gray-600">
+                            Overall Progress
+                          </span>
+                          <span className="text-sm font-medium">
+                            {selectedProject.progress || 0}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${getProgressColor(selectedProject.progress)}`}
+                            style={{ width: `${selectedProject.progress || 0}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Project Timeline */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-3">Timeline</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Start Date:</span>
+                        <span className="font-medium">
+                          {new Date(
+                            selectedProject.startDate
+                          ).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">End Date:</span>
+                        <span className="font-medium">
+                          {new Date(selectedProject.endDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Status:</span>
+                        <span
+                          className={`font-medium ${calculateDaysRemaining(selectedProject.endDate, selectedProject.status).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(selectedProject.endDate, selectedProject.status).includes('remaining') && parseInt(calculateDaysRemaining(selectedProject.endDate, selectedProject.status)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}
+                        >
+                          {calculateDaysRemaining(selectedProject.endDate, selectedProject.status)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Team Information */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-3">Team</h4>
+                    <div className="space-y-3 text-sm">
+                      {selectedProject.projectManager && (
+                        <div>
+                          <span className="text-gray-600">Project Manager:</span>
+                          <p className="font-medium">
+                            {selectedProject.projectManager.firstName}{' '}
+                            {selectedProject.projectManager.lastName}
+                          </p>
+                          <p className="text-gray-500">
+                            {selectedProject.projectManager.email}
+                          </p>
+                        </div>
+                      )}
+                      {selectedProject.teamLeader && (
+                        <div>
+                          <span className="text-gray-600">Team Leader:</span>
+                          <p className="font-medium">
+                            {selectedProject.teamLeader.firstName}{' '}
+                            {selectedProject.teamLeader.lastName}
+                          </p>
+                          <p className="text-gray-500">
+                            {selectedProject.teamLeader.email}
+                          </p>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-gray-600">Team Size:</span>
                         <p className="font-medium">
-                          {selectedProject.teamLeader.firstName}{' '}
-                          {selectedProject.teamLeader.lastName}
-                        </p>
-                        <p className="text-gray-500">
-                          {selectedProject.teamLeader.email}
+                          {selectedProject.teamSize} members
                         </p>
                       </div>
-                    )}
-                    <div>
-                      <span className="text-gray-600">Team Size:</span>
-                      <p className="font-medium">
-                        {selectedProject.teamSize} members
-                      </p>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
-        </div>
+            </motion.div>
+          </div>
+        </Portal>
       )}
     </div>
   );
@@ -1451,7 +1437,11 @@ const TeamLeaderProjectsView = ({ user }) => {
     return 'bg-red-500';
   };
 
-  const calculateDaysRemaining = (endDate) => {
+  const calculateDaysRemaining = (endDate, status) => {
+    if (status === 'completed') return 'Completed';
+
+    if (!endDate) return 'No end date';
+
     const end = new Date(endDate);
     const now = new Date();
     const diffTime = end - now;
@@ -1573,23 +1563,7 @@ const TeamLeaderProjectsView = ({ user }) => {
                       {project.description}
                     </p>
 
-                    {/* Progress Bar */}
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-gray-700">
-                          Progress
-                        </span>
-                        <span className="text-sm text-gray-600">
-                          {project.progress || 0}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${getProgressColor(project.progress)} transition-all duration-300`}
-                          style={{ width: `${project.progress || 0}%` }}
-                        ></div>
-                      </div>
-                    </div>
+                    {/* Progress removed from cards */}
 
                     {/* Project Details */}
                     <div className="space-y-3 mb-4">
@@ -1622,9 +1596,9 @@ const TeamLeaderProjectsView = ({ user }) => {
                           <span>Time Left</span>
                         </div>
                         <div
-                          className={`font-medium text-right ${calculateDaysRemaining(project.endDate).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(project.endDate).includes('remaining') && parseInt(calculateDaysRemaining(project.endDate)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}
+                          className={`font-medium text-right ${calculateDaysRemaining(project.endDate, project.status).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(project.endDate, project.status).includes('remaining') && parseInt(calculateDaysRemaining(project.endDate, project.status)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}
                         >
-                          {calculateDaysRemaining(project.endDate)}
+                          {calculateDaysRemaining(project.endDate, project.status)}
                         </div>
                       </div>
                     </div>
@@ -1948,9 +1922,9 @@ const TeamLeaderProjectsView = ({ user }) => {
                     <div className="flex justify-between">
                       <span className="text-gray-600">Status:</span>
                       <span
-                        className={`font-medium ${calculateDaysRemaining(selectedProject.endDate).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(selectedProject.endDate).includes('remaining') && parseInt(calculateDaysRemaining(selectedProject.endDate)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}
+                          className={`font-medium ${calculateDaysRemaining(selectedProject.endDate, selectedProject.status).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(selectedProject.endDate, selectedProject.status).includes('remaining') && parseInt(calculateDaysRemaining(selectedProject.endDate, selectedProject.status)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}
                       >
-                        {calculateDaysRemaining(selectedProject.endDate)}
+                          {calculateDaysRemaining(selectedProject.endDate, selectedProject.status)}
                       </span>
                     </div>
                   </div>

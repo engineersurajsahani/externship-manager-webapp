@@ -80,6 +80,7 @@ const MainLayout = () => {
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/daily-updates" element={<DailyUpdates />} />
+            <Route path="/daily-updates/:id" element={<DailyUpdates />} />
             <Route
               path="/daily-updates/submit"
               element={<SubmitDailyUpdate />}

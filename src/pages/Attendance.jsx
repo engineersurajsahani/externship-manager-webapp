@@ -690,14 +690,15 @@ const Attendance = () => {
             )}
           </Card>
         </motion.div>
-      ) : (
+        ) : (
         /* Attendance View for non-admin roles */
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
         >
-          {userRole === ROLES.INTERN ? (
+          {/* Show calendar for interns and team leaders; hide table history for team leaders */}
+          {userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER ? (
             <CalendarAttendanceView />
           ) : (
             <AttendanceHistory viewMode="table" />

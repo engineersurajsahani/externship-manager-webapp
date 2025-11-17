@@ -61,7 +61,7 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
         }
       }
     } catch (error) {
-      console.error("Error checking existing update:", error);
+      // Silently fail - not critical to user flow
     }
   }, [project, user]);
 
@@ -189,9 +189,9 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
       .filter((word) => word.length > 0).length;
   };
 
-  // Function removed as part of removing mood field
-
   if (!project) return null;
+
+  const isCompleted = project.status === 'completed';
 
   return (
     <AnimatePresence>
@@ -429,16 +429,22 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
                       <Button type="button" variant="outline" onClick={onClose}>
                         Cancel
                       </Button>
-                      <Button
-                        type="submit"
-                        loading={isSubmitting}
-                        className="min-w-32"
-                      >
-                        <div className="flex items-center justify-center">
-                          <FiSave className="w-4 h-4 mr-2" />
-                          <span>{hasExistingUpdate ? "Update" : "Submit"}</span>
-                        </div>
-                      </Button>
+                      <div className="flex items-center space-x-3">
+                        {isCompleted && (
+                          <div className="text-sm text-red-600 mr-2">This project is completed — updates and attendance cannot be submitted.</div>
+                        )}
+                        <Button
+                          type="submit"
+                          loading={isSubmitting}
+                          className="min-w-32"
+                          disabled={isCompleted}
+                        >
+                          <div className="flex items-center justify-center">
+                            <FiSave className="w-4 h-4 mr-2" />
+                            <span>{hasExistingUpdate ? "Update" : "Submit"}</span>
+                          </div>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>

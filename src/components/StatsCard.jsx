@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FiTrendingUp, FiTrendingDown, FiMoreHorizontal } from 'react-icons/fi';
+import { FiTrendingUp, FiTrendingDown } from 'react-icons/fi';
 
 const StatsCard = ({
   title,
@@ -99,13 +99,8 @@ const StatsCard = ({
       <div className="relative">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2">
               <p className={`text-sm font-medium ${subtitleColor}`}>{title}</p>
-              <button
-                className={`p-1 rounded-md hover:bg-black/5 ${isGradient ? 'text-white/60 hover:text-white/80' : 'text-gray-400 hover:text-gray-600'} transition-colors`}
-              >
-                <FiMoreHorizontal className="w-4 h-4" />
-              </button>
             </div>
             <div className="flex items-baseline space-x-2">
               <motion.p
@@ -127,13 +122,13 @@ const StatsCard = ({
           {/* Icon */}
           <div
             className={`
-            p-3 rounded-xl flex items-center justify-center
+            p-3 rounded-full flex items-center justify-center
             ${variant === 'gradient' ? 'bg-white/20' : currentColor?.bg}
           `}
           >
             <Icon
               className={`
-              w-6 h-6 
+              w-5 h-5
               ${variant === 'gradient' ? 'text-white' : currentColor?.text}
             `}
             />

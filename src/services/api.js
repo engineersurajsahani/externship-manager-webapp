@@ -156,6 +156,7 @@ export const apiService = {
   getMyAttendance: (params = {}) => api.get('/attendance/my', { params }),
   markAttendance: (attendanceData) => api.post('/attendance', attendanceData),
   getAttendanceStats: (params = {}) => api.get('/attendance/stats', { params }),
+  // `getTeamAttendance` removed — team attendance endpoints deprecated/removed
 
   // Projects
   getAllProjects: (params = {}) => api.get('/projects', { params }),

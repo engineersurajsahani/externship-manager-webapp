@@ -1,46 +1,13 @@
 import React, { useState } from 'react';
-import { FiBell, FiSearch, FiUser, FiLogOut } from 'react-icons/fi';
+import { FiBell, FiSearch } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 
 const Header = () => {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  // header only handles notifications now
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
 
-  const handleSignOut = () => {
-    // Use AuthContext logout method
-    logout();
-    // Navigate to login page
-    navigate('/login');
-  };
-
-  // Get user display info
-  const getUserDisplayInfo = () => {
-    if (!user) return { name: 'User', role: 'Guest', initials: 'U' };
-
-    const email = user.email || '';
-    const name = email.split('@')[0] || 'User';
-    const initials = name.substring(0, 2).toUpperCase();
-
-    const roleDisplayNames = {
-      admin: 'Administrator',
-      pm: 'Project Manager',
-      tl: 'Team Leader',
-      intern: 'Intern',
-    };
-
-    return {
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      role: roleDisplayNames[user.role] || user.role || 'User',
-      initials,
-    };
-  };
-
-  const userDisplayInfo = getUserDisplayInfo();
+  // Notifications only — profile moved to sidebar footer
 
   const notifications = [
     {
@@ -93,7 +60,6 @@ const Header = () => {
               <button
                 onClick={() => {
                   setShowNotifications(!showNotifications);
-                  setShowProfile(false);
                 }}
                 className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
@@ -137,55 +103,7 @@ const Header = () => {
               </AnimatePresence>
             </div>
 
-            {/* Profile */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setShowProfile(!showProfile);
-                  setShowNotifications(false);
-                }}
-                className="flex items-center space-x-2 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                  {userDisplayInfo.initials}
-                </div>
-              </button>
-
-              <AnimatePresence>
-                {showProfile && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden"
-                  >
-                    <div className="px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600">
-                      <p className="text-sm font-semibold text-white">
-                        {userDisplayInfo.name}
-                      </p>
-                      <p className="text-xs text-indigo-100">
-                        {userDisplayInfo.role}
-                      </p>
-                    </div>
-                    <div className="py-2">
-                      <button className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        <FiUser className="inline mr-2" /> Profile Settings
-                      </button>
-                      <button className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        Account Settings
-                      </button>
-                      <hr className="my-2" />
-                      <button
-                        onClick={handleSignOut}
-                        className="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                      >
-                        <FiLogOut className="inline mr-2" /> Sign Out
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* Profile removed from header — moved to sidebar footer */}
           </div>
         </div>
       </div>

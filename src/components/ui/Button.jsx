@@ -42,7 +42,7 @@ const Button = ({
   };
 
   const classes = `
-    ${baseClasses}
+    ${baseClasses} inline-flex items-center justify-center
     ${variants[variant]}
     ${sizes[size]}
     ${fullWidth ? 'w-full' : ''}
@@ -74,9 +74,13 @@ const Button = ({
           ></path>
         </svg>
       )}
-      {!loading && leftIcon && <span className="mr-2">{leftIcon}</span>}
-      <span>{children}</span>
-      {!loading && rightIcon && <span className="ml-2">{rightIcon}</span>}
+      {!loading && leftIcon && (
+        <span className="mr-2 inline-flex items-center">{leftIcon}</span>
+      )}
+      <span className="inline-flex items-center">{children}</span>
+      {!loading && rightIcon && (
+        <span className="ml-2 inline-flex items-center">{rightIcon}</span>
+      )}
     </>
   );
 

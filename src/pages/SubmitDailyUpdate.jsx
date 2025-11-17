@@ -62,7 +62,8 @@ const SubmitDailyUpdate = () => {
       try {
         const resp = await apiService.getMyProjects();
         if (resp.data && resp.data.projects) {
-          setUserProjects(resp.data.projects.map((p) => ({ id: p._id, name: p.name })));
+          // Keep full project objects so we can inspect `status` on submit
+          setUserProjects(resp.data.projects);
           // If the user only has one project, select it by default
           if (resp.data.projects.length === 1) {
             setSelectedProject(resp.data.projects[0]._id);
@@ -140,6 +141,16 @@ const SubmitDailyUpdate = () => {
     setIsSubmitting(true);
 
     try {
+      // Prevent submission if selected project is completed
+      if (selectedProject) {
+        const proj = userProjects.find((p) => p._id === selectedProject || p.id === selectedProject);
+        if (proj && proj.status === 'completed') {
+          setErrors({ submit: 'Cannot submit update or mark attendance for a completed project.' });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const updateData = {
         workDone: formData.workDone,
         challenges: formData.challenges,
@@ -348,7 +359,7 @@ const SubmitDailyUpdate = () => {
                     >
                       <option value="">Select Project</option>
                       {userProjects.map((p) => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
+                        <option key={p._id || p.id} value={p._id || p.id}>{p.name}</option>
                       ))}
                     </select>
                   </div>
