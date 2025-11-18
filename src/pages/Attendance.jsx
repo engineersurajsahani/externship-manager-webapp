@@ -70,7 +70,7 @@ const Attendance = () => {
     };
   }, []);
 
-  // Helper function to get total working days in a month (exclude Sundays)
+  // Helper function to get total working days in a month (exclude Sundays and Saturdays)
   const getWorkingDaysInMonth = (year, month) => {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     let workingDays = 0;
@@ -78,8 +78,8 @@ const Attendance = () => {
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0) {
-        // Exclude Sundays
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        // Exclude Sundays and Saturdays
         workingDays++;
       }
     }
@@ -94,8 +94,8 @@ const Attendance = () => {
     for (let day = 1; day <= currentDay; day++) {
       const date = new Date(year, month, day);
       const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0) {
-        // Exclude Sundays
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        // Exclude Sundays and Saturdays
         workingDays++;
       }
     }
@@ -476,9 +476,9 @@ const Attendance = () => {
                       Current Streak
                     </p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {overview.streak}
+                      {overview.streak}   days
                     </p>
-                    <p className="text-sm text-gray-500">Consecutive days</p>
+                    
                   </div>
                   <div className="p-3 bg-orange-100 rounded-full">
                     <FiTarget className="w-6 h-6 text-orange-600" />
