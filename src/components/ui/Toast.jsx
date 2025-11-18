@@ -63,23 +63,23 @@ const Toast = ({
       exit={{ opacity: 0, x: 300, scale: 0.8 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className={`
-        relative max-w-sm w-full ${currentType.bgColor} shadow-xl rounded-xl p-4 mb-4
+        relative max-w-md w-full ${currentType.bgColor} shadow-xl rounded-xl p-4 mb-4
         backdrop-blur-md border border-white/20 overflow-hidden
       `}
     >
       {/* Background decoration */}
-      <div className="absolute inset-0 opacity-20">
+      <div className="absolute inset-0 opacity-20 pointer-events-none z-0">
         <div className="absolute -right-4 -top-4 w-16 h-16 bg-white rounded-full" />
         <div className="absolute -left-4 -bottom-4 w-8 h-8 bg-white rounded-full" />
       </div>
 
       {/* Content */}
-      <div className="relative flex items-start">
+      <div className="relative flex items-start z-10">
         <div className="flex-shrink-0">
           <Icon className={`w-5 h-5 ${currentType.textColor}`} />
         </div>
-        <div className="ml-3 w-0 flex-1">
-          <p className={`text-sm font-medium ${currentType.textColor}`}>
+        <div className="ml-3 flex-1 min-w-0">
+          <p className={`text-sm font-medium ${currentType.textColor} break-words whitespace-normal`}>
             {message}
           </p>
         </div>

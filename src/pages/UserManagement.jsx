@@ -137,7 +137,7 @@ const UserManagement = () => {
       }
     } catch (error) {
       console.error('Error toggling user status:', error);
-      alert('Failed to update user status: ' + error.message);
+      window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Failed to update user status: ' + (error.message || ''), type: 'error' } }));
     }
   };
 
@@ -154,7 +154,7 @@ const UserManagement = () => {
         }
       } catch (error) {
         console.error('Error deleting user:', error);
-        alert('Failed to delete user: ' + error.message);
+        window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Failed to delete user: ' + (error.message || ''), type: 'error' } }));
       }
     }
   };
@@ -172,12 +172,8 @@ const UserManagement = () => {
         response = await apiService.updateUser(userModal.user.id, userData);
       }
 
-      if (response.data && response.data.success) {
-        alert(
-          userModal.mode === 'create' 
-            ? 'User created successfully!' 
-            : 'User updated successfully!'
-        );
+        if (response.data && response.data.success) {
+        window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: userModal.mode === 'create' ? 'User created successfully!' : 'User updated successfully!', type: 'success' } }));
         setUserModal({
           isOpen: false,
           mode: 'create',
@@ -189,7 +185,7 @@ const UserManagement = () => {
       }
     } catch (error) {
       console.error('Error saving user:', error);
-      alert(error.response?.data?.message || error.message || 'Failed to save user');
+      window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: (error.response?.data?.message || error.message || 'Failed to save user'), type: 'error' } }));
     } finally {
       setLoading(false);
     }

@@ -291,18 +291,17 @@ const AttendanceHistory = ({ viewMode = "table" }) => {
                 </Badge>
 
                 {record.hasUpdate && record.update && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      // In a real app, this would open a modal or navigate to the update detail
-                      alert(
-                        `Update Details:\n\nWork Done: ${record.update.workDone}\n\nChallenges: ${record.update.challenges}\n\nPlan Tomorrow: ${record.update.planForTomorrow}`
-                      );
-                    }}
-                  >
-                    <FiEye className="w-3 h-3" />
-                  </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // Replace native alert with UI toast showing details (info)
+                          const message = `Update Details:\n\nWork Done: ${record.update.workDone || 'N/A'}\n\nChallenges: ${record.update.challenges || 'N/A'}\n\nPlan Tomorrow: ${record.update.planForTomorrow || 'N/A'}`;
+                          window.dispatchEvent(new CustomEvent('app-toast', { detail: { message, type: 'info', duration: 8000 } }));
+                        }}
+                      >
+                        <FiEye className="w-3 h-3" />
+                      </Button>
                 )}
               </div>
             </motion.div>

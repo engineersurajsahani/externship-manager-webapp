@@ -104,12 +104,25 @@ const Dashboard = () => {
       } catch (e) {}
 
       let apiData = null;
+      let attendanceRate = 0;
       try {
         const response = await apiService.getDashboardStats();
         apiData = response.data;
+
+        if (userRole === ROLES.INTERN) {
+          const updatesResponse = await apiService.getMyUpdates();
+          if (updatesResponse.data.success) {
+            const updates = updatesResponse.data.updates || [];
+            const stats = calculateAttendanceStats(updates);
+            attendanceRate = stats.attendanceRate;
+          }
+        } else {
+          attendanceRate = apiData.stats?.attendanceRate || 0;
+        }
+
       } catch (e) {}
 
-      const data = apiData ? processApiData(apiData, attendanceStatus) : generateFallbackData(attendanceStatus);
+      const data = apiData ? processApiData(apiData, attendanceStatus, attendanceRate) : generateFallbackData(attendanceStatus);
       setDashboardData(data);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -133,7 +146,7 @@ const Dashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generateFallbackData]);
 
-  const processApiData = (apiData, attendanceStatus = null) => {
+  const processApiData = (apiData, attendanceStatus = null, customAttendanceRate = null) => {
     // If we have attendance status from API, use it to enhance the data
     let enhancedStats = apiData.stats || {};
     if (attendanceStatus && userRole === ROLES.INTERN) {
@@ -141,6 +154,7 @@ const Dashboard = () => {
         ...enhancedStats,
         todayStatus: attendanceStatus.hasSubmitted ? 'Submitted' : 'Pending',
         timeRemaining: attendanceStatus.timeRemaining,
+        attendanceRate: customAttendanceRate !== null ? customAttendanceRate : enhancedStats.attendanceRate,
       };
     }
 
@@ -317,6 +331,67 @@ const Dashboard = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const getWorkingDaysInMonth = (year, month) => {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    let workingDays = 0;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        // Exclude Sundays and Saturdays
+        workingDays++;
+      }
+    }
+
+    return workingDays;
+  };
+
+  const getWorkingDaysPassed = (year, month, currentDay) => {
+    let workingDays = 0;
+
+    for (let day = 1; day <= currentDay; day++) {
+      const date = new Date(year, month, day);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        // Exclude Sundays and Saturdays
+        workingDays++;
+      }
+    }
+
+    return workingDays;
+  };
+
+  const calculateAttendanceStats = useCallback((updates) => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const monthlyUpdates = updates.filter((update) => {
+      const updateDate = new Date(update.date);
+      return (
+        updateDate.getMonth() === currentMonth &&
+        updateDate.getFullYear() === currentYear
+      );
+    });
+
+    const presentDays = monthlyUpdates.length;
+    const today = new Date();
+    const passedWorkingDays = getWorkingDaysPassed(
+      currentYear,
+      currentMonth,
+      today.getDate()
+    );
+    const attendanceRate =
+      passedWorkingDays > 0
+        ? Math.round((presentDays / passedWorkingDays) * 100)
+        : 0;
+
+    return {
+      attendanceRate,
+    };
+  }, []);
 
   if (isLoading) {
     return (

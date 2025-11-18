@@ -16,6 +16,7 @@ import Projects from './pages/Projects';
 import Chat from './pages/Chat';
 import UserManagement from './pages/UserManagement';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import ToastListener from './components/ui/ToastListener';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -101,6 +102,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <ToastListener />
         <Routes>
           {/* Public routes */}
           <Route

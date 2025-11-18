@@ -215,7 +215,7 @@ const Projects = () => {
       setProjectModal({ isOpen: false, mode: 'create', project: null });
     } catch (error) {
       console.error('Error saving project:', error);
-      alert('Error saving project. Please try again.');
+      window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Error saving project. Please try again.', type: 'error' } }));
     }
   };
 
@@ -310,13 +310,11 @@ const Projects = () => {
 
       setAssignmentModal({ isOpen: false, project: null });
 
-      // Show success message
-      alert(
-        'Team assignments updated successfully! Changes will be visible to all users.'
-      );
+      // Show success message using UI toast
+      window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Team assignments updated successfully! Changes will be visible to all users.', type: 'success' } }));
     } catch (error) {
       console.error('Error updating assignments:', error);
-      alert('Error updating team assignments. Please try again.');
+      window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Error updating team assignments. Please try again.', type: 'error' } }));
     }
   };
 

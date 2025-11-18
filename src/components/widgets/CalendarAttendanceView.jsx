@@ -395,7 +395,7 @@ const CalendarAttendanceView = () => {
       }
     } catch (err) {
       console.error('Failed to fetch update details:', err);
-      alert('Failed to load update details');
+      window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Failed to load update details', type: 'error' } }));
     }
   };
 
