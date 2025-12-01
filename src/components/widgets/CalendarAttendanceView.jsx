@@ -90,8 +90,15 @@ const CalendarAttendanceView = () => {
 
   const loadAttendanceData = async () => {
     try {
+      // Calculate start and end dates for the current month view
+      const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+      const startDate = formatLocalDate(firstDay);
+      const endDate = formatLocalDate(lastDay);
+
       // Use attendance API instead of daily updates
-      const response = await apiService.getMyAttendance();
+      const response = await apiService.getMyAttendance({ startDate, endDate });
       if (response.data && response.data.success) {
         processAttendanceData(response.data.attendance);
       } else {
@@ -118,7 +125,7 @@ const CalendarAttendanceView = () => {
       0
     );
 
-  // Month bounds (used for debugging): firstDayOfMonth, lastDayOfMonth
+    // Month bounds (used for debugging): firstDayOfMonth, lastDayOfMonth
     const startCalendar = new Date(firstDayOfMonth);
     startCalendar.setDate(startCalendar.getDate() - firstDayOfMonth.getDay());
     const endCalendar = new Date(lastDayOfMonth);
@@ -409,12 +416,12 @@ const CalendarAttendanceView = () => {
     const today = new Date();
     const firstOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const workingDaysUntilToday = getWorkingDaysUntilToday(firstOfMonth, today);
-    
+
     const present = monthData.filter((day) => day.status === 'present').length;
     const absent = monthData.filter((day) => day.status === 'absent').length;
     const leaves = monthData.filter((day) => day.status === 'leave').length;
     const pending = monthData.filter((day) => day.status === 'pending').length;
-    
+
     // Total should be working days until today, not all working days in month
     const total = workingDaysUntilToday;
     const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
@@ -427,7 +434,7 @@ const CalendarAttendanceView = () => {
     let workingDays = 0;
     let currentDate = new Date(startDate);
     const end = new Date(endDate);
-    
+
     // Ensure we're counting up to and including today
     while (currentDate <= end) {
       const dayOfWeek = currentDate.getDay();
@@ -436,7 +443,7 @@ const CalendarAttendanceView = () => {
       }
       currentDate.setDate(currentDate.getDate() + 1);
     }
-    
+
     return workingDays;
   };
 
@@ -555,11 +562,10 @@ const CalendarAttendanceView = () => {
           {dayNames.map((day, index) => (
             <div
               key={day}
-              className={`p-3 text-center text-sm font-semibold rounded-lg ${
-                index === 0 || index === 6
+              className={`p-3 text-center text-sm font-semibold rounded-lg ${index === 0 || index === 6
                   ? 'text-gray-400 bg-gray-50'  // Sunday and Saturday
                   : 'text-gray-700 bg-blue-50' // Monday to Friday
-              }`}
+                }`}
             >
               {day}
             </div>
@@ -619,11 +625,11 @@ const CalendarAttendanceView = () => {
               <h4 className="font-semibold text-gray-900 text-lg">
                 {selectedLocalDate
                   ? selectedLocalDate.toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })
                   : ''}
               </h4>
               <p className="text-sm text-gray-600 mt-1">
@@ -632,15 +638,14 @@ const CalendarAttendanceView = () => {
             </div>
             <div className="flex items-center space-x-3">
               <Badge
-                className={`px-3 py-1 text-sm font-medium ${
-                  selectedDayData.status === 'present'
+                className={`px-3 py-1 text-sm font-medium ${selectedDayData.status === 'present'
                     ? 'bg-green-100 text-green-800 border border-green-200'
                     : selectedDayData.status === 'absent'
                       ? 'bg-red-100 text-red-800 border border-red-200'
                       : selectedDayData.status === 'pending'
                         ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
                         : 'bg-gray-100 text-gray-800 border border-gray-200'
-                }`}
+                  }`}
               >
                 {selectedDayData.status.charAt(0).toUpperCase() +
                   selectedDayData.status.slice(1)}
@@ -663,12 +668,12 @@ const CalendarAttendanceView = () => {
 
           {selectedDayData.attendanceRecord && (selectedDayData.attendanceRecord.dailyUpdate || selectedDayData.attendanceRecord.hasSubmittedUpdate) && (
             <div className="bg-white rounded-lg p-4 space-y-3 border border-blue-100">
-                  <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <p className="text-sm text-gray-600 font-medium">
                     Daily update submitted
-                    {selectedDayData.attendanceRecord.checkInTime && 
+                    {selectedDayData.attendanceRecord.checkInTime &&
                       ` at ${new Date(selectedDayData.attendanceRecord.checkInTime).toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
