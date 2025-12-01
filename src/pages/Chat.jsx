@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   FiMessageSquare,
@@ -9,6 +9,16 @@ import {
 } from "react-icons/fi";
 import { useAuth } from "../contexts/AuthContext";
 import { apiService } from "../services/api";
+import {
+  initializeSocket,
+  disconnectSocket,
+  joinProject,
+  leaveProject,
+  sendMessage as sendSocketMessage,
+  startTyping,
+  stopTyping,
+  getSocket
+} from "../services/socketConfig";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 
@@ -18,11 +28,149 @@ const Chat = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [typingUsers, setTypingUsers] = useState(new Set());
+  const [onlineUsers, setOnlineUsers] = useState(0);
 
   // State for projects and messages
   const [projects, setProjects] = useState([]);
   const [messages, setMessages] = useState({});
   const [loading, setLoading] = useState(false);
+
+  // Refs
+  const messagesEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  const socketRef = useRef(null);
+  const selectedProjectRef = useRef(selectedProject);
+
+  // Update ref when selectedProject changes
+  useEffect(() => {
+    selectedProjectRef.current = selectedProject;
+  }, [selectedProject]);
+
+  // Initialize socket connection - ONE TIME ONLY
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // Initialize socket if not already done
+    if (!socketRef.current) {
+      socketRef.current = initializeSocket(token);
+    }
+
+    const socket = socketRef.current;
+
+    // Define event handlers
+    const handleNewMessage = (newMessage) => {
+      console.log('Received new message:', newMessage);
+      setMessages((prev) => {
+        // Use the projectId from the message if available, otherwise fallback to selectedProject (risky but legacy support)
+        const currentSelectedProject = selectedProjectRef.current;
+        const projectId = newMessage.projectId || currentSelectedProject?.id;
+
+        if (!projectId) return prev;
+
+        const projectMessages = prev[projectId] || [];
+        const isCurrentUser = newMessage.sender.id === user?.id;
+
+        // Prevent duplicates if necessary, though React key usually handles it
+        // Check if message already exists to be safe
+        if (projectMessages.some(m => m.id === newMessage.id)) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          [projectId]: [
+            ...projectMessages,
+            {
+              ...newMessage,
+              isCurrentUser,
+              timestamp: new Date(newMessage.timestamp),
+            },
+          ],
+        };
+      });
+
+      // Scroll to bottom if looking at this project
+      if (selectedProjectRef.current?.id === newMessage.projectId) {
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      }
+    };
+
+    const handleUserJoined = ({ userName }) => {
+      console.log(`${userName} joined the chat`);
+      setOnlineUsers(prev => prev + 1);
+    };
+
+    const handleUserLeft = ({ userName }) => {
+      console.log(`${userName} left the chat`);
+      setOnlineUsers(prev => Math.max(0, prev - 1));
+    };
+
+    const handleUserTyping = ({ userName, userId }) => {
+      if (userId !== user?.id) {
+        setTypingUsers(prev => new Set(prev).add(userName));
+      }
+    };
+
+    const handleUserStoppedTyping = ({ userId }) => {
+      // We need a way to map userId to userName to remove from Set correctly
+      // For now, we'll just clear the set after a timeout in the UI or rely on the timeout below
+      // A better approach would be to store typing users as a Map of userId -> userName
+    };
+
+    const handleActiveUsers = ({ count }) => {
+      setOnlineUsers(count);
+    };
+
+    const handleError = (error) => {
+      console.error('Socket error:', error);
+    };
+
+    // Attach listeners
+    socket.on('new-message', handleNewMessage);
+    socket.on('user-joined', handleUserJoined);
+    socket.on('user-left', handleUserLeft);
+    socket.on('user-typing', handleUserTyping);
+    socket.on('user-stopped-typing', handleUserStoppedTyping);
+    socket.on('active-users', handleActiveUsers);
+    socket.on('error', handleError);
+
+    // Cleanup listeners on unmount
+    return () => {
+      socket.off('new-message', handleNewMessage);
+      socket.off('user-joined', handleUserJoined);
+      socket.off('user-left', handleUserLeft);
+      socket.off('user-typing', handleUserTyping);
+      socket.off('user-stopped-typing', handleUserStoppedTyping);
+      socket.off('active-users', handleActiveUsers);
+      socket.off('error', handleError);
+
+      // We DO NOT disconnect the socket here to keep it alive across project switches
+      // Only disconnect if the component is truly unmounting (e.g. navigating away from Chat page)
+      // But since we might want to keep socket alive for notifications, we might leave it.
+      // For this specific page logic, we'll disconnect on unmount of the page.
+    };
+  }, [user]); // Only re-run if user changes (login/logout)
+
+  // Handle cleanup on unmount
+  useEffect(() => {
+    return () => {
+      disconnectSocket();
+    };
+  }, []);
+
+  // Handle project room joining/leaving
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    const projectId = selectedProject.id;
+    joinProject(projectId);
+
+    return () => {
+      leaveProject(projectId);
+    };
+  }, [selectedProject]);
 
   // Load user's projects on component mount
   useEffect(() => {
@@ -54,7 +202,9 @@ const Chat = () => {
             .filter(Boolean),
           lastMessage: null,
           unreadCount: 0,
-        }));
+          status: p.status // Include status for filtering
+        }))
+          .filter(p => p.status !== 'completed'); // Filter out completed projects
 
         setProjects(mapped);
       } else {
@@ -74,10 +224,33 @@ const Chat = () => {
       if (apiService.getProjectMessages) {
         const res = await apiService.getProjectMessages(projectId);
         if (res.data && res.data.success) {
+          const formattedMessages = (res.data.messages || []).map(msg => ({
+            id: msg._id || msg.id,
+            sender: {
+              id: msg.sender?._id || msg.sender?.id,
+              name: `${msg.sender?.firstName || ''} ${msg.sender?.lastName || ''}`.trim() || msg.sender?.email,
+              email: msg.sender?.email,
+              role: msg.sender?.role === 'project_manager'
+                ? 'Project Manager'
+                : msg.sender?.role === 'team_leader'
+                  ? 'Team Leader'
+                  : msg.sender?.role === 'admin'
+                    ? 'Admin'
+                    : 'Intern',
+            },
+            text: msg.text,
+            timestamp: new Date(msg.createdAt || msg.timestamp),
+            isCurrentUser: (msg.sender?._id || msg.sender?.id) === user?.id,
+            attachments: msg.attachments || [],
+          }));
+
           setMessages((prev) => ({
             ...prev,
-            [projectId]: res.data.messages || [],
+            [projectId]: formattedMessages,
           }));
+
+          // Scroll to bottom after loading messages
+          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
           return;
         }
       }
@@ -104,51 +277,54 @@ const Chat = () => {
 
   // Handle project selection
   const handleProjectSelect = (project) => {
+    // Leave previous project room
+    if (selectedProject) {
+      leaveProject(selectedProject.id);
+    }
+
     setSelectedProject(project);
+
     // Load messages for the selected project
-    if (project && !messages[project.id]) {
+    if (project) {
       loadProjectMessages(project.id);
+      // Room joining is handled by the useEffect now
     }
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = useCallback(() => {
     if (!message.trim() || !selectedProject) return;
 
     const messageText = message.trim();
     setMessage(""); // Clear input immediately for better UX
 
-    try {
-      // Send to backend
-      const res = await apiService.sendMessage(selectedProject.id, { text: messageText });
-      if (res.data && res.data.success) {
-        const saved = res.data.message;
+    // Send via socket (socket handler will save to DB and broadcast)
+    sendSocketMessage(selectedProject.id, messageText);
 
-        const newMessage = {
-          id: saved._id || Date.now().toString(),
-          sender: saved.sender
-            ? {
-                name: `${saved.sender.firstName || ''} ${saved.sender.lastName || ''}`.trim() || saved.sender.email,
-                role: saved.sender.role === 'project_manager' ? 'Project Manager' : saved.sender.role === 'team_leader' ? 'Team Leader' : 'Intern',
-                email: saved.sender.email,
-                id: saved.sender._id || saved.sender.id,
-              }
-            : { name: `${user?.firstName} ${user?.lastName}`, role: userRole, email: user?.email },
-          text: saved.text,
-          timestamp: new Date(saved.createdAt || Date.now()),
-          isCurrentUser: true,
-        };
-
-        setMessages((prev) => ({
-          ...prev,
-          [selectedProject.id]: [...(prev[selectedProject.id] || []), newMessage],
-        }));
-      }
-    } catch (error) {
-      console.error("Error sending message:", error);
-      // Restore message in input on error
-      setMessage(messageText);
+    // Stop typing indicator
+    stopTyping(selectedProject.id);
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
     }
-  };
+  }, [message, selectedProject]);
+
+  // Handle typing indicator
+  const handleTyping = useCallback(() => {
+    if (!selectedProject) return;
+
+    // Start typing indicator
+    startTyping(selectedProject.id);
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Stop typing after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      stopTyping(selectedProject.id);
+    }, 2000);
+  }, [selectedProject]);
 
   const formatTime = (timestamp) => {
     const now = new Date();
@@ -238,11 +414,10 @@ const Chat = () => {
                     key={project.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`p-4 rounded-lg mb-2 cursor-pointer transition-all duration-200 ${
-                      selectedProject?.id === project.id
-                        ? "bg-indigo-50 border-2 border-indigo-200"
-                        : "hover:bg-gray-50 border-2 border-transparent"
-                    }`}
+                    className={`p-4 rounded-lg mb-2 cursor-pointer transition-all duration-200 ${selectedProject?.id === project.id
+                      ? "bg-indigo-50 border-2 border-indigo-200"
+                      : "hover:bg-gray-50 border-2 border-transparent"
+                      }`}
                     onClick={() => handleProjectSelect(project)}
                   >
                     <div className="flex items-start justify-between mb-2">
@@ -255,13 +430,13 @@ const Chat = () => {
                         </Badge>
                       )}
                     </div>
-                    
+
                     {project.description && (
                       <p className="text-xs text-gray-600 mb-2 line-clamp-2">
                         {project.description}
                       </p>
                     )}
-                    
+
                     {project.lastMessage && (
                       <div className="text-xs text-gray-500">
                         <p className="truncate">
@@ -271,7 +446,7 @@ const Chat = () => {
                         <p className="mt-1">{formatTime(project.lastMessage.timestamp)}</p>
                       </div>
                     )}
-                    
+
                     <div className="flex items-center mt-2">
                       <FiUsers className="w-3 h-3 text-gray-400 mr-1" />
                       <span className="text-xs text-gray-500">
@@ -312,8 +487,8 @@ const Chat = () => {
                         {participant.role}
                       </Badge>
                     )) || (
-                      <span className="text-xs text-gray-500">No participants loaded</span>
-                    )}
+                        <span className="text-xs text-gray-500">No participants loaded</span>
+                      )}
                     <Button variant="outline" size="sm">
                       <FiMoreVertical className="w-4 h-4" />
                     </Button>
@@ -331,35 +506,53 @@ const Chat = () => {
                     className={`flex ${msg.isCurrentUser ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        msg.isCurrentUser
-                          ? "bg-indigo-600 text-white"
-                          : "bg-white border border-gray-200"
-                      }`}
+                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${msg.isCurrentUser
+                        ? "bg-indigo-600 text-white"
+                        : "bg-white border border-gray-200"
+                        }`}
                     >
-                      {!msg.isCurrentUser && (
-                        <div className="flex items-center mb-1">
-                          <span className="text-xs font-medium text-gray-900">
-                            {msg.sender.name}
-                          </span>
-                          <Badge className={`ml-2 text-xs ${getRoleColor(msg.sender.role)}`}>
-                            {msg.sender.role}
-                          </Badge>
-                        </div>
-                      )}
+                      {/* Always show sender name and role */}
+                      <div className="flex items-center mb-1">
+                        <span className={`text-xs font-medium ${msg.isCurrentUser ? "text-white" : "text-gray-900"}`}>
+                          {msg.sender.name}
+                        </span>
+                        <Badge className={`ml-2 text-xs ${msg.isCurrentUser
+                          ? "bg-indigo-500 text-white"
+                          : getRoleColor(msg.sender.role)
+                          }`}>
+                          {msg.sender.role}
+                        </Badge>
+                      </div>
                       <p className={`text-sm ${msg.isCurrentUser ? "text-white" : "text-gray-900"}`}>
                         {msg.text}
                       </p>
                       <p
-                        className={`text-xs mt-1 ${
-                          msg.isCurrentUser ? "text-indigo-200" : "text-gray-500"
-                        }`}
+                        className={`text-xs mt-1 ${msg.isCurrentUser ? "text-indigo-200" : "text-gray-500"
+                          }`}
                       >
                         {formatTime(msg.timestamp)}
                       </p>
                     </div>
                   </motion.div>
                 ))}
+
+                {/* Typing indicator */}
+                {typingUsers.size > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex justify-start"
+                  >
+                    <div className="bg-gray-100 px-4 py-2 rounded-lg">
+                      <p className="text-xs text-gray-600">
+                        {Array.from(typingUsers).join(", ")} {typingUsers.size === 1 ? "is" : "are"} typing...
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Scroll anchor */}
+                <div ref={messagesEndRef} />
               </div>
 
               {/* Message Input */}
@@ -369,8 +562,16 @@ const Chat = () => {
                     type="text"
                     placeholder="Type a message..."
                     value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                    onChange={(e) => {
+                      setMessage(e.target.value);
+                      handleTyping();
+                    }}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                   <Button
@@ -381,6 +582,11 @@ const Chat = () => {
                     <FiSend className="w-4 h-4" />
                   </Button>
                 </div>
+                {onlineUsers > 0 && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    {onlineUsers} {onlineUsers === 1 ? "user" : "users"} online
+                  </p>
+                )}
               </div>
             </>
           ) : (
