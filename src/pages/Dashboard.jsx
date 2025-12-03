@@ -728,13 +728,7 @@ const Dashboard = () => {
               color="green"
               delay={0.3}
             />
-            <StatsCard
-              title="Budget Utilization"
-              value={`${dashboardData?.stats?.budgetUtilization || 0}%`}
-              icon={FiTrendingUp}
-              color="orange"
-              delay={0.4}
-            />
+
           </>
         )}
 

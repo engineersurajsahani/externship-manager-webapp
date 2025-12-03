@@ -67,13 +67,11 @@ const Chat = () => {
 
     // Define event handlers
     const handleConnect = () => {
-      console.log('Socket connected');
       setIsConnected(true);
       setConnectionError(null);
     };
 
     const handleDisconnect = () => {
-      console.log('Socket disconnected');
       setIsConnected(false);
     };
 
@@ -83,7 +81,6 @@ const Chat = () => {
       setConnectionError('Connection failed');
     };
     const handleNewMessage = (newMessage) => {
-      console.log('Received new message:', newMessage);
       setMessages((prev) => {
         // Use the projectId from the message if available, otherwise fallback to selectedProject (risky but legacy support)
         const currentSelectedProject = selectedProjectRef.current;
@@ -120,12 +117,10 @@ const Chat = () => {
     };
 
     const handleUserJoined = ({ userName }) => {
-      console.log(`${userName} joined the chat`);
       setOnlineUsers(prev => prev + 1);
     };
 
     const handleUserLeft = ({ userName }) => {
-      console.log(`${userName} left the chat`);
       setOnlineUsers(prev => Math.max(0, prev - 1));
     };
 

@@ -27,7 +27,7 @@ export const initializeSocket = (token) => {
   });
 
   socket.on('connect', () => {
-    console.log('✅ Socket connected:', socket.id);
+    // Connected
   });
 
   socket.on('connect_error', (error) => {
@@ -35,7 +35,7 @@ export const initializeSocket = (token) => {
   });
 
   socket.on('disconnect', (reason) => {
-    console.log('❌ Socket disconnected:', reason);
+    // Disconnected
   });
 
   socket.on('error', (error) => {
@@ -55,7 +55,6 @@ export const disconnectSocket = () => {
       socket.disconnect();
     }
     socket = null;
-    console.log('Socket disconnected and cleared');
   }
 };
 
