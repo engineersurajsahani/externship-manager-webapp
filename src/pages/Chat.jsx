@@ -30,6 +30,8 @@ const Chat = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [typingUsers, setTypingUsers] = useState(new Set());
   const [onlineUsers, setOnlineUsers] = useState(0);
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState(null);
 
   // State for projects and messages
   const [projects, setProjects] = useState([]);
@@ -55,11 +57,31 @@ const Chat = () => {
     // Initialize socket if not already done
     if (!socketRef.current) {
       socketRef.current = initializeSocket(token);
+    } else if (!socketRef.current.connected) {
+      // If reference exists but not connected, try to get/reconnect
+      socketRef.current = initializeSocket(token);
     }
 
     const socket = socketRef.current;
+    setIsConnected(socket.connected);
 
     // Define event handlers
+    const handleConnect = () => {
+      console.log('Socket connected');
+      setIsConnected(true);
+      setConnectionError(null);
+    };
+
+    const handleDisconnect = () => {
+      console.log('Socket disconnected');
+      setIsConnected(false);
+    };
+
+    const handleConnectError = (err) => {
+      console.error('Socket connection error:', err);
+      setIsConnected(false);
+      setConnectionError('Connection failed');
+    };
     const handleNewMessage = (newMessage) => {
       console.log('Received new message:', newMessage);
       setMessages((prev) => {
@@ -135,6 +157,9 @@ const Chat = () => {
     socket.on('user-stopped-typing', handleUserStoppedTyping);
     socket.on('active-users', handleActiveUsers);
     socket.on('error', handleError);
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('connect_error', handleConnectError);
 
     // Cleanup listeners on unmount
     return () => {
@@ -145,6 +170,9 @@ const Chat = () => {
       socket.off('user-stopped-typing', handleUserStoppedTyping);
       socket.off('active-users', handleActiveUsers);
       socket.off('error', handleError);
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('connect_error', handleConnectError);
 
       // We DO NOT disconnect the socket here to keep it alive across project switches
       // Only disconnect if the component is truly unmounting (e.g. navigating away from Chat page)
@@ -202,9 +230,7 @@ const Chat = () => {
             .filter(Boolean),
           lastMessage: null,
           unreadCount: 0,
-          status: p.status // Include status for filtering
-        }))
-          .filter(p => p.status !== 'completed'); // Filter out completed projects
+        }));
 
         setProjects(mapped);
       } else {
@@ -366,6 +392,23 @@ const Chat = () => {
               </p>
             </div>
             <div className="flex items-center space-x-2">
+              <div className={`flex items-center text-xs ${isConnected ? 'text-green-600' : 'text-red-500'}`}>
+                <div className={`w-2 h-2 rounded-full mr-1 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                {isConnected ? 'Connected' : connectionError || 'Disconnected'}
+              </div>
+              {!isConnected && (
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={() => {
+                    const token = localStorage.getItem('token');
+                    if (token) socketRef.current = initializeSocket(token);
+                  }}
+                  className="ml-2"
+                >
+                  Reconnect
+                </Button>
+              )}
               <FiMessageSquare className="w-6 h-6 text-indigo-600" />
             </div>
           </div>

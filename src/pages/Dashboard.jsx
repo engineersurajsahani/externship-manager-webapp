@@ -14,7 +14,11 @@ import {
   FiActivity,
   FiRefreshCw,
   FiCalendar,
+  FiEye,
+  FiX,
+  FiTarget,
 } from 'react-icons/fi';
+import Portal from '../components/ui/Portal';
 import UpcomingDeadlinesModal from '../components/modals/UpcomingDeadlinesModal';
 
 import StatsCard from '../components/StatsCard';
@@ -38,7 +42,12 @@ const Dashboard = () => {
   });
   const [showUpcomingDeadlines, setShowUpcomingDeadlines] = useState(false);
   const [weeklyGoal, setWeeklyGoal] = useState(null);
+
   const [weeklyGoalProject, setWeeklyGoalProject] = useState(null);
+  const [selectedActivity, setSelectedActivity] = useState(null);
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  const [fullActivityDetails, setFullActivityDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
 
   const getEmptyStats = useCallback(
@@ -101,7 +110,7 @@ const Dashboard = () => {
       let attendanceStatus = null;
       try {
         attendanceStatus = await dashboardHelpers.apiHelpers.getTodayAttendanceStatus();
-      } catch (e) {}
+      } catch (e) { }
 
       let apiData = null;
       let attendanceRate = 0;
@@ -120,7 +129,7 @@ const Dashboard = () => {
           attendanceRate = apiData.stats?.attendanceRate || 0;
         }
 
-      } catch (e) {}
+      } catch (e) { }
 
       const data = apiData ? processApiData(apiData, attendanceStatus, attendanceRate) : generateFallbackData(attendanceStatus);
       setDashboardData(data);
@@ -163,59 +172,50 @@ const Dashboard = () => {
       apiData.recentActivity || [];
 
     // For interns and team leaders, only show their submitted work
-    if (userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) {
-      try {
-        rawRecent = (rawRecent || []).filter((a) => {
-          // Determine whether the activity is an update-like item
-          const isUpdateLike =
-            a.type === 'update' || !!a.workDone || !!a.project || !!a.projectName || (typeof a.message === 'string' && a.message.toLowerCase().includes('submit'));
+    // Client-side filtering removed to trust backend response
 
-          if (!isUpdateLike) return false;
-
-          // Try to resolve the activity owner (email or id)
-          const ownerEmail = a.user?.email || a.email || a.userEmail || a.userEmail;
-          const ownerId = a.user?._id || a.user?.id || a.userId || a.user_id;
-
-          if (!user) return false;
-
-          const isOwner = (ownerEmail && user.email && ownerEmail === user.email) || (ownerId && user.id && ownerId === user.id) || (ownerId && user.id && ownerId === user.id);
-
-          return !!isOwner;
-        });
-      } catch (err) {
-        // fallback: if filtering fails, keep rawRecent as-is but log for debugging
-        console.error('Error filtering recent activity for role-limited view:', err);
-      }
-    }
 
     // Map backend activity shape to frontend expected shape
     const recentActivity = (rawRecent || [])
       .map((a, idx) => {
-      // Normalize varying backend shapes
-      const timestamp = a.timestamp || a.date || a.createdAt || a.time || null;
-      const title = a.title || a.message || (a.type === 'update' ? 'Daily update' : a.type || 'Activity');
-      const description = a.description || a.messageDetail || a.message || '';
-      const isUpdateLike =
-        a.type === 'update' ||
-        !!a.user ||
-        !!a.userName ||
-        !!a.project ||
-        !!a.projectName ||
-        !!a.workDone ||
-        (typeof a.message === 'string' && a.message.toLowerCase().includes('submit'));
+        // Normalize varying backend shapes
+        const timestamp = a.timestamp || a.date || a.createdAt || a.time || null;
 
-      const status = a.status || (isUpdateLike ? 'completed' : 'pending');
-      const user = a.user || a.email || a.by || null;
+        // Enhance title with project name if available
+        let title = a.title || a.message;
+        if (!title) {
+          if (a.type === 'update') {
+            title = (a.project || a.projectName)
+              ? `Daily update - ${a.project || a.projectName}`
+              : 'Daily update';
+          } else {
+            title = a.type || 'Activity';
+          }
+        }
 
-      return {
-        id: a.id || a._id || `${timestamp || Date.now()}-${idx}`,
-        title,
-        description,
-        timestamp,
-        status,
-        user,
-        raw: a,
-      };
+        // Use workDone as description if available, otherwise fall back
+        const description = a.workDone || a.description || a.messageDetail || a.message || '';
+        const isUpdateLike =
+          a.type === 'update' ||
+          !!a.user ||
+          !!a.userName ||
+          !!a.project ||
+          !!a.projectName ||
+          !!a.workDone ||
+          (typeof a.message === 'string' && a.message.toLowerCase().includes('submit'));
+
+        const status = a.status || (isUpdateLike ? 'completed' : 'pending');
+        const user = a.user || a.email || a.by || null;
+
+        return {
+          id: a.id || a._id || `${timestamp || Date.now()}-${idx}`,
+          title,
+          description,
+          timestamp,
+          status,
+          user,
+          raw: a,
+        };
       })
       .slice(0, 3); // only show the most recent 3 activities
 
@@ -263,11 +263,38 @@ const Dashboard = () => {
         if (resp.data && resp.data.success && resp.data.projects) {
           const projects = resp.data.projects;
           let found = false;
+
+          // Helper to check if a date is in the current week (Mon-Sun)
+          const isDateInCurrentWeek = (dateString) => {
+            const date = new Date(dateString);
+            const now = new Date();
+
+            // Adjust to local start of week (Monday)
+            const dayOfWeek = now.getDay(); // 0 (Sun) - 6 (Sat)
+            const diffToMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+            const startOfWeek = new Date(now);
+            startOfWeek.setHours(0, 0, 0, 0);
+            startOfWeek.setDate(now.getDate() - diffToMon);
+
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            endOfWeek.setHours(23, 59, 59, 999);
+
+            return date >= startOfWeek && date <= endOfWeek;
+          };
+
           for (const project of projects) {
             const goals = project.weeklyGoals || project.weeklyGoals?.length ? project.weeklyGoals : project.weeklyGoals || [];
             if (goals && goals.length > 0) {
-              // Prefer the current status goal if available
-              const current = goals.find((g) => g.status === 'current') || goals[0];
+              // Sort goals by creation date (newest first)
+              const sortedGoals = [...goals].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+              // Find the first goal that is 'current' AND created this week
+              const current = sortedGoals.find((g) =>
+                g.status === 'current' && isDateInCurrentWeek(g.createdAt)
+              );
+
               if (current) {
                 setWeeklyGoal(current);
                 setWeeklyGoalProject(project.name || project.title || 'Project');
@@ -290,7 +317,7 @@ const Dashboard = () => {
     };
 
     loadWeeklyGoal();
-  }, [userRole]);
+  }, [userRole, ROLES]);
 
 
 
@@ -310,6 +337,27 @@ const Dashboard = () => {
         break;
       default:
         break;
+    }
+  };
+
+  const handleViewActivity = async (activity) => {
+    setSelectedActivity(activity);
+    setShowActivityModal(true);
+    setFullActivityDetails(null);
+
+    // If it's an update, fetch full details to get non-truncated text
+    if (activity.raw && (activity.raw.type === 'update' || activity.raw.workDone)) {
+      setLoadingDetails(true);
+      try {
+        const response = await apiService.getUpdate(activity.id);
+        if (response.data && response.data.success) {
+          setFullActivityDetails(response.data.update);
+        }
+      } catch (error) {
+        console.error("Failed to fetch full update details", error);
+      } finally {
+        setLoadingDetails(false);
+      }
     }
   };
 
@@ -425,7 +473,7 @@ const Dashboard = () => {
         </div>
 
         {/* Weekly Goal (Interns / Team Leaders) */}
-          {/* (Weekly goal moved into the stats grid for better alignment) */}
+        {/* (Weekly goal moved into the stats grid for better alignment) */}
         <div className="flex items-center space-x-4 mt-4 lg:mt-0">
           <Button
             variant="outline"
@@ -450,13 +498,12 @@ const Dashboard = () => {
           {(dashboardData?.notifications || []).map((notification) => (
             <div
               key={notification.id}
-              className={`p-4 rounded-lg border-l-4 ${
-                notification.type === 'warning'
-                  ? 'bg-yellow-50 border-yellow-400'
-                  : notification.type === 'info'
-                    ? 'bg-blue-50 border-blue-400'
-                    : 'bg-green-50 border-green-400'
-              }`}
+              className={`p-4 rounded-lg border-l-4 ${notification.type === 'warning'
+                ? 'bg-yellow-50 border-yellow-400'
+                : notification.type === 'info'
+                  ? 'bg-blue-50 border-blue-400'
+                  : 'bg-green-50 border-green-400'
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -488,11 +535,10 @@ const Dashboard = () => {
 
       {/* Role-based Stats Grid */}
       <div
-        className={`grid gap-6 ${
-          userRole === ROLES.INTERN
-            ? 'grid-cols-1 md:grid-cols-4 lg:grid-cols-4'
-            : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
-        }`}
+        className={`grid gap-6 ${userRole === ROLES.INTERN
+          ? 'grid-cols-1 md:grid-cols-4 lg:grid-cols-4'
+          : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+          }`}
       >
         {userRole === ROLES.INTERN && (
           <>
@@ -767,22 +813,20 @@ const Dashboard = () => {
                   className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <div
-                    className={`p-2 rounded-full ${
-                      activity.status === 'completed'
-                        ? 'bg-green-100'
-                        : activity.status === 'pending'
-                          ? 'bg-yellow-100'
-                          : 'bg-blue-100'
-                    }`}
+                    className={`p-2 rounded-full ${activity.status === 'completed'
+                      ? 'bg-green-100'
+                      : activity.status === 'pending'
+                        ? 'bg-yellow-100'
+                        : 'bg-blue-100'
+                      }`}
                   >
                     <FiEdit3
-                      className={`w-4 h-4 ${
-                        activity.status === 'completed'
-                          ? 'text-green-600'
-                          : activity.status === 'pending'
-                            ? 'text-yellow-600'
-                            : 'text-blue-600'
-                      }`}
+                      className={`w-4 h-4 ${activity.status === 'completed'
+                        ? 'text-green-600'
+                        : activity.status === 'pending'
+                          ? 'text-yellow-600'
+                          : 'text-blue-600'
+                        }`}
                     />
                   </div>
 
@@ -790,38 +834,121 @@ const Dashboard = () => {
                     <p className="text-sm font-medium text-gray-900 truncate">
                       {activity.title}
                     </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {activity.description}
-                    </p>
                     <p className="text-xs text-gray-400">
                       {activity.timestamp
                         ? new Date(activity.timestamp).toLocaleString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
-                        : '—'}
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                        : ''}
                     </p>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Badge className={getStatusColor(activity.status)}>
-                      {activity.status.charAt(0).toUpperCase() +
-                        activity.status.slice(1)}
-                    </Badge>
-                    {activity.user && (
-                      <span className="text-xs text-gray-500">
-                        by {activity.user.split('@')[0]}
-                      </span>
-                    )}
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleViewActivity(activity)}
+                    className="ml-2"
+                  >
+                    <FiEye className="w-4 h-4 text-gray-500 hover:text-blue-600" />
+                  </Button>
                 </motion.div>
               ))}
             </div>
           )}
         </Card>
       </motion.div>
+
+      {/* Activity Detail Modal */}
+      {showActivityModal && selectedActivity && (
+        <Portal>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Daily Update Details
+                </h2>
+                <button
+                  onClick={() => setShowActivityModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <FiX className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <FiTarget className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-gray-900">
+                      {fullActivityDetails?.project?.name || selectedActivity.raw?.project?.name || selectedActivity.raw?.project || selectedActivity.raw?.projectName || 'Project Update'}
+                    </h3>
+                    <p className="text-sm text-gray-500">Project Update</p>
+                    <div className="flex items-center space-x-2 text-xs text-gray-400">
+                      <FiCalendar className="w-3 h-3" />
+                      <span>
+                        {selectedActivity.timestamp ? new Date(selectedActivity.timestamp).toLocaleDateString() : 'N/A'}
+                      </span>
+                      <span>•</span>
+                      <FiClock className="w-3 h-3" />
+                      <span>
+                        {selectedActivity.timestamp ? new Date(selectedActivity.timestamp).toLocaleTimeString() : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                  <Badge className={getStatusColor(selectedActivity.status)}>
+                    {selectedActivity.status.charAt(0).toUpperCase() +
+                      selectedActivity.status.slice(1)}
+                  </Badge>
+                </div>
+
+                {loadingDetails ? (
+                  <div className="flex justify-center py-4">
+                    <FiRefreshCw className="w-6 h-6 animate-spin text-blue-500" />
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <h4 className="font-medium text-gray-700 mb-2">
+                        What was accomplished:
+                      </h4>
+                      <p className="text-gray-600 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                        {fullActivityDetails?.workDone || selectedActivity.raw?.workDone || selectedActivity.description || 'No details provided'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium text-gray-700 mb-2">
+                        Challenges faced:
+                      </h4>
+                      <p className="text-gray-600 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                        {fullActivityDetails?.challenges || selectedActivity.raw?.challenges || 'None mentioned'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium text-gray-700 mb-2">
+                        Plan for tomorrow:
+                      </h4>
+                      <p className="text-gray-600 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                        {fullActivityDetails?.planForTomorrow || selectedActivity.raw?.planForTomorrow || 'No plan provided'}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </Portal>
+      )}
 
       {/* Performance Overview for Managers/Admins */}
       {(userRole === ROLES.PROJECT_MANAGER || userRole === ROLES.ADMIN) && (
@@ -840,7 +967,7 @@ const Dashboard = () => {
                 {Math.round(
                   ((dashboardData.stats.dailyUpdates || 0) /
                     (dashboardData.stats.totalUsers || 1)) *
-                    100
+                  100
                 )}
                 %
               </p>

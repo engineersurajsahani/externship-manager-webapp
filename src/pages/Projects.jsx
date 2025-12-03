@@ -59,7 +59,7 @@ const Projects = () => {
     if (!user) return;
 
     loadProjects();
-    
+
     // Load users if user is admin, project manageri
     if (userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER) {
       loadUsers();
@@ -93,7 +93,7 @@ const Projects = () => {
   const loadUsers = async () => {
     try {
       let allUsers = [];
-      
+
       if (userRole === ROLES.ADMIN) {
         // Admin can load all users at once
         const response = await apiService.getAllUsers();
@@ -108,7 +108,7 @@ const Projects = () => {
             apiService.getUsersByRole('team_leader').catch(() => ({ data: { users: [] } })),
             apiService.getUsersByRole('intern').catch(() => ({ data: { users: [] } }))
           ]);
-          
+
           allUsers = [
             ...(pmResponse.data?.users || []),
             ...(tlResponse.data?.users || []),
@@ -119,12 +119,12 @@ const Projects = () => {
           allUsers = [];
         }
       }
-      
+
       const normalizedUsers = allUsers.map((user) => ({
         ...user,
         id: user._id || user.id,
       }));
-      
+
       setUsers(normalizedUsers);
     } catch (error) {
       console.error('Error loading users:', error);
@@ -500,87 +500,87 @@ const Projects = () => {
               <Card className="p-6 hover:shadow-lg transition-shadow h-full">
                 <div className="flex flex-col h-full">
                   <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
-                      <FiBriefcase className="w-5 h-5 text-indigo-600" />
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
+                        <FiBriefcase className="w-5 h-5 text-indigo-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {project.name}
+                        </h3>
+                        <p className="text-sm text-gray-500">{project.lead}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {project.name}
-                      </h3>
-                      <p className="text-sm text-gray-500">{project.lead}</p>
+                    <div className="relative">
+                      <button className="p-1 hover:bg-gray-100 rounded">
+                        <FiMoreVertical className="w-4 h-4 text-gray-400" />
+                      </button>
                     </div>
                   </div>
-                  <div className="relative">
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <FiMoreVertical className="w-4 h-4 text-gray-400" />
-                    </button>
-                  </div>
-                </div>
 
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                  {project.description}
-                </p>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                    {project.description}
+                  </p>
 
-                <div className="flex items-center justify-between mb-4">
-                  <Badge className={getStatusColor(project.status)}>
-                    {project.status
-                      ? project.status.charAt(0).toUpperCase() +
+                  <div className="flex items-center justify-between mb-4">
+                    <Badge className={getStatusColor(project.status)}>
+                      {project.status
+                        ? project.status.charAt(0).toUpperCase() +
                         project.status.slice(1)
-                      : 'Unknown'}
-                  </Badge>
-                  {project.priority && (
-                    <Badge className={getPriorityColor(project.priority)}>
-                      {project.priority.charAt(0).toUpperCase() +
-                        project.priority.slice(1)}
+                        : 'Unknown'}
                     </Badge>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  <div className="flex items-center">
-                    <FiUsers className="w-4 h-4 mr-1" />
-                    <span>{project.teamMembers?.length || 0} members</span>
+                    {project.priority && (
+                      <Badge className={getPriorityColor(project.priority)}>
+                        {project.priority.charAt(0).toUpperCase() +
+                          project.priority.slice(1)}
+                      </Badge>
+                    )}
                   </div>
-                  <div className="flex items-center">
-                    <FiCalendar className="w-4 h-4 mr-1" />
-                    <span>
-                      {project.endDate
-                        ? new Date(project.endDate).toLocaleDateString()
-                        : 'No end date'}
-                    </span>
-                  </div>
-                </div>
 
-                <div className="flex items-center space-x-2 mt-auto">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleViewProject(project)}
-                  >
-                    <FiEye className="w-4 h-4 mr-2" />
-                    View
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleEditProject(project)}
-                  >
-                    <FiEdit3 className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleManageTeam(project)}
-                  >
-                    <FiUserPlus className="w-4 h-4 mr-2" />
-                    Team
-                  </Button>
-                </div>
+                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                    <div className="flex items-center">
+                      <FiUsers className="w-4 h-4 mr-1" />
+                      <span>{project.teamMembers?.length || 0} members</span>
+                    </div>
+                    <div className="flex items-center">
+                      <FiCalendar className="w-4 h-4 mr-1" />
+                      <span>
+                        {project.endDate
+                          ? new Date(project.endDate).toLocaleDateString()
+                          : 'No end date'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2 mt-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleViewProject(project)}
+                    >
+                      <FiEye className="w-4 h-4 mr-2" />
+                      View
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleEditProject(project)}
+                    >
+                      <FiEdit3 className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleManageTeam(project)}
+                    >
+                      <FiUserPlus className="w-4 h-4 mr-2" />
+                      Team
+                    </Button>
+                  </div>
                 </div>
               </Card>
             </motion.div>
@@ -644,7 +644,7 @@ const Projects = () => {
                         <Badge className={getStatusColor(project.status)}>
                           {project.status
                             ? project.status.charAt(0).toUpperCase() +
-                              project.status.slice(1)
+                            project.status.slice(1)
                             : 'Unknown'}
                         </Badge>
                       </td>
@@ -948,7 +948,7 @@ const InternProjectsView = ({ user }) => {
                       <Badge className={getStatusColor(project.status)}>
                         {project.status
                           ? project.status.charAt(0).toUpperCase() +
-                            project.status.slice(1)
+                          project.status.slice(1)
                           : 'Unknown'}
                       </Badge>
                     </div>
@@ -1072,7 +1072,7 @@ const InternProjectsView = ({ user }) => {
                     <Badge className={getStatusColor(selectedProject.status)}>
                       {selectedProject.status
                         ? selectedProject.status.charAt(0).toUpperCase() +
-                          selectedProject.status.slice(1)
+                        selectedProject.status.slice(1)
                         : 'Unknown'}
                     </Badge>
                   </div>
@@ -1164,26 +1164,25 @@ const InternProjectsView = ({ user }) => {
                         </h3>
                         <div className="space-y-3">
                           {selectedProject.weeklyGoals
-                            .sort(
-                              (a, b) =>
-                                new Date(b.createdAt) - new Date(a.createdAt)
+                            .filter(
+                              (goal) =>
+                                goal.week ===
+                                `Week of ${new Date().toLocaleDateString()}`
                             )
                             .map((goal) => (
                               <div
                                 key={goal.id}
-                                className={`p-4 border rounded-lg ${
-                                  goal.status === 'current'
-                                    ? 'bg-green-50 border-green-200'
-                                    : 'bg-gray-50 border-gray-200'
-                                }`}
+                                className={`p-4 border rounded-lg ${goal.status === 'current'
+                                  ? 'bg-green-50 border-green-200'
+                                  : 'bg-gray-50 border-gray-200'
+                                  }`}
                               >
                                 <div className="flex items-center justify-between mb-2">
                                   <span
-                                    className={`font-medium ${
-                                      goal.status === 'current'
-                                        ? 'text-green-800'
-                                        : 'text-gray-700'
-                                    }`}
+                                    className={`font-medium ${goal.status === 'current'
+                                      ? 'text-green-800'
+                                      : 'text-gray-700'
+                                      }`}
                                   >
                                     {goal.week}
                                   </span>
@@ -1220,30 +1219,7 @@ const InternProjectsView = ({ user }) => {
 
                 {/* Sidebar Info */}
                 <div className="space-y-6">
-                  {/* Progress */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-3">
-                      Progress Overview
-                    </h4>
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm text-gray-600">
-                            Overall Progress
-                          </span>
-                          <span className="text-sm font-medium">
-                            {selectedProject.progress || 0}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${getProgressColor(selectedProject.progress)}`}
-                            style={{ width: `${selectedProject.progress || 0}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Progress Overview removed */}
 
                   {/* Project Timeline */}
                   <div className="bg-gray-50 p-4 rounded-lg">
@@ -1394,7 +1370,11 @@ const TeamLeaderProjectsView = ({ user }) => {
 
   const handleSetWeeklyGoal = (project) => {
     setSelectedProjectForGoal(project);
-    setGoalText('');
+    const currentWeek = `Week of ${new Date().toLocaleDateString()}`;
+    const existingGoal = project.weeklyGoals?.find(
+      (g) => g.week === currentWeek
+    );
+    setGoalText(existingGoal ? existingGoal.goal : '');
     setShowGoalModal(true);
   };
 
@@ -1551,7 +1531,7 @@ const TeamLeaderProjectsView = ({ user }) => {
                       <Badge className={getStatusColor(project.status)}>
                         {project.status
                           ? project.status.charAt(0).toUpperCase() +
-                            project.status.slice(1)
+                          project.status.slice(1)
                           : 'Unknown'}
                       </Badge>
                     </div>
@@ -1670,7 +1650,7 @@ const TeamLeaderProjectsView = ({ user }) => {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">
-                    Set Weekly Goal
+                    {goalText ? 'Update Weekly Goal' : 'Set Weekly Goal'}
                   </h2>
                   <p className="text-gray-600">{selectedProjectForGoal.name}</p>
                 </div>
@@ -1738,7 +1718,7 @@ const TeamLeaderProjectsView = ({ user }) => {
                   <Badge className={getStatusColor(selectedProject.status)}>
                     {selectedProject.status
                       ? selectedProject.status.charAt(0).toUpperCase() +
-                        selectedProject.status.slice(1)
+                      selectedProject.status.slice(1)
                       : 'Unknown'}
                   </Badge>
                 </div>
@@ -1843,30 +1823,36 @@ const TeamLeaderProjectsView = ({ user }) => {
                       Weekly Goals
                     </h3>
                     <div className="space-y-3">
-                      {selectedProject.weeklyGoals.map((goal) => (
-                        <div
-                          key={goal.id}
-                          className="p-4 bg-green-50 border border-green-200 rounded-lg"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-green-800">
-                              {goal.week}
-                            </span>
-                            <Badge
-                              className={
-                                goal.status === 'current'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-gray-100 text-gray-800'
-                              }
-                            >
-                              {goal.status === 'current'
-                                ? 'Current'
-                                : 'Completed'}
-                            </Badge>
+                      {selectedProject.weeklyGoals
+                        .filter(
+                          (goal) =>
+                            goal.week ===
+                            `Week of ${new Date().toLocaleDateString()}`
+                        )
+                        .map((goal) => (
+                          <div
+                            key={goal.id}
+                            className="p-4 bg-green-50 border border-green-200 rounded-lg"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium text-green-800">
+                                {goal.week}
+                              </span>
+                              <Badge
+                                className={
+                                  goal.status === 'current'
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                }
+                              >
+                                {goal.status === 'current'
+                                  ? 'Current'
+                                  : 'Completed'}
+                              </Badge>
+                            </div>
+                            <p className="text-gray-700">{goal.goal}</p>
                           </div>
-                          <p className="text-gray-700">{goal.goal}</p>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 )}
@@ -1874,30 +1860,7 @@ const TeamLeaderProjectsView = ({ user }) => {
 
               {/* Sidebar Info */}
               <div className="space-y-6">
-                {/* Progress Overview */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-3">
-                    Progress Overview
-                  </h4>
-                  <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm text-gray-600">
-                          Overall Progress
-                        </span>
-                        <span className="text-sm font-medium">
-                          {selectedProject.progress || 0}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${getProgressColor(selectedProject.progress)}`}
-                          style={{ width: `${selectedProject.progress || 0}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* Progress Overview removed */}
 
                 {/* Project Timeline */}
                 <div className="bg-gray-50 p-4 rounded-lg">
@@ -1920,9 +1883,9 @@ const TeamLeaderProjectsView = ({ user }) => {
                     <div className="flex justify-between">
                       <span className="text-gray-600">Status:</span>
                       <span
-                          className={`font-medium ${calculateDaysRemaining(selectedProject.endDate, selectedProject.status).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(selectedProject.endDate, selectedProject.status).includes('remaining') && parseInt(calculateDaysRemaining(selectedProject.endDate, selectedProject.status)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}
+                        className={`font-medium ${calculateDaysRemaining(selectedProject.endDate, selectedProject.status).includes('overdue') ? 'text-red-600' : calculateDaysRemaining(selectedProject.endDate, selectedProject.status).includes('remaining') && parseInt(calculateDaysRemaining(selectedProject.endDate, selectedProject.status)) < 30 ? 'text-orange-600' : 'text-gray-900'}`}
                       >
-                          {calculateDaysRemaining(selectedProject.endDate, selectedProject.status)}
+                        {calculateDaysRemaining(selectedProject.endDate, selectedProject.status)}
                       </span>
                     </div>
                   </div>

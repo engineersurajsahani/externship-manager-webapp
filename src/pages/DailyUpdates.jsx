@@ -43,22 +43,22 @@ const DailyUpdates = () => {
   const [selectedDate, setSelectedDate] = useState(
     formatLocalDateForInput(new Date())
   );
-  
+
   const [selectedUpdate, setSelectedUpdate] = useState(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const { id: routeUpdateId } = useParams();
   const location = useLocation();
   const queryDate = new URLSearchParams(location.search).get('date');
-  
+
   const [selectedProject, setSelectedProject] = useState('all');
   const [selectedIntern, setSelectedIntern] = useState('all');
   const [projects, setProjects] = useState([]);
   const [interns, setInterns] = useState([]);
-  
-  const [recentFilter, setRecentFilter] = useState('recent3');
-  const [showAllUpdates, setShowAllUpdates] = useState(true);
 
-  
+  const [recentFilter, setRecentFilter] = useState('recent3');
+  const [showAllUpdates, setShowAllUpdates] = useState(false);
+
+
   const [userProjects, setUserProjects] = useState([]);
   const [projectUpdateModal, setProjectUpdateModal] = useState({
     isOpen: false,
@@ -67,7 +67,7 @@ const DailyUpdates = () => {
   const [todaysSubmissions, setTodaysSubmissions] = useState(new Set());
   const [loadingProjects, setLoadingProjects] = useState(false);
 
-  
+
   useEffect(() => {
     loadTeamUpdates();
     // If route contains an update id, attempt to open it
@@ -163,8 +163,7 @@ const DailyUpdates = () => {
     // Date filter - apply when allowed or when selected date is today
     const shouldApplyDateFilter =
       !(userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) ||
-      showAllUpdates ||
-      selectedDate === todayStr;
+      showAllUpdates;
 
     if (shouldApplyDateFilter) {
       // Date filter
@@ -210,11 +209,11 @@ const DailyUpdates = () => {
         }
 
         if (apiResponse.data.success) {
-          
+
           const updates = apiResponse.data.updates || [];
           console.debug('API returned updates:', updates.length, updates);
 
-          
+
           dailyUpdates = updates.map((update) => ({
             id: update._id,
             userEmail: update.user?.email || 'No Email',
@@ -233,12 +232,12 @@ const DailyUpdates = () => {
             projectName: update.project?.name || 'No Project Assigned',
           }));
 
-          
+
         }
       } catch (apiError) {
         console.error('Failed to fetch updates from API:', apiError);
 
-        
+
         if (
           apiError.code === 'ECONNREFUSED' ||
           apiError.message.includes('Network Error')
@@ -248,11 +247,11 @@ const DailyUpdates = () => {
           );
         }
 
-        
+
         dailyUpdates = [];
       }
 
-      
+
       dailyUpdates.sort(
         (a, b) =>
           new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date)
@@ -294,7 +293,7 @@ const DailyUpdates = () => {
     }
   };
 
-  
+
   const loadUserProjects = async () => {
     if (userRole !== ROLES.INTERN) return;
 
@@ -311,33 +310,33 @@ const DailyUpdates = () => {
             return true; // Project managers and admins see all projects
           })
           .map((project) => ({
-          id: project._id,
-          name: project.name,
-          description: project.description,
-          status: project.status,
-          projectManager: project.projectManager
-            ? {
+            id: project._id,
+            name: project.name,
+            description: project.description,
+            status: project.status,
+            projectManager: project.projectManager
+              ? {
                 name: `${project.projectManager.firstName} ${project.projectManager.lastName}`,
                 email: project.projectManager.email,
               }
-            : null,
-          teamLeader: project.teamMembers?.find(
-            (member) => member.role === 'team_leader'
-          )?.user
-            ? {
+              : null,
+            teamLeader: project.teamMembers?.find(
+              (member) => member.role === 'team_leader'
+            )?.user
+              ? {
                 name: `${project.teamMembers.find((member) => member.role === 'team_leader').user.firstName} ${project.teamMembers.find((member) => member.role === 'team_leader').user.lastName}`,
                 email: project.teamMembers.find(
                   (member) => member.role === 'team_leader'
                 ).user.email,
               }
-            : null,
-          technologies: project.technologies || [],
-          startDate: project.startDate,
-          endDate: project.endDate,
-        }));
+              : null,
+            technologies: project.technologies || [],
+            startDate: project.startDate,
+            endDate: project.endDate,
+          }));
         setUserProjects(projectsWithDetails);
 
-        
+
         await checkTodaysSubmissions(projectsWithDetails);
       }
     } catch (error) {
@@ -347,13 +346,13 @@ const DailyUpdates = () => {
     }
   };
 
-  
+
   const checkTodaysSubmissions = async (projects) => {
     try {
       const today = formatLocalDateForInput(new Date());
       const submissions = new Set();
 
-      
+
       const response = await apiService.getMyAttendance();
       if (response.data.success && response.data.attendance) {
         const todayAttendance = response.data.attendance.find((record) =>
@@ -361,7 +360,7 @@ const DailyUpdates = () => {
         );
 
         if (todayAttendance && todayAttendance.projectAttendance) {
-          
+
           todayAttendance.projectAttendance.forEach((projectAtt) => {
             if (projectAtt.hasSubmittedUpdate && projectAtt.status === 'present') {
               submissions.add(projectAtt.project.toString());
@@ -373,10 +372,10 @@ const DailyUpdates = () => {
       setTodaysSubmissions(submissions);
     } catch (error) {
       console.error('Error checking today submissions:', error);
-      
+
       const today = formatLocalDateForInput(new Date());
       const submissions = new Set();
-      
+
       for (const project of projects) {
         const userTodayUpdates = teamUpdates.filter(
           (update) =>
@@ -393,7 +392,7 @@ const DailyUpdates = () => {
     }
   };
 
-  
+
   useEffect(() => {
     if (userRole === ROLES.INTERN) {
       loadUserProjects();
@@ -401,12 +400,12 @@ const DailyUpdates = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userRole, teamUpdates]); // Re-run when teamUpdates changes
 
-  
+
   const handleProjectUpdateSubmit = (project) => {
     setProjectUpdateModal({ isOpen: true, project });
   };
 
-  
+
   const handleUpdateSuccess = () => {
     setProjectUpdateModal({ isOpen: false, project: null });
     // Reload data
@@ -435,7 +434,7 @@ const DailyUpdates = () => {
     setShowUpdateModal(true);
   };
 
-  
+
   useEffect(() => {
     if (showUpdateModal) lockScroll();
     else unlockScroll();
@@ -531,17 +530,15 @@ const DailyUpdates = () => {
                     transition={{ delay: 0.1 * index }}
                   >
                     <Card
-                      className={`p-6 relative overflow-hidden ${
-                        hasSubmittedToday
+                      className={`p-6 relative overflow-hidden ${hasSubmittedToday
                           ? 'border-green-200 bg-green-50/30'
                           : 'border-gray-200 hover:border-blue-300 hover:shadow-lg'
-                      } transition-all`}
+                        } transition-all`}
                     >
                       {/* Status indicator */}
                       <div
-                        className={`absolute top-0 right-0 w-2 h-full ${
-                          hasSubmittedToday ? 'bg-green-500' : 'bg-orange-400'
-                        }`}
+                        className={`absolute top-0 right-0 w-2 h-full ${hasSubmittedToday ? 'bg-green-500' : 'bg-orange-400'
+                          }`}
                       ></div>
 
                       {/* Project Header */}
@@ -553,11 +550,10 @@ const DailyUpdates = () => {
                               {project.name}
                             </h3>
                             <Badge
-                              className={`${
-                                project.status === 'active'
+                              className={`${project.status === 'active'
                                   ? 'bg-green-100 text-green-800'
                                   : 'bg-gray-100 text-gray-800'
-                              }`}
+                                }`}
                             >
                               {project.status}
                             </Badge>
@@ -637,11 +633,10 @@ const DailyUpdates = () => {
                         </div>
                         <Button
                           onClick={() => handleProjectUpdateSubmit(project)}
-                          className={`${
-                            hasSubmittedToday
+                          className={`${hasSubmittedToday
                               ? 'bg-blue-600 hover:bg-blue-700'
                               : 'bg-green-600 hover:bg-green-700'
-                          }`}
+                            }`}
                           size="sm"
                         >
                           <FiEdit3 className="w-4 h-4 mr-2" />
@@ -812,75 +807,75 @@ const DailyUpdates = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
               >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Daily Update Details
-                </h2>
-                <button
-                  onClick={() => setShowUpdateModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <FiX className="w-6 h-6" />
-                </button>
-              </div>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Daily Update Details
+                  </h2>
+                  <button
+                    onClick={() => setShowUpdateModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <FiX className="w-6 h-6" />
+                  </button>
+                </div>
 
-              <div className="space-y-6">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <FiTarget className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      {selectedUpdate.projectName}
-                    </h3>
-                    <p className="text-sm text-gray-500">Project Update</p>
-                    <div className="flex items-center space-x-2 text-xs text-gray-400">
-                      <FiCalendar className="w-3 h-3" />
-                      <span>
-                        {new Date(selectedUpdate.date).toLocaleDateString()}
-                      </span>
-                      <span>•</span>
-                      <FiClock className="w-3 h-3" />
-                      <span>
-                        {new Date(
-                          selectedUpdate.timestamp || selectedUpdate.date
-                        ).toLocaleTimeString()}
-                      </span>
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <FiTarget className="w-6 h-6 text-blue-600" />
                     </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">
+                        {selectedUpdate.projectName}
+                      </h3>
+                      <p className="text-sm text-gray-500">Project Update</p>
+                      <div className="flex items-center space-x-2 text-xs text-gray-400">
+                        <FiCalendar className="w-3 h-3" />
+                        <span>
+                          {new Date(selectedUpdate.date).toLocaleDateString()}
+                        </span>
+                        <span>•</span>
+                        <FiClock className="w-3 h-3" />
+                        <span>
+                          {new Date(
+                            selectedUpdate.timestamp || selectedUpdate.date
+                          ).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge className={getStatusColor(selectedUpdate.status)}>
+                      {selectedUpdate.status.charAt(0).toUpperCase() +
+                        selectedUpdate.status.slice(1)}
+                    </Badge>
                   </div>
-                  <Badge className={getStatusColor(selectedUpdate.status)}>
-                    {selectedUpdate.status.charAt(0).toUpperCase() +
-                      selectedUpdate.status.slice(1)}
-                  </Badge>
-                </div>
 
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">
-                    What was accomplished:
-                  </h4>
-                  <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
-                    {selectedUpdate.workDone || 'No details provided'}
-                  </p>
-                </div>
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">
+                      What was accomplished:
+                    </h4>
+                    <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
+                      {selectedUpdate.workDone || 'No details provided'}
+                    </p>
+                  </div>
 
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">
-                    Challenges faced:
-                  </h4>
-                  <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
-                    {selectedUpdate.challenges || 'None mentioned'}
-                  </p>
-                </div>
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">
+                      Challenges faced:
+                    </h4>
+                    <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
+                      {selectedUpdate.challenges || 'None mentioned'}
+                    </p>
+                  </div>
 
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">
-                    Plan for tomorrow:
-                  </h4>
-                  <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
-                    {selectedUpdate.planForTomorrow || 'No plan provided'}
-                  </p>
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">
+                      Plan for tomorrow:
+                    </h4>
+                    <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
+                      {selectedUpdate.planForTomorrow || 'No plan provided'}
+                    </p>
+                  </div>
                 </div>
-              </div>
               </motion.div>
             </div>
           </Portal>
@@ -946,87 +941,87 @@ const DailyUpdates = () => {
       {/* Filters - Only show for PM/Admin or when Intern/TL clicks Show All */}
       {(!(userRole === ROLES.INTERN || userRole === ROLES.TEAM_LEADER) ||
         showAllUpdates) && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card className="p-6">
-            <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
-              {/* Date Filter */}
-              <div className="flex items-center space-x-2">
-                <FiCalendar className="w-4 h-4 text-gray-400" />
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Status filter removed — only date filter is displayed */}
-
-              {/* Project Filter (PM only) */}
-              {userRole === ROLES.PROJECT_MANAGER && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
+                {/* Date Filter */}
                 <div className="flex items-center space-x-2">
-                  <FiFolder className="w-4 h-4 text-gray-400" />
-                  <select
-                    value={selectedProject}
-                    onChange={(e) => {
-                      setSelectedProject(e.target.value);
-                      // Reset intern filter when project changes
-                      setSelectedIntern('all');
-                    }}
+                  <FiCalendar className="w-4 h-4 text-gray-400" />
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">All Projects</option>
-                    {projects.map((project) => (
-                      <option key={project.id} value={project.id.toString()}>
-                        {project.name}
+                  />
+                </div>
+
+                {/* Status filter removed — only date filter is displayed */}
+
+                {/* Project Filter (PM only) */}
+                {userRole === ROLES.PROJECT_MANAGER && (
+                  <div className="flex items-center space-x-2">
+                    <FiFolder className="w-4 h-4 text-gray-400" />
+                    <select
+                      value={selectedProject}
+                      onChange={(e) => {
+                        setSelectedProject(e.target.value);
+                        // Reset intern filter when project changes
+                        setSelectedIntern('all');
+                      }}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="all">All Projects</option>
+                      {projects.map((project) => (
+                        <option key={project.id} value={project.id.toString()}>
+                          {project.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Intern Filter (PM only, filtered by project) */}
+                {userRole === ROLES.PROJECT_MANAGER && (
+                  <div className="flex items-center space-x-2">
+                    <FiUsers className="w-4 h-4 text-gray-400" />
+                    <select
+                      value={selectedIntern}
+                      onChange={(e) => setSelectedIntern(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={selectedProject === 'all'}
+                    >
+                      <option value="all">
+                        {selectedProject === 'all'
+                          ? 'Select Project First'
+                          : 'All Interns'}
                       </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Intern Filter (PM only, filtered by project) */}
-              {userRole === ROLES.PROJECT_MANAGER && (
-                <div className="flex items-center space-x-2">
-                  <FiUsers className="w-4 h-4 text-gray-400" />
-                  <select
-                    value={selectedIntern}
-                    onChange={(e) => setSelectedIntern(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    disabled={selectedProject === 'all'}
-                  >
-                    <option value="all">
-                      {selectedProject === 'all'
-                        ? 'Select Project First'
-                        : 'All Interns'}
-                    </option>
-                    {selectedProject !== 'all' &&
-                      interns
-                        .filter((intern) => {
-                          // Filter interns by selected project
-                          const internUpdates = teamUpdates.filter(
-                            (update) =>
-                              update.userEmail === intern.email &&
-                              update.projectId?.toString() === selectedProject
-                          );
-                          return internUpdates.length > 0;
-                        })
-                        .map((intern) => (
-                          <option key={intern.email} value={intern.email}>
-                            {intern.name}
-                          </option>
-                        ))}
-                  </select>
-                </div>
-              )}
-            </div>
-          </Card>
-        </motion.div>
-      )}
+                      {selectedProject !== 'all' &&
+                        interns
+                          .filter((intern) => {
+                            // Filter interns by selected project
+                            const internUpdates = teamUpdates.filter(
+                              (update) =>
+                                update.userEmail === intern.email &&
+                                update.projectId?.toString() === selectedProject
+                            );
+                            return internUpdates.length > 0;
+                          })
+                          .map((intern) => (
+                            <option key={intern.email} value={intern.email}>
+                              {intern.name}
+                            </option>
+                          ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </motion.div>
+        )}
 
       {/* Updates List */}
       <motion.div
@@ -1043,27 +1038,27 @@ const DailyUpdates = () => {
               {/* Recent Updates Filter (Intern/Team Leader only) */}
               {(userRole === ROLES.INTERN ||
                 userRole === ROLES.TEAM_LEADER) && (
-                <div className="flex items-center space-x-2">
-                  <FiFilter className="w-4 h-4 text-gray-400" />
-                  <select
-                    value={recentFilter}
-                    onChange={(e) => setRecentFilter(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    disabled={showAllUpdates}
-                  >
-                    <option value="recent3">Recent 3 Updates</option>
-                    <option value="lastWeek">Last Week</option>
-                    <option value="thisMonth">This Month</option>
-                  </select>
-                  <Button
-                    variant={showAllUpdates ? 'primary' : 'outline'}
-                    size="sm"
-                    onClick={() => setShowAllUpdates(!showAllUpdates)}
-                  >
-                    {showAllUpdates ? 'Show Filtered' : 'Show All'}
-                  </Button>
-                </div>
-              )}
+                  <div className="flex items-center space-x-2">
+                    <FiFilter className="w-4 h-4 text-gray-400" />
+                    <select
+                      value={recentFilter}
+                      onChange={(e) => setRecentFilter(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      disabled={showAllUpdates}
+                    >
+                      <option value="recent3">Recent 3 Updates</option>
+                      <option value="lastWeek">Last Week</option>
+                      <option value="thisMonth">This Month</option>
+                    </select>
+                    <Button
+                      variant={showAllUpdates ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setShowAllUpdates(!showAllUpdates)}
+                    >
+                      {showAllUpdates ? 'Show Filtered' : 'Show All'}
+                    </Button>
+                  </div>
+                )}
               <span className="text-sm text-gray-500">
                 {filteredUpdates.length} updates found
               </span>
