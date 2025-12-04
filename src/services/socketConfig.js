@@ -5,13 +5,7 @@ const SOCKET_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http:/
 let socket = null;
 
 export const initializeSocket = (token) => {
-  if (socket) {
-    if (socket.connected) {
-      return socket;
-    }
-    // If socket exists but disconnected, try to reconnect
-    socket.auth = { token };
-    socket.connect();
+  if (socket && socket.connected) {
     return socket;
   }
 
@@ -27,7 +21,7 @@ export const initializeSocket = (token) => {
   });
 
   socket.on('connect', () => {
-    // Connected
+    console.log('✅ Socket connected:', socket.id);
   });
 
   socket.on('connect_error', (error) => {
@@ -35,7 +29,7 @@ export const initializeSocket = (token) => {
   });
 
   socket.on('disconnect', (reason) => {
-    // Disconnected
+    console.log('❌ Socket disconnected:', reason);
   });
 
   socket.on('error', (error) => {
@@ -46,15 +40,17 @@ export const initializeSocket = (token) => {
 };
 
 export const getSocket = () => {
+  if (!socket) {
+    console.warn('Socket not initialized. Call initializeSocket first.');
+  }
   return socket;
 };
 
 export const disconnectSocket = () => {
   if (socket) {
-    if (socket.connected) {
-      socket.disconnect();
-    }
+    socket.disconnect();
     socket = null;
+    console.log('Socket disconnected and cleared');
   }
 };
 
@@ -73,8 +69,6 @@ export const leaveProject = (projectId) => {
 export const sendMessage = (projectId, text, attachments = []) => {
   if (socket && socket.connected) {
     socket.emit('send-message', { projectId, text, attachments });
-  } else {
-    console.error('Cannot send message: Socket not connected', { socketExists: !!socket, connected: socket?.connected });
   }
 };
 
@@ -90,10 +84,6 @@ export const stopTyping = (projectId) => {
   }
 };
 
-export const isConnected = () => {
-  return socket && socket.connected;
-};
-
 export default {
   initializeSocket,
   getSocket,
@@ -103,5 +93,4 @@ export default {
   sendMessage,
   startTyping,
   stopTyping,
-  isConnected,
 };
