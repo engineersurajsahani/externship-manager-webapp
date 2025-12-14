@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5050';
+const SOCKET_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://externship-manager-api.onrender.com';
 
 let socket = null;
 

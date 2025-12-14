@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // API Base URL - adjust this to match your backend
 const API_BASE_URL =
-  process.env.REACT_APP_API_URL || 'http://localhost:5050/api';
+  process.env.REACT_APP_API_URL || 'https://externship-manager-api.onrender.com/api';
 
 // Create axios instance
 const api = axios.create({
@@ -37,19 +37,19 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
+
       const refreshToken = localStorage.getItem('refreshToken');
-      
+
       if (refreshToken) {
         try {
           const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
             refreshToken,
           });
-          
+
           if (response.data.success) {
             const { token } = response.data;
             localStorage.setItem('token', token);
-            
+
             // Retry original request with new token
             originalRequest.headers.Authorization = `Bearer ${token}`;
             return api(originalRequest);
@@ -71,7 +71,7 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
-    
+
     return Promise.reject(error);
   }
 );
