@@ -1,0 +1,9 @@
+services:
+  - type: static
+    name: externship-manager-webapp
+    runtime: static
+    buildCommand: npm install && npm run build
+    publishPath: build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://externship-manager-api.onrender.com/api
