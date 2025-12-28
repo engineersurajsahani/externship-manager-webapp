@@ -88,6 +88,20 @@ const CalendarAttendanceView = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDate, user]);
 
+  // Listen for daily update submissions to refresh attendance
+  useEffect(() => {
+    const handleDailyUpdateSubmitted = () => {
+      console.log('[CalendarAttendanceView] Daily update submitted, refreshing attendance...');
+      loadAttendanceData();
+    };
+
+    window.addEventListener('daily-update-submitted', handleDailyUpdateSubmitted);
+    return () => {
+      window.removeEventListener('daily-update-submitted', handleDailyUpdateSubmitted);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const loadAttendanceData = async () => {
     try {
       // Calculate start and end dates for the current month view
@@ -476,10 +490,21 @@ const CalendarAttendanceView = () => {
   return (
     <Card className="p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-2">
+      <div className="mb-6 flex items-center justify-between">
+        <h3 className="text-xl font-bold text-gray-900">
           Attendance Calendar
         </h3>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={loadAttendanceData}
+          className="text-sm"
+        >
+          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Refresh
+        </Button>
       </div>
 
       {/* Month Navigation */}
@@ -563,8 +588,8 @@ const CalendarAttendanceView = () => {
             <div
               key={day}
               className={`p-3 text-center text-sm font-semibold rounded-lg ${index === 0 || index === 6
-                  ? 'text-gray-400 bg-gray-50'  // Sunday and Saturday
-                  : 'text-gray-700 bg-blue-50' // Monday to Friday
+                ? 'text-gray-400 bg-gray-50'  // Sunday and Saturday
+                : 'text-gray-700 bg-blue-50' // Monday to Friday
                 }`}
             >
               {day}
@@ -639,12 +664,12 @@ const CalendarAttendanceView = () => {
             <div className="flex items-center space-x-3">
               <Badge
                 className={`px-3 py-1 text-sm font-medium ${selectedDayData.status === 'present'
-                    ? 'bg-green-100 text-green-800 border border-green-200'
-                    : selectedDayData.status === 'absent'
-                      ? 'bg-red-100 text-red-800 border border-red-200'
-                      : selectedDayData.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                        : 'bg-gray-100 text-gray-800 border border-gray-200'
+                  ? 'bg-green-100 text-green-800 border border-green-200'
+                  : selectedDayData.status === 'absent'
+                    ? 'bg-red-100 text-red-800 border border-red-200'
+                    : selectedDayData.status === 'pending'
+                      ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                      : 'bg-gray-100 text-gray-800 border border-gray-200'
                   }`}
               >
                 {selectedDayData.status.charAt(0).toUpperCase() +
