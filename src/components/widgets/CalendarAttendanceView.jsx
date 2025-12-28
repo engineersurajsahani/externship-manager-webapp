@@ -106,6 +106,23 @@ const CalendarAttendanceView = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ADDITIONAL FIX: Refresh attendance when page becomes visible
+  // This ensures calendar updates when user navigates back to Attendance page
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('[CalendarAttendanceView] Page became visible, refreshing attendance...');
+        loadAttendanceData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const loadAttendanceData = async () => {
     try {
       // Calculate start and end dates for the current month view
