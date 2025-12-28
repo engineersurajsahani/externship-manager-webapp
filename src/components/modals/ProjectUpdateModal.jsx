@@ -142,6 +142,10 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
       const response = await apiService.submitDailyUpdate(updateData);
 
       if (response.data.success) {
+        // Dispatch custom event to notify calendar to refresh attendance
+        window.dispatchEvent(new CustomEvent('daily-update-submitted'));
+        console.log('[ProjectUpdateModal] Dispatched daily-update-submitted event');
+
         onSuccess();
       } else {
         throw new Error(response.data.message || "Failed to submit update");
@@ -318,107 +322,104 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
             <div className="flex-1 flex flex-col overflow-hidden min-h-0">
               <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
-                {/* Work Done Today */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    What did you work on today for this project? *
-                  </label>
-                  <textarea
-                    value={formData.workDone}
-                    onChange={(e) =>
-                      handleInputChange("workDone", e.target.value)
-                    }
-                    rows={4}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
-                      errors.workDone ? "border-red-300" : "border-gray-300"
-                    }`}
-                    placeholder={`Describe the specific tasks you completed for ${project.name}...`}
-                    required
-                  />
-                  <div className="flex items-center justify-between mt-1">
-                    {errors.workDone ? (
-                      <p className="text-red-500 text-xs">{errors.workDone}</p>
-                    ) : (
-                      <p className="text-gray-500 text-xs">
-                        Be specific about your project contributions
-                      </p>
-                    )}
-                    <span className="text-xs text-gray-400">
-                      {getWordCount(formData.workDone)} words
-                    </span>
+                  {/* Work Done Today */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      What did you work on today for this project? *
+                    </label>
+                    <textarea
+                      value={formData.workDone}
+                      onChange={(e) =>
+                        handleInputChange("workDone", e.target.value)
+                      }
+                      rows={4}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${errors.workDone ? "border-red-300" : "border-gray-300"
+                        }`}
+                      placeholder={`Describe the specific tasks you completed for ${project.name}...`}
+                      required
+                    />
+                    <div className="flex items-center justify-between mt-1">
+                      {errors.workDone ? (
+                        <p className="text-red-500 text-xs">{errors.workDone}</p>
+                      ) : (
+                        <p className="text-gray-500 text-xs">
+                          Be specific about your project contributions
+                        </p>
+                      )}
+                      <span className="text-xs text-gray-400">
+                        {getWordCount(formData.workDone)} words
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Challenges */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Challenges faced (if any)
-                  </label>
-                  <textarea
-                    value={formData.challenges}
-                    onChange={(e) =>
-                      handleInputChange("challenges", e.target.value)
-                    }
-                    rows={3}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
-                      errors.challenges ? "border-red-300" : "border-gray-300"
-                    }`}
-                    placeholder="Describe any project-specific blockers or difficulties..."
-                  />
-                  <div className="flex items-center justify-between mt-1">
-                    {errors.challenges ? (
-                      <p className="text-red-500 text-xs">
-                        {errors.challenges}
-                      </p>
-                    ) : (
-                      <p className="text-gray-500 text-xs">
-                        Optional: Mention any obstacles or help needed
-                      </p>
-                    )}
-                    <span className="text-xs text-gray-400">
-                      {getWordCount(formData.challenges)} words
-                    </span>
+                  {/* Challenges */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Challenges faced (if any)
+                    </label>
+                    <textarea
+                      value={formData.challenges}
+                      onChange={(e) =>
+                        handleInputChange("challenges", e.target.value)
+                      }
+                      rows={3}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${errors.challenges ? "border-red-300" : "border-gray-300"
+                        }`}
+                      placeholder="Describe any project-specific blockers or difficulties..."
+                    />
+                    <div className="flex items-center justify-between mt-1">
+                      {errors.challenges ? (
+                        <p className="text-red-500 text-xs">
+                          {errors.challenges}
+                        </p>
+                      ) : (
+                        <p className="text-gray-500 text-xs">
+                          Optional: Mention any obstacles or help needed
+                        </p>
+                      )}
+                      <span className="text-xs text-gray-400">
+                        {getWordCount(formData.challenges)} words
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Plan for Tomorrow */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    What do you plan to work on tomorrow for this project? *
-                  </label>
-                  <textarea
-                    value={formData.planForTomorrow}
-                    onChange={(e) =>
-                      handleInputChange("planForTomorrow", e.target.value)
-                    }
-                    rows={3}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
-                      errors.planForTomorrow ? "border-red-300" : "border-gray-300"
-                    }`}
-                    placeholder={`Outline your goals and tasks for ${project.name} tomorrow...`}
-                  />
-                  <div className="flex items-center justify-between mt-1">
-                    {errors.planForTomorrow ? (
-                      <p className="text-red-500 text-xs">
-                        {errors.planForTomorrow}
-                      </p>
-                    ) : (
-                      <p className="text-gray-500 text-xs">
-                        Outline your project priorities for tomorrow
-                      </p>
-                    )}
-                    <span className="text-xs text-gray-400">
-                      {getWordCount(formData.planForTomorrow)} words
-                    </span>
+                  {/* Plan for Tomorrow */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      What do you plan to work on tomorrow for this project? *
+                    </label>
+                    <textarea
+                      value={formData.planForTomorrow}
+                      onChange={(e) =>
+                        handleInputChange("planForTomorrow", e.target.value)
+                      }
+                      rows={3}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${errors.planForTomorrow ? "border-red-300" : "border-gray-300"
+                        }`}
+                      placeholder={`Outline your goals and tasks for ${project.name} tomorrow...`}
+                    />
+                    <div className="flex items-center justify-between mt-1">
+                      {errors.planForTomorrow ? (
+                        <p className="text-red-500 text-xs">
+                          {errors.planForTomorrow}
+                        </p>
+                      ) : (
+                        <p className="text-gray-500 text-xs">
+                          Outline your project priorities for tomorrow
+                        </p>
+                      )}
+                      <span className="text-xs text-gray-400">
+                        {getWordCount(formData.planForTomorrow)} words
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Submit Error */}
-                {errors.submit && (
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-600 text-sm">{errors.submit}</p>
-                  </div>
-                )}
+                  {/* Submit Error */}
+                  {errors.submit && (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-red-600 text-sm">{errors.submit}</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Form Footer */}
