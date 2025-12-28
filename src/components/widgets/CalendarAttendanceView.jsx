@@ -90,9 +90,13 @@ const CalendarAttendanceView = () => {
 
   // Listen for daily update submissions to refresh attendance
   useEffect(() => {
-    const handleDailyUpdateSubmitted = () => {
-      console.log('[CalendarAttendanceView] Daily update submitted, refreshing attendance...');
-      loadAttendanceData();
+    const handleDailyUpdateSubmitted = async () => {
+      console.log('[CalendarAttendanceView] Daily update submitted event received');
+      // Add a small delay to ensure backend has saved the attendance record
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('[CalendarAttendanceView] Refreshing attendance data...');
+      await loadAttendanceData();
+      console.log('[CalendarAttendanceView] Attendance data refreshed');
     };
 
     window.addEventListener('daily-update-submitted', handleDailyUpdateSubmitted);
@@ -111,15 +115,20 @@ const CalendarAttendanceView = () => {
       const startDate = formatLocalDate(firstDay);
       const endDate = formatLocalDate(lastDay);
 
+      console.log('[CalendarAttendanceView] Loading attendance data from', startDate, 'to', endDate);
+
       // Use attendance API instead of daily updates
       const response = await apiService.getMyAttendance({ startDate, endDate });
+      console.log('[CalendarAttendanceView] Attendance API response:', response.data);
+
       if (response.data && response.data.success) {
+        console.log('[CalendarAttendanceView] Processing', response.data.attendance.length, 'attendance records');
         processAttendanceData(response.data.attendance);
       } else {
         throw new Error('Failed to load attendance data');
       }
     } catch (error) {
-      console.error('Error loading attendance data:', error);
+      console.error('[CalendarAttendanceView] Error loading attendance data:', error);
       processAttendanceData([]);
     }
   };
@@ -173,11 +182,19 @@ const CalendarAttendanceView = () => {
         if (attendanceRecord) {
           // Use the attendance record status
           status = attendanceRecord.status; // 'present', 'absent', 'leave', 'holiday'
+          if (isToday) {
+            console.log('[CalendarAttendanceView] Today\'s attendance record found:', {
+              date: dateString,
+              status: attendanceRecord.status,
+              hasSubmittedUpdate: attendanceRecord.hasSubmittedUpdate
+            });
+          }
         } else if (isPast) {
           // If no record exists for a past working day, consider it absent
           status = 'absent';
         } else if (isToday) {
           status = 'pending';
+          console.log('[CalendarAttendanceView] Today has no attendance record, showing as pending:', dateString);
         } else {
           status = 'future';
         }
