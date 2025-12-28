@@ -167,6 +167,10 @@ const SubmitDailyUpdate = () => {
       if (response.data.success) {
         setSubmitSuccess(true);
 
+        // Dispatch custom event to notify calendar to refresh attendance
+        window.dispatchEvent(new CustomEvent('daily-update-submitted'));
+        console.log('[SubmitDailyUpdate] Dispatched daily-update-submitted event');
+
         // Redirect after success message
         setTimeout(() => {
           navigate('/daily-updates');
@@ -343,33 +347,33 @@ const SubmitDailyUpdate = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Work Done Today */}
-              {/* Project selector for interns working on multiple projects */}
-              {userRole === ROLES.INTERN && userProjects.length > 0 && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Project (select the project you're submitting an update for)</label>
-                  <div className="flex items-center space-x-2">
-                    <FiFolder className="w-4 h-4 text-gray-400" />
-                    <select
-                      value={selectedProject}
-                      onChange={(e) => {
-                        setSelectedProject(e.target.value);
-                        if (errors.project) setErrors((prev) => ({ ...prev, project: '' }));
-                      }}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    >
-                      <option value="">Select Project</option>
-                      {userProjects.map((p) => (
-                        <option key={p._id || p.id} value={p._id || p.id}>{p.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  {errors.project && (
-                    <p className="text-red-500 text-xs mt-1">{errors.project}</p>
-                  )}
+            {/* Project selector for interns working on multiple projects */}
+            {userRole === ROLES.INTERN && userProjects.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Project (select the project you're submitting an update for)</label>
+                <div className="flex items-center space-x-2">
+                  <FiFolder className="w-4 h-4 text-gray-400" />
+                  <select
+                    value={selectedProject}
+                    onChange={(e) => {
+                      setSelectedProject(e.target.value);
+                      if (errors.project) setErrors((prev) => ({ ...prev, project: '' }));
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="">Select Project</option>
+                    {userProjects.map((p) => (
+                      <option key={p._id || p.id} value={p._id || p.id}>{p.name}</option>
+                    ))}
+                  </select>
                 </div>
-              )}
+                {errors.project && (
+                  <p className="text-red-500 text-xs mt-1">{errors.project}</p>
+                )}
+              </div>
+            )}
 
-              <div>
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 What did you work on today? *
               </label>
@@ -377,9 +381,8 @@ const SubmitDailyUpdate = () => {
                 value={formData.workDone}
                 onChange={(e) => handleInputChange('workDone', e.target.value)}
                 rows={4}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none ${
-                  errors.workDone ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none ${errors.workDone ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 placeholder="Describe the tasks you completed, progress made, milestones achieved, etc."
               />
               <div className="flex items-center justify-between mt-1">
@@ -407,9 +410,8 @@ const SubmitDailyUpdate = () => {
                   handleInputChange('challenges', e.target.value)
                 }
                 rows={3}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none ${
-                  errors.challenges ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none ${errors.challenges ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 placeholder="Describe any blockers, difficulties, or issues you encountered..."
               />
               <div className="flex items-center justify-between mt-1">
@@ -437,9 +439,8 @@ const SubmitDailyUpdate = () => {
                   handleInputChange('planForTomorrow', e.target.value)
                 }
                 rows={3}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none ${
-                  errors.planForTomorrow ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none ${errors.planForTomorrow ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 placeholder="Outline your goals and tasks for the next working day..."
               />
               <div className="flex items-center justify-between mt-1">
