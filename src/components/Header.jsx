@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { FiBell, FiSearch } from 'react-icons/fi';
+import { FiBell, FiSearch, FiSun, FiMoon } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Header = () => {
+  const { theme, toggleTheme } = useTheme();
   // header only handles notifications now
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
@@ -55,6 +57,13 @@ const Header = () => {
 
           {/* Right side - Notifications and Profile */}
           <div className="flex items-center space-x-4">
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+            >
+              {theme === 'light' ? <FiMoon size={20} /> : <FiSun size={20} />}
+            </button>
+
             {/* Notifications */}
             <div className="relative">
               <button
@@ -82,9 +91,8 @@ const Header = () => {
                       {notifications.map((notif) => (
                         <div
                           key={notif.id}
-                          className={`px-4 py-3 hover:bg-gray-50 border-b border-gray-100 cursor-pointer ${
-                            notif.unread ? 'bg-blue-50' : ''
-                          }`}
+                          className={`px-4 py-3 hover:bg-gray-50 border-b border-gray-100 cursor-pointer ${notif.unread ? 'bg-blue-50' : ''
+                            }`}
                         >
                           <p className="text-sm text-gray-800">{notif.text}</p>
                           <p className="text-xs text-gray-500 mt-1">

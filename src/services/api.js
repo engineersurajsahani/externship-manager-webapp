@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // API Base URL - adjust this to match your backend
 const API_BASE_URL =
-  process.env.REACT_APP_API_URL || 'https://externship-manager-api.onrender.com/api';
+  process.env.REACT_APP_API_URL || 'https://externship-manager-api-eb8m.onrender.com/api';
 
 // Create axios instance
 const api = axios.create({

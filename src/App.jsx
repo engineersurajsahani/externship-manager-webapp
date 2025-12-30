@@ -8,6 +8,7 @@ import {
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import ToastListener from './components/ui/ToastListener';
 
 // Lazy load pages
@@ -100,34 +101,36 @@ const MainLayout = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <ToastListener />
-        <Suspense fallback={<LoadingFallback />}>
-          <Routes>
-            {/* Public routes */}
-            <Route
-              path="/login"
-              element={
-                <PublicRoute>
-                  <Login />
-                </PublicRoute>
-              }
-            />
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <ToastListener />
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              {/* Public routes */}
+              <Route
+                path="/login"
+                element={
+                  <PublicRoute>
+                    <Login />
+                  </PublicRoute>
+                }
+              />
 
-            {/* Protected routes */}
-            <Route
-              path="/*"
-              element={
-                <ProtectedRoute>
-                  <MainLayout />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </Suspense>
-      </Router>
-    </AuthProvider>
+              {/* Protected routes */}
+              <Route
+                path="/*"
+                element={
+                  <ProtectedRoute>
+                    <MainLayout />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </Suspense>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

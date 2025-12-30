@@ -24,6 +24,7 @@ import StatsCard from '../components/StatsCard';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
+import StreakBadge from '../components/StreakBadge';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import { dashboardHelpers } from '../utils/dashboardHelpers';
@@ -196,7 +197,7 @@ const Dashboard = () => {
         const description = a.workDone || a.description || a.messageDetail || a.message || '';
         const isUpdateLike =
           a.type === 'update' ||
-          !!a.user || 
+          !!a.user ||
           !!a.userName ||
           !!a.project ||
           !!a.projectName ||
@@ -467,8 +468,21 @@ const Dashboard = () => {
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col lg:flex-row lg:items-center justify-between mb-8"
       >
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          </div>
+
+          {/* Streak Badge - Show for interns */}
+          {userRole === ROLES.INTERN && dashboardData?.stats?.streak !== undefined && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3, type: 'spring' }}
+            >
+              <StreakBadge streak={dashboardData.stats.streak} size="md" />
+            </motion.div>
+          )}
         </div>
 
         {/* Weekly Goal (Interns / Team Leaders) */}
@@ -766,6 +780,62 @@ const Dashboard = () => {
       </div>
 
 
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Project Updates Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+        >
+          <Card className="p-6 h-full">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Project Updates
+            </h3>
+            <ul className="space-y-3">
+              <li className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                <FiCheckCircle className="w-4 h-4 text-green-500 mr-3" />
+                Attendance module updated
+              </li>
+              <li className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                <FiCheckCircle className="w-4 h-4 text-green-500 mr-3" />
+                Calendar improvements
+              </li>
+              <li className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                <FiCheckCircle className="w-4 h-4 text-green-500 mr-3" />
+                UI enhancements
+              </li>
+            </ul>
+          </Card>
+        </motion.div>
+
+        {/* Team Updates Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9 }}
+        >
+          <Card className="p-6 h-full">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Team Updates
+            </h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600 dark:text-gray-300">Total Team Members</span>
+                <span className="font-semibold text-gray-900 dark:text-white">12</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600 dark:text-gray-300">Active Interns</span>
+                <span className="font-semibold text-gray-900 dark:text-white">8</span>
+              </div>
+              <div className="pt-2 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                <span>Last updated</span>
+                <span>Today</span>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      </div>
 
       {/* Recent Activity Feed */}
       <motion.div
