@@ -1,8 +1,20 @@
 import axios from 'axios';
 
 // API Base URL - adjust this to match your backend
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL || 'https://externship-manager-api-eb8m.onrender.com/api';
+// Ensure it always ends with /api
+const getApiBaseUrl = () => {
+  const url = process.env.REACT_APP_API_URL || 'https://externship-manager-api-eb8m.onrender.com/api';
+  // Normalize: ensure it ends with /api
+  if (url.endsWith('/api')) {
+    return url;
+  } else if (url.endsWith('/')) {
+    return url + 'api';
+  } else {
+    return url + '/api';
+  }
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Create axios instance
 const api = axios.create({
