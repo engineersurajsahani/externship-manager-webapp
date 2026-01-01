@@ -6,4 +6,4 @@ services:
     publishPath: build
     envVars:
       - key: REACT_APP_API_URL
-        value: https://externship-manager-api.onrender.com/api
+        value: https://externship-manager-api-qiwo.onrender.com/api

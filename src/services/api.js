@@ -3,7 +3,7 @@ import axios from 'axios';
 // API Base URL - adjust this to match your backend
 // Ensure it always ends with /api
 const getApiBaseUrl = () => {
-  const url = process.env.REACT_APP_API_URL || 'https://externship-manager-api-eb8m.onrender.com/api';
+  const url = process.env.REACT_APP_API_URL || 'https://externship-manager-api-qiwo.onrender.com/api';
   // Normalize: ensure it ends with /api
   if (url.endsWith('/api')) {
     return url;
@@ -72,7 +72,7 @@ api.interceptors.response.use(
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('userEmail');
           localStorage.removeItem('userData');
-          window.location.href = '/login';
+          window.location.href = '/';
           return Promise.reject(refreshError);
         }
       } else {
@@ -80,7 +80,7 @@ api.interceptors.response.use(
         localStorage.removeItem('token');
         localStorage.removeItem('userEmail');
         localStorage.removeItem('userData');
-        window.location.href = '/login';
+        window.location.href = '/';
       }
     }
 
