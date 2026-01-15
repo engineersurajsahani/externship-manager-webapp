@@ -47,7 +47,8 @@ export const AuthProvider = ({ children }) => {
         if (token && userEmail) {
           try {
             // Verify token with backend to ensure it's valid (prevents fake/demo tokens from granting access)
-            const resp = await api.get('/auth/me');
+            // Use a shorter timeout for initial auth check to prevent blank screen
+            const resp = await api.get('/auth/me', { timeout: 3000 });
             const apiUser = resp.data?.user;
 
             if (apiUser) {

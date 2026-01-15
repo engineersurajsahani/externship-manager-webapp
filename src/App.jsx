@@ -40,7 +40,7 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return children;
@@ -90,7 +90,7 @@ const MainLayout = () => {
               <Route path="/projects" element={<Projects />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/users" element={<UserManagement />} />
-              <Route path="/" element={<Navigate to="/login" replace />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </Suspense>
         </main>

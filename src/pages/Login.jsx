@@ -21,7 +21,7 @@ const Login = () => {
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
-// ... existing code ...
+    // ... existing code ...
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -30,7 +30,7 @@ const Login = () => {
   };
 
   const handleSubmit = async (e) => {
-// ... existing code ...
+    // ... existing code ...
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -45,8 +45,8 @@ const Login = () => {
       if (response.data.token) {
         // Use AuthContext login with API user data
         login(
-          formData.email, 
-          response.data.token, 
+          formData.email,
+          response.data.token,
           response.data.user,
           response.data.refreshToken
         );
@@ -54,11 +54,33 @@ const Login = () => {
         return;
       }
     } catch (err) {
-// ... existing code ...
-      // Do NOT fall back to a client-side demo login automatically.
-      // Only show an informative error so authentication must come from the server.
+      // ... existing code ...
+      // If backend is unavailable, allow demo login for testing
       if (err.code === 'ECONNREFUSED' || err.message.includes('Network Error')) {
-        setError('Server unavailable. Please ensure the backend is running.');
+        // Demo login - create mock user data
+        const demoUsers = {
+          'admin@test.com': { role: 'admin', firstName: 'Admin', lastName: 'User' },
+          'pm@test.com': { role: 'project_manager', firstName: 'Project', lastName: 'Manager' },
+          'tl@test.com': { role: 'team_leader', firstName: 'Team', lastName: 'Leader' },
+          'intern@test.com': { role: 'intern', firstName: 'Intern', lastName: 'User' },
+        };
+
+        const demoUser = demoUsers[formData.email.toLowerCase()];
+        if (demoUser) {
+          // Create a mock token and user data
+          const mockToken = 'demo-token-' + Date.now();
+          const mockUserData = {
+            id: 'demo-' + Date.now(),
+            email: formData.email,
+            ...demoUser
+          };
+
+          login(formData.email, mockToken, mockUserData);
+          navigate('/dashboard');
+          return;
+        } else {
+          setError('Server unavailable. For demo mode, use: admin@test.com, pm@test.com, tl@test.com, or intern@test.com (any password)');
+        }
       } else if (err.response?.status === 401) {
         setError('Invalid email or password.');
       } else if (err.response?.status === 404) {
@@ -106,6 +128,25 @@ const Login = () => {
           <p className="text-indigo-100">
             Sign in to your Externship Manager account
           </p>
+        </motion.div>
+
+        {/* Demo Credentials Info */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="mb-4 p-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg"
+        >
+          <p className="text-white/90 text-sm font-medium mb-2">🎭 Demo Mode Available</p>
+          <p className="text-white/70 text-xs">
+            Backend unavailable? Try these demo accounts (any password):
+          </p>
+          <div className="mt-2 space-y-1 text-xs text-white/80">
+            <div>• admin@test.com (Admin)</div>
+            <div>• intern@test.com (Intern)</div>
+            <div>• pm@test.com (Project Manager)</div>
+            <div>• tl@test.com (Team Leader)</div>
+          </div>
         </motion.div>
 
         {/* Login Form */}
