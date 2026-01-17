@@ -3,15 +3,18 @@ import axios from 'axios';
 // API Base URL - adjust this to match your backend
 // Ensure it always ends with /api
 const getApiBaseUrl = () => {
-  const url = process.env.REACT_APP_API_URL || 'https://externship-manager-api-qiwo.onrender.com/api';
-  // Normalize: ensure it ends with /api
-  if (url.endsWith('/api')) {
-    return url;
-  } else if (url.endsWith('/')) {
-    return url + 'api';
-  } else {
-    return url + '/api';
+  // Use environment variable if available, otherwise fallback to the production URL
+  let url = process.env.REACT_APP_API_URL || 'https://externship-manager-api-qiwo.onrender.com/api';
+
+  // Clean the URL: remove trailing whitespaces and ALL trailing slashes
+  url = url.trim().replace(/\/+$/, '');
+
+  // Ensure the URL ends with /api exactly once
+  if (!url.endsWith('/api')) {
+    url = `${url}/api`;
   }
+
+  return url;
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -113,7 +116,6 @@ export const apiService = {
 
   // Daily Updates
   submitDailyUpdate: (updateData) => {
-    // If there are file attachments, use FormData
     if (updateData.attachments && updateData.attachments.length > 0) {
       const formData = new FormData();
       formData.append('workDone', updateData.workDone);
@@ -131,8 +133,7 @@ export const apiService = {
             : updateData.tasksCompleted
         );
       }
-      // Handle file attachments
-      updateData.attachments.forEach((file, index) => {
+      updateData.attachments.forEach((file) => {
         formData.append('attachments', file);
       });
       return api.post('/updates', formData, {
@@ -141,7 +142,6 @@ export const apiService = {
         },
       });
     } else {
-      // For text-only submissions, use JSON
       const jsonData = {
         workDone: updateData.workDone,
         challenges: updateData.challenges || '',
@@ -168,7 +168,6 @@ export const apiService = {
   getMyAttendance: (params = {}) => api.get('/attendance/my', { params }),
   markAttendance: (attendanceData) => api.post('/attendance', attendanceData),
   getAttendanceStats: (params = {}) => api.get('/attendance/stats', { params }),
-  // `getTeamAttendance` removed — team attendance endpoints deprecated/removed
 
   // Projects
   getAllProjects: (params = {}) => api.get('/projects', { params }),
