@@ -163,19 +163,19 @@ const Attendance = () => {
       setError(null);
       try {
         if (userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER) {
-            // Admin: fetch team & per-project attendance stats
-            const resp = await apiService.getAttendanceStats({ date: new Date().toISOString() });
-            if (resp.data && resp.data.success) {
-              const data = resp.data;
-              setAttendanceData({
-                totalUsers: data.totalUsers || 0,
-                teamAttendanceRate: data.teamAttendanceRate || 0,
-                todaySubmissions: data.todaySubmissions || 0,
-                projects: data.projects || [],
-              });
-            } else {
-              throw new Error(resp.data?.message || 'Failed to load attendance stats');
-            }
+          // Admin: fetch team & per-project attendance stats
+          const resp = await apiService.getAttendanceStats({ date: new Date().toISOString() });
+          if (resp.data && resp.data.success) {
+            const data = resp.data;
+            setAttendanceData({
+              totalUsers: data.totalUsers || 0,
+              teamAttendanceRate: data.teamAttendanceRate || 0,
+              todaySubmissions: data.todaySubmissions || 0,
+              projects: data.projects || [],
+            });
+          } else {
+            throw new Error(resp.data?.message || 'Failed to load attendance stats');
+          }
         } else {
           // Other roles get their personal attendance from daily updates
           const response = await apiService.getMyUpdates();
@@ -191,24 +191,35 @@ const Attendance = () => {
         }
       } catch (error) {
         console.error('Failed to load attendance data:', error);
-        setError(error.message);
-        // Set fallback data
+        console.error('Request URL:', error.config?.url);
+
+        // Don't block the UI with a full page error - use fallback data and show toast
+        window.dispatchEvent(new CustomEvent('app-toast', {
+          detail: {
+            message: `Could not load latest attendance data. Showing empty state. (${error.message})`,
+            type: 'error'
+          }
+        }));
+
+        // Set fallback data so the page renders
         const fallbackData =
           userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER
             ? {
-                totalUsers: 0,
-                teamAttendanceRate: 0,
-                todaySubmissions: 0,
-                projects: [],
-              }
+              totalUsers: 0,
+              teamAttendanceRate: 0,
+              todaySubmissions: 0,
+              projects: [],
+            }
             : {
-                totalWorkingDays: 0,
-                presentDays: 0,
-                absentDays: 0,
-                attendanceRate: 0,
-                streak: 0,
-              };
+              totalWorkingDays: 0,
+              presentDays: 0,
+              absentDays: 0,
+              attendanceRate: 0,
+              streak: 0,
+            };
         setAttendanceData(fallbackData);
+        // Do NOT set error state to avoid locking the UI
+        // setError(error.message); 
       } finally {
         setLoading(false);
       }
@@ -284,16 +295,16 @@ const Attendance = () => {
             <FiCalendar className="w-6 h-6 text-blue-600" />
           </div>
           <div>
-                      <h1 className="text-3xl font-bold text-gray-900">
-            {userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER
-              ? 'Team Attendance Management'
-              : 'Attendance Tracking'}
-          </h1>
-          <p className="text-gray-600 mt-1">
-            {userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER
-              ? 'Monitor team attendance and daily update submissions across all users'
-              : 'Monitor your daily update submissions and attendance record'}
-          </p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER
+                ? 'Team Attendance Management'
+                : 'Attendance Tracking'}
+            </h1>
+            <p className="text-gray-600 mt-1">
+              {userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER
+                ? 'Monitor team attendance and daily update submissions across all users'
+                : 'Monitor your daily update submissions and attendance record'}
+            </p>
           </div>
         </div>
       </motion.div>
@@ -341,13 +352,12 @@ const Attendance = () => {
                       {overview.teamAttendanceRate}%
                     </p>
                     <p
-                      className={`text-sm ${
-                        overview.teamAttendanceRate >= 90
+                      className={`text-sm ${overview.teamAttendanceRate >= 90
                           ? 'text-green-600'
                           : overview.teamAttendanceRate >= 75
                             ? 'text-yellow-600'
                             : 'text-red-600'
-                      }`}
+                        }`}
                     >
                       {overview.teamAttendanceRate >= 90
                         ? 'Excellent'
@@ -357,22 +367,20 @@ const Attendance = () => {
                     </p>
                   </div>
                   <div
-                    className={`p-3 rounded-full ${
-                      overview.teamAttendanceRate >= 90
+                    className={`p-3 rounded-full ${overview.teamAttendanceRate >= 90
                         ? 'bg-green-100'
                         : overview.teamAttendanceRate >= 75
                           ? 'bg-yellow-100'
                           : 'bg-red-100'
-                    }`}
+                      }`}
                   >
                     <FiTrendingUp
-                      className={`w-6 h-6 ${
-                        overview.teamAttendanceRate >= 90
+                      className={`w-6 h-6 ${overview.teamAttendanceRate >= 90
                           ? 'text-green-600'
                           : overview.teamAttendanceRate >= 75
                             ? 'text-yellow-600'
                             : 'text-red-600'
-                      }`}
+                        }`}
                     />
                   </div>
                 </div>
@@ -443,22 +451,20 @@ const Attendance = () => {
                     </p>
                   </div>
                   <div
-                    className={`p-3 rounded-full ${
-                      overview.attendanceRate >= 90
+                    className={`p-3 rounded-full ${overview.attendanceRate >= 90
                         ? 'bg-green-100'
                         : overview.attendanceRate >= 75
                           ? 'bg-yellow-100'
                           : 'bg-red-100'
-                    }`}
+                      }`}
                   >
                     <FiTrendingUp
-                      className={`w-6 h-6 ${
-                        overview.attendanceRate >= 90
+                      className={`w-6 h-6 ${overview.attendanceRate >= 90
                           ? 'text-green-600'
                           : overview.attendanceRate >= 75
                             ? 'text-yellow-600'
                             : 'text-red-600'
-                      }`}
+                        }`}
                     />
                   </div>
                 </div>
@@ -479,7 +485,7 @@ const Attendance = () => {
                     <p className="text-2xl font-bold text-gray-900">
                       {overview.streak}   days
                     </p>
-                    
+
                   </div>
                   <div className="p-3 bg-orange-100 rounded-full">
                     <FiTarget className="w-6 h-6 text-orange-600" />
@@ -529,13 +535,12 @@ const Attendance = () => {
                       {overview.attendanceRate}%
                     </p>
                     <p
-                      className={`text-sm ${
-                        overview.attendanceRate >= 90
+                      className={`text-sm ${overview.attendanceRate >= 90
                           ? 'text-green-600'
                           : overview.attendanceRate >= 75
                             ? 'text-yellow-600'
                             : 'text-red-600'
-                      }`}
+                        }`}
                     >
                       {overview.attendanceRate >= 90
                         ? 'Excellent'
@@ -545,22 +550,20 @@ const Attendance = () => {
                     </p>
                   </div>
                   <div
-                    className={`p-3 rounded-full ${
-                      overview.attendanceRate >= 90
+                    className={`p-3 rounded-full ${overview.attendanceRate >= 90
                         ? 'bg-green-100'
                         : overview.attendanceRate >= 75
                           ? 'bg-yellow-100'
                           : 'bg-red-100'
-                    }`}
+                      }`}
                   >
                     <FiTrendingUp
-                      className={`w-6 h-6 ${
-                        overview.attendanceRate >= 90
+                      className={`w-6 h-6 ${overview.attendanceRate >= 90
                           ? 'text-green-600'
                           : overview.attendanceRate >= 75
                             ? 'text-yellow-600'
                             : 'text-red-600'
-                      }`}
+                        }`}
                     />
                   </div>
                 </div>
@@ -635,13 +638,12 @@ const Attendance = () => {
                       </div>
                     </div>
                     <Badge
-                      className={`${
-                        project.attendanceRate >= 80
+                      className={`${project.attendanceRate >= 80
                           ? 'bg-green-100 text-green-800'
                           : project.attendanceRate >= 60
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-red-100 text-red-800'
-                      }`}
+                        }`}
                     >
                       {project.attendanceRate}%
                     </Badge>
@@ -691,7 +693,7 @@ const Attendance = () => {
             )}
           </Card>
         </motion.div>
-        ) : (
+      ) : (
         /* Attendance View for non-admin roles */
         <motion.div
           initial={{ opacity: 0, y: 20 }}

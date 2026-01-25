@@ -108,7 +108,7 @@ const UserModal = ({
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };    const handleSubmit = async (e) => {
+  }; const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -121,7 +121,7 @@ const UserModal = ({
       // Split name into firstName and lastName
       const nameParts = formData.name.trim().split(' ');
       const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || firstName; // Use firstName if lastName is empty
+      const lastName = nameParts.slice(1).join(' ') || ''; // Use empty string if no lastName provided
 
       const userData = {
         firstName,
@@ -243,9 +243,8 @@ const UserModal = ({
                         handleInputChange('name', e.target.value)
                       }
                       disabled={mode === 'view'}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                        errors.name ? 'border-red-300' : 'border-gray-300'
-                      } ${mode === 'view' ? 'bg-gray-50' : ''}`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.name ? 'border-red-300' : 'border-gray-300'
+                        } ${mode === 'view' ? 'bg-gray-50' : ''}`}
                       placeholder="Enter full name"
                     />
                   </div>
@@ -268,9 +267,8 @@ const UserModal = ({
                         handleInputChange('email', e.target.value)
                       }
                       disabled={mode === 'view'}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                        errors.email ? 'border-red-300' : 'border-gray-300'
-                      } ${mode === 'view' ? 'bg-gray-50' : ''}`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.email ? 'border-red-300' : 'border-gray-300'
+                        } ${mode === 'view' ? 'bg-gray-50' : ''}`}
                       placeholder="Enter email address"
                     />
                   </div>
@@ -293,9 +291,8 @@ const UserModal = ({
                         handleInputChange('phone', e.target.value)
                       }
                       disabled={mode === 'view'}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                        errors.phone ? 'border-red-300' : 'border-gray-300'
-                      } ${mode === 'view' ? 'bg-gray-50' : ''}`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.phone ? 'border-red-300' : 'border-gray-300'
+                        } ${mode === 'view' ? 'bg-gray-50' : ''}`}
                       placeholder="Enter 10-digit phone number"
                       maxLength="10"
                       pattern="[0-9]{10}"
@@ -319,9 +316,8 @@ const UserModal = ({
                         handleInputChange('department', e.target.value)
                       }
                       disabled={mode === 'view'}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                        errors.department ? 'border-red-300' : 'border-gray-300'
-                      } ${mode === 'view' ? 'bg-gray-50' : ''}`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.department ? 'border-red-300' : 'border-gray-300'
+                        } ${mode === 'view' ? 'bg-gray-50' : ''}`}
                     >
                       <option value="">Select department</option>
                       {departments.map((dept) => (
@@ -352,9 +348,8 @@ const UserModal = ({
                         onChange={(e) =>
                           handleInputChange('password', e.target.value)
                         }
-                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                          errors.password ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.password ? 'border-red-300' : 'border-gray-300'
+                          }`}
                         placeholder="Enter password (min 6 characters)"
                       />
                     </div>
@@ -378,9 +373,8 @@ const UserModal = ({
                         onChange={(e) =>
                           handleInputChange('confirmPassword', e.target.value)
                         }
-                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                          errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                          }`}
                         placeholder="Confirm password"
                       />
                     </div>
@@ -399,9 +393,8 @@ const UserModal = ({
                     value={formData.role}
                     onChange={(e) => handleInputChange('role', e.target.value)}
                     disabled={mode === 'view'}
-                    className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50' : ''
-                    }`}
+                    className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${mode === 'view' ? 'bg-gray-50' : ''
+                      }`}
                   >
                     {roles.map((role) => (
                       <option key={role.value} value={role.value}>
@@ -422,9 +415,8 @@ const UserModal = ({
                       handleInputChange('status', e.target.value)
                     }
                     disabled={mode === 'view'}
-                    className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50' : ''
-                    }`}
+                    className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${mode === 'view' ? 'bg-gray-50' : ''
+                      }`}
                   >
                     {statuses.map((status) => (
                       <option key={status.value} value={status.value}>
@@ -449,9 +441,8 @@ const UserModal = ({
                       handleInputChange('joinDate', e.target.value)
                     }
                     disabled={mode === 'view'}
-                    className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50' : ''
-                    }`}
+                    className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${mode === 'view' ? 'bg-gray-50' : ''
+                      }`}
                   />
                 </div>
               </div>

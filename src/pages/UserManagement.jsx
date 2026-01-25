@@ -27,6 +27,11 @@ const UserManagement = () => {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsersCount, setTotalUsersCount] = useState(0);
+  const usersPerPage = 5; // Requirement 2
 
   // Modal states
   const [userModal, setUserModal] = useState({
@@ -37,13 +42,24 @@ const UserManagement = () => {
 
   const [users, setUsers] = useState([]);
 
-  // Fetch users from API
+  // Fetch users from API with server-side pagination
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getAllUsers();
+      const params = {
+        page: currentPage,
+        limit: usersPerPage,
+        search: searchQuery,
+        role: selectedRole !== 'all' ? selectedRole : undefined,
+        status: selectedStatus !== 'all' ? selectedStatus : undefined,
+      };
+
+      const response = await apiService.getAllUsers(params);
       if (response.data && response.data.success) {
-        const userData = response.data.users || response.data.data || [];
+        const userData = response.data.users || [];
+        setTotalPages(response.data.totalPages || 1);
+        setTotalUsersCount(response.data.totalUsers || 0);
+
         // Transform user data to match UI expectations and keep backend-like fields
         const transformedUsers = userData.map((user) => {
           // Determine user status
@@ -85,9 +101,24 @@ const UserManagement = () => {
     }
   };
 
+  // Debounce search and handle filters
   useEffect(() => {
+    // Reset to page 1 when filters change (except when simply changing page)
     fetchUsers();
-  }, []);  // CRUD Operations
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, selectedRole, selectedStatus]);
+
+  // Separate effect for search to implement debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage !== 1) setCurrentPage(1);
+      else fetchUsers();
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
+
+  // CRUD Operations
   const handleCreateUser = () => {
     setUserModal({
       isOpen: true,
@@ -120,20 +151,11 @@ const UserManagement = () => {
       const updateData = {
         isActive: user.status !== 'active',
       };
-      
+
       const response = await apiService.updateUser(userId, updateData);
       if (response.data && response.data.success) {
-        setUsers((prevUsers) =>
-          prevUsers.map((user) => {
-            if (user.id === userId) {
-              return {
-                ...user,
-                status: user.status === 'active' ? 'inactive' : 'active',
-              };
-            }
-            return user;
-          })
-        );
+        // Refresh list to keep sync
+        fetchUsers();
       }
     } catch (error) {
       console.error('Error toggling user status:', error);
@@ -150,7 +172,7 @@ const UserManagement = () => {
       try {
         const response = await apiService.deleteUser(userId);
         if (response.data && response.data.success) {
-          setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+          fetchUsers(); // Refresh list
         }
       } catch (error) {
         console.error('Error deleting user:', error);
@@ -172,7 +194,7 @@ const UserManagement = () => {
         response = await apiService.updateUser(userModal.user.id, userData);
       }
 
-        if (response.data && response.data.success) {
+      if (response.data && response.data.success) {
         window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: userModal.mode === 'create' ? 'User created successfully!' : 'User updated successfully!', type: 'success' } }));
         setUserModal({
           isOpen: false,
@@ -238,19 +260,11 @@ const UserManagement = () => {
     }
   };
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = selectedRole === 'all' || user.role === selectedRole;
-    const matchesStatus =
-      selectedStatus === 'all' || user.status === selectedStatus;
-
-    return matchesSearch && matchesRole && matchesStatus;
-  });
-
+  // Simplified stats - Note: Currently reflects only fetched page + total count
   const userStats = {
-    total: users.length,
+    total: totalUsersCount,
+    // These specific counts are now only valid for the current page due to server-side pagination
+    // To fix this properly, backend should return stats summary. For now, showing available data.
     active: users.filter((u) => u.status === 'active').length,
     pending: users.filter((u) => u.status === 'pending').length,
     inactive: users.filter((u) => u.status === 'inactive').length,
@@ -259,8 +273,13 @@ const UserManagement = () => {
     interns: users.filter((u) => u.role === 'intern').length,
   };
 
+  // Pagination handlers
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   // Show loading state
-  if (loading) {
+  if (loading && !users.length && currentPage === 1) { // Only show full loader on initial load
     return (
       <div className="p-6 space-y-6">
         <div className="animate-pulse">
@@ -277,7 +296,7 @@ const UserManagement = () => {
   }
 
   // Show error state
-  if (error) {
+  if (error && !users.length) {
     return (
       <div className="p-6 space-y-6">
         <Card className="p-6 text-center">
@@ -329,28 +348,21 @@ const UserManagement = () => {
           delay={0}
         />
         <StatsCard
-          title="Active Users"
+          title="Active (Page)"
           value={userStats.active.toString()}
           icon={FiUserCheck}
           color="green"
           delay={0.1}
         />
         <StatsCard
-          title="Pending Users"
+          title="Pending (Page)"
           value={userStats.pending.toString()}
           icon={FiUserX}
           color="yellow"
           delay={0.2}
         />
         <StatsCard
-          title="Project Managers"
-          value={userStats.projectManagers.toString()}
-          icon={FiUsers}
-          color="purple"
-          delay={0.3}
-        />
-        <StatsCard
-          title="Interns"
+          title="Interns (Page)"
           value={userStats.interns.toString()}
           icon={FiUsers}
           color="orange"
@@ -381,8 +393,8 @@ const UserManagement = () => {
           >
             <option value="all">All Roles</option>
             <option value="admin">Administrator</option>
-            <option value="pm">Project Manager</option>
-            <option value="tl">Team Leader</option>
+            <option value="project_manager">Project Manager</option>
+            <option value="team_leader">Team Leader</option>
             <option value="intern">Intern</option>
           </select>
 
@@ -434,7 +446,7 @@ const UserManagement = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredUsers.map((user) => (
+                {users.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
@@ -497,11 +509,10 @@ const UserManagement = () => {
                           <FiEdit3 className="w-4 h-4" />
                         </button>
                         <button
-                          className={`${
-                            user.status === 'active'
-                              ? 'text-red-600 hover:text-red-900'
-                              : 'text-green-600 hover:text-green-900'
-                          }`}
+                          className={`${user.status === 'active'
+                            ? 'text-red-600 hover:text-red-900'
+                            : 'text-green-600 hover:text-green-900'
+                            }`}
                           title={
                             user.status === 'active' ? 'Deactivate' : 'Activate'
                           }
@@ -530,12 +541,65 @@ const UserManagement = () => {
             </table>
           </div>
 
-          {filteredUsers.length === 0 && (
+          {users.length === 0 && !loading && (
             <div className="text-center py-8">
               <FiUsers className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">
                 No users found matching your criteria.
               </p>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Showing {(currentPage - 1) * usersPerPage + 1} to {Math.min(currentPage * usersPerPage, totalUsersCount)} of {totalUsersCount} users
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <div className="hidden sm:flex space-x-1">
+                  {[...Array(Math.min(5, totalPages))].map((_, idx) => {
+                    // Smart pagination to show window of pages around current page
+                    let pageNum = idx + 1;
+                    if (totalPages > 5) {
+                      if (currentPage > 3) {
+                        pageNum = currentPage - 2 + idx;
+                      }
+                      if (pageNum > totalPages) {
+                        pageNum = totalPages - (4 - idx);
+                      }
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-3 py-1 text-sm rounded-md ${currentPage === pageNum
+                          ? 'bg-indigo-600 text-white'
+                          : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           )}
         </Card>

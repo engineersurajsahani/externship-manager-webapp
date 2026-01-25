@@ -1,20 +1,18 @@
 import axios from 'axios';
 
-// API Base URL - adjust this to match your backend
-// Ensure it always ends with /api
+// API Base URL - Prioritize local development URL as requested
 const getApiBaseUrl = () => {
-  // Use environment variable if available, otherwise fallback to the production URL
-  let url = process.env.REACT_APP_API_URL || 'https://externship-manager-api-qiwo.onrender.com/api';
-
-  // Clean the URL: remove trailing whitespaces and ALL trailing slashes
-  url = url.trim().replace(/\/+$/, '');
-
-  // Ensure the URL ends with /api exactly once
-  if (!url.endsWith('/api')) {
-    url = `${url}/api`;
+  // If explicitly set in environment, use it
+  if (process.env.REACT_APP_API_URL) {
+    let url = process.env.REACT_APP_API_URL.trim().replace(/\/+$/, '');
+    if (!url.endsWith('/api')) {
+      url = `${url}/api`;
+    }
+    return url;
   }
 
-  return url;
+  // Default to localhost for development to fix "Network Error"
+  return 'http://localhost:5050/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -31,10 +29,14 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
+    // Get token from localStorage
     const token = localStorage.getItem('token');
+
+    // If token exists, attach it to the Authorization header
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => {
@@ -50,6 +52,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Handle 401 Unauthorized errors (expired token)
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
@@ -65,7 +68,7 @@ api.interceptors.response.use(
             const { token } = response.data;
             localStorage.setItem('token', token);
 
-            // Retry original request with new token
+            // Update Authorization header with new token
             originalRequest.headers.Authorization = `Bearer ${token}`;
             return api(originalRequest);
           }
@@ -75,7 +78,7 @@ api.interceptors.response.use(
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('userEmail');
           localStorage.removeItem('userData');
-          window.location.href = '/';
+          window.location.href = '/login';
           return Promise.reject(refreshError);
         }
       } else {
@@ -83,7 +86,7 @@ api.interceptors.response.use(
         localStorage.removeItem('token');
         localStorage.removeItem('userEmail');
         localStorage.removeItem('userData');
-        window.location.href = '/';
+        window.location.href = '/login';
       }
     }
 
@@ -108,7 +111,7 @@ export const apiService = {
   deleteStudent: (id) => api.delete(`/users/${id}`),
 
   // Users
-  getAllUsers: () => api.get('/users'),
+  getAllUsers: (params = {}) => api.get('/users', { params }),
   getUsersByRole: (role) => api.get(`/users/role/${role}`),
   createUser: (userData) => api.post('/users', userData),
   updateUser: (id, userData) => api.put(`/users/${id}`, userData),
@@ -193,6 +196,7 @@ export const apiService = {
 
   // Test connection
   testConnection: () => api.get('/health'),
+
   // Chat
   getProjectMessages: (projectId) => api.get(`/chat/${projectId}/messages`),
   sendMessage: (projectId, messageData) => api.post(`/chat/${projectId}/messages`, messageData),
