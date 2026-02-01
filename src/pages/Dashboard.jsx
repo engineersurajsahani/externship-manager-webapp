@@ -285,7 +285,7 @@ const Dashboard = () => {
           };
 
           for (const project of projects) {
-            const goals = project.weeklyGoals || project.weeklyGoals?.length ? project.weeklyGoals : project.weeklyGoals || [];
+            const goals = project.weeklyGoals || [];
             if (goals && goals.length > 0) {
               // Sort goals by creation date (newest first)
               const sortedGoals = [...goals].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -470,7 +470,7 @@ const Dashboard = () => {
       >
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
           </div>
 
           {/* Streak Badge - Show for interns */}
@@ -569,14 +569,14 @@ const Dashboard = () => {
                   )}
                 </div>
                 {weeklyGoal ? (
-                  <div className="text-sm text-gray-700">
-                    {weeklyGoal.goal || weeklyGoal.title}
+                  <div className="text-sm text-gray-700 dark:text-gray-200">
+                    {weeklyGoal.goal || weeklyGoal.title || 'Goal'}
                     {weeklyGoal.week && (
-                      <div className="text-xs text-gray-500 mt-2">{weeklyGoal.week}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">{weeklyGoal.week}</div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500">No weekly goal set</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">No weekly goal set</div>
                 )}
               </Card>
             </motion.div>
@@ -667,14 +667,14 @@ const Dashboard = () => {
                   )}
                 </div>
                 {weeklyGoal ? (
-                  <div className="text-sm text-gray-700">
-                    {weeklyGoal.goal || weeklyGoal.title}
+                  <div className="text-sm text-gray-700 dark:text-gray-200">
+                    {weeklyGoal.goal || weeklyGoal.title || 'Goal'}
                     {weeklyGoal.week && (
-                      <div className="text-xs text-gray-500 mt-2">{weeklyGoal.week}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">{weeklyGoal.week}</div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500">No weekly goal set</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">No weekly goal set</div>
                 )}
               </Card>
             </motion.div>
@@ -789,7 +789,7 @@ const Dashboard = () => {
           transition={{ delay: 0.8 }}
         >
           <Card className="p-6 h-full">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Project Updates
             </h3>
             <ul className="space-y-3">
@@ -816,7 +816,7 @@ const Dashboard = () => {
           transition={{ delay: 0.9 }}
         >
           <Card className="p-6 h-full">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Team Updates
             </h3>
             <div className="space-y-3">
@@ -845,7 +845,7 @@ const Dashboard = () => {
       >
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               Recent Activity
             </h3>
             <Button
@@ -859,9 +859,9 @@ const Dashboard = () => {
 
           {dashboardData.recentActivity.length === 0 ? (
             <div className="text-center py-8">
-              <FiActivity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No recent activity to show</p>
-              <p className="text-sm text-gray-400">
+              <FiActivity className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-500 dark:text-gray-400">No recent activity to show</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">
                 Activity will appear here as you submit updates
               </p>
             </div>
@@ -873,7 +873,7 @@ const Dashboard = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 * index }}
-                  className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   <div
                     className={`p-2 rounded-full ${activity.status === 'completed'
@@ -894,10 +894,10 @@ const Dashboard = () => {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                       {activity.title}
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
                       {activity.timestamp
                         ? new Date(activity.timestamp).toLocaleString('en-US', {
                           month: 'short',
@@ -931,15 +931,15 @@ const Dashboard = () => {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+              className="bg-white dark:bg-gray-900 rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Daily Update Details
                 </h2>
                 <button
                   onClick={() => setShowActivityModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   <FiX className="w-6 h-6" />
                 </button>
@@ -951,10 +951,10 @@ const Dashboard = () => {
                     <FiTarget className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-gray-900">
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100">
                       {fullActivityDetails?.project?.name || selectedActivity.raw?.project?.name || selectedActivity.raw?.project || selectedActivity.raw?.projectName || 'Project Update'}
                     </h3>
-                    <p className="text-sm text-gray-500">Project Update</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Project Update</p>
                     <div className="flex items-center space-x-2 text-xs text-gray-400">
                       <FiCalendar className="w-3 h-3" />
                       <span>
@@ -980,28 +980,28 @@ const Dashboard = () => {
                 ) : (
                   <>
                     <div>
-                      <h4 className="font-medium text-gray-700 mb-2">
+                      <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-2">
                         What was accomplished:
                       </h4>
-                      <p className="text-gray-600 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                      <p className="text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg whitespace-pre-wrap">
                         {fullActivityDetails?.workDone || selectedActivity.raw?.workDone || selectedActivity.description || 'No details provided'}
                       </p>
                     </div>
 
                     <div>
-                      <h4 className="font-medium text-gray-700 mb-2">
+                      <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Challenges faced:
                       </h4>
-                      <p className="text-gray-600 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                      <p className="text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg whitespace-pre-wrap">
                         {fullActivityDetails?.challenges || selectedActivity.raw?.challenges || 'None mentioned'}
                       </p>
                     </div>
 
                     <div>
-                      <h4 className="font-medium text-gray-700 mb-2">
+                      <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Plan for tomorrow:
                       </h4>
-                      <p className="text-gray-600 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                      <p className="text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg whitespace-pre-wrap">
                         {fullActivityDetails?.planForTomorrow || selectedActivity.raw?.planForTomorrow || 'No plan provided'}
                       </p>
                     </div>

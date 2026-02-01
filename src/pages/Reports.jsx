@@ -221,8 +221,8 @@ const Reports = () => {
                         <FiFileText className="w-6 h-6 text-purple-600" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
-                        <p className="text-gray-600 mt-1">
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Reports</h1>
+                        <p className="text-gray-600 dark:text-gray-400 mt-1">
                             Generate and export reports for daily updates and attendance
                         </p>
                     </div>
@@ -236,20 +236,20 @@ const Reports = () => {
                 transition={{ delay: 0.1 }}
             >
                 <Card className="p-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                         Generate Report
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         {/* Report Type */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Report Type
                             </label>
                             <select
                                 value={reportType}
                                 onChange={(e) => setReportType(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             >
                                 <option value="dailyUpdates">Daily Updates</option>
                                 <option value="attendance">Attendance</option>
@@ -258,32 +258,32 @@ const Reports = () => {
 
                         {/* Start Date */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Start Date
                             </label>
                             <div className="relative">
-                                <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                                 <input
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                 />
                             </div>
                         </div>
 
                         {/* End Date */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 End Date
                             </label>
                             <div className="relative">
-                                <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                                 <input
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                 />
                             </div>
                         </div>
@@ -327,12 +327,12 @@ const Reports = () => {
                     <Card className="p-6">
                         <div className="flex items-center justify-between mb-6">
                             <div>
-                                <h2 className="text-xl font-semibold text-gray-900">
+                                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                                     {reportType === 'dailyUpdates'
                                         ? 'Daily Updates Report'
                                         : 'Attendance Report'}
                                 </h2>
-                                <p className="text-sm text-gray-500 mt-1">
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                                     {new Date(reportData.startDate).toLocaleDateString()} -{' '}
                                     {new Date(reportData.endDate).toLocaleDateString()}
                                 </p>
@@ -344,59 +344,59 @@ const Reports = () => {
 
                         {reportData.data.length === 0 ? (
                             <div className="text-center py-12">
-                                <FiFileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                                <p className="text-gray-500">No data found for the selected date range</p>
+                                <FiFileText className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                                <p className="text-gray-500 dark:text-gray-400">No data found for the selected date range</p>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 {reportType === 'dailyUpdates' ? (
                                     <table className="w-full">
-                                        <thead className="bg-gray-50">
+                                        <thead className="bg-gray-50 dark:bg-gray-800">
                                             <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     Date
                                                 </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     User
                                                 </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     Department
                                                 </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     Project
                                                 </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     Work Done
                                                 </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     Challenges
                                                 </th>
                                             </tr>
                                         </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
+                                        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                                             {reportData.data.map((update, index) => (
-                                                <tr key={index} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                                         {new Date(update.date).toLocaleDateString()}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm font-medium text-gray-900">
+                                                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                                             {update.user?.firstName} {update.user?.lastName}
                                                         </div>
-                                                        <div className="text-sm text-gray-500">
+                                                        <div className="text-sm text-gray-500 dark:text-gray-400">
                                                             {update.user?.email}
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                         {update.user?.department}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                         {update.project?.name || 'No Project'}
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                                                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">
                                                         {update.workDone}
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                                                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
                                                         {update.challenges || 'None'}
                                                     </td>
                                                 </tr>
@@ -405,52 +405,52 @@ const Reports = () => {
                                     </table>
                                 ) : (
                                     <table className="w-full">
-                                        <thead className="bg-gray-50">
+                                        <thead className="bg-gray-50 dark:bg-gray-800">
                                             <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     User
                                                 </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     Department
                                                 </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     Role
                                                 </th>
-                                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     Total Days
                                                 </th>
-                                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     Present
                                                 </th>
-                                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     Absent
                                                 </th>
-                                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     Leaves
                                                 </th>
-                                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     Attendance %
                                                 </th>
                                             </tr>
                                         </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
+                                        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                                             {reportData.data.map((record, index) => (
-                                                <tr key={index} className="hover:bg-gray-50">
+                                                <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm font-medium text-gray-900">
+                                                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                                             {record.user.name}
                                                         </div>
-                                                        <div className="text-sm text-gray-500">
+                                                        <div className="text-sm text-gray-500 dark:text-gray-400">
                                                             {record.user.email}
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                         {record.user.department}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                         {record.user.role}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900 dark:text-gray-100">
                                                         {record.summary.total}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -480,10 +480,10 @@ const Reports = () => {
                                                     <td className="px-6 py-4 whitespace-nowrap text-center">
                                                         <Badge
                                                             className={`${record.summary.percentage >= 90
-                                                                    ? 'bg-green-100 text-green-800'
-                                                                    : record.summary.percentage >= 75
-                                                                        ? 'bg-yellow-100 text-yellow-800'
-                                                                        : 'bg-red-100 text-red-800'
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : record.summary.percentage >= 75
+                                                                    ? 'bg-yellow-100 text-yellow-800'
+                                                                    : 'bg-red-100 text-red-800'
                                                                 }`}
                                                         >
                                                             {record.summary.percentage.toFixed(1)}%

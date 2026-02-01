@@ -136,19 +136,19 @@ const Sidebar = () => {
   return (
     <aside
       style={{ minWidth: '256px', width: '256px' }}
-      className="bg-white shadow-2xl border-r border-gray-200 h-screen flex flex-col"
+      className="bg-white dark:bg-gray-900 shadow-2xl border-r border-gray-200 dark:border-gray-700 h-screen flex flex-col"
     >
       {/* Header */}
       <div className="relative h-16 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 shadow-lg overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute -right-4 -top-4 w-16 h-16 bg-white rounded-full" />
-          <div className="absolute -left-4 -bottom-4 w-12 h-12 bg-white rounded-full" />
+          <div className="absolute -right-4 -top-4 w-16 h-16 bg-white dark:bg-gray-800 rounded-full" />
+          <div className="absolute -left-4 -bottom-4 w-12 h-12 bg-white dark:bg-gray-800 rounded-full" />
         </div>
         <div className="relative flex items-center justify-center h-full">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center mr-3 backdrop-blur-md">
-              <span className="text-indigo-600 font-bold text-xl">E</span>
+            <div className="w-10 h-10 bg-white dark:bg-gray-800 rounded-xl shadow-lg flex items-center justify-center mr-3 backdrop-blur-md">
+              <span className="text-indigo-600 dark:text-indigo-400 font-bold text-xl">E</span>
             </div>
             <div>
               <span className="text-white font-bold text-lg leading-tight">
@@ -172,7 +172,7 @@ const Sidebar = () => {
                 className={({ isActive }) =>
                   `relative flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group overflow-hidden ${isActive
                     ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg cursor-default'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 cursor-pointer'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white cursor-pointer'
                   }`
                 }
               >
@@ -183,7 +183,7 @@ const Sidebar = () => {
                       <div className="absolute left-0 top-0 w-1 h-full bg-white rounded-r-full" />
                     )}
                     {!isActive && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-gray-100 dark:from-gray-800 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     )}
 
                     {/* Content */}
@@ -207,7 +207,7 @@ const Sidebar = () => {
       </nav>
 
       {/* Sidebar Footer - user initials and logout */}
-      <div className="px-4 py-4 border-t border-gray-100">
+      <div className="px-4 py-4 border-t border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
@@ -218,14 +218,14 @@ const Sidebar = () => {
                   : 'AD'}
             </div>
             <div>
-              <div className="text-sm font-medium text-gray-700">
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-200">
                 {user && (user.firstName || user.lastName)
                   ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
                   : user && user.email
                     ? user.email.split('@')[0]
                     : 'Admin'}
               </div>
-              <div className="text-xs text-gray-400">{getRoleSubtitle().toUpperCase()}</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500">{getRoleSubtitle().toUpperCase()}</div>
             </div>
           </div>
           <button
@@ -233,7 +233,7 @@ const Sidebar = () => {
               logout();
               navigate('/login');
             }}
-            className="flex items-center space-x-2 text-sm text-red-600 hover:text-red-800"
+            className="flex items-center space-x-2 text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
           >
             <FiLogOut className="w-4 h-4" />
             <span>Sign Out</span>
