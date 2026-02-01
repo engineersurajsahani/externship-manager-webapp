@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { FiHome, FiBriefcase, FiUsers, FiClock, FiEdit3, FiMessageSquare, FiLogOut } from 'react-icons/fi';
+import { FiHome, FiBriefcase, FiUsers, FiClock, FiEdit3, FiMessageSquare, FiLogOut, FiFileText } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = () => {
@@ -91,6 +91,16 @@ const Sidebar = () => {
       ],
     },
 
+    // Reports - Admin and PM only:
+    // Admin & PM: Generate and export reports for daily updates and attendance
+    {
+      path: '/reports',
+      icon: FiFileText,
+      label: 'Reports',
+      badge: null,
+      roles: [ROLES.ADMIN, ROLES.PROJECT_MANAGER],
+    },
+
     // User Management - Admin only:
     // Admin: Full control over all users and roles
     {
@@ -160,10 +170,9 @@ const Sidebar = () => {
               <NavLink
                 to={item.path}
                 className={({ isActive }) =>
-                  `relative flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group overflow-hidden ${
-                    isActive
-                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg cursor-default'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 cursor-pointer'
+                  `relative flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group overflow-hidden ${isActive
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg cursor-default'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 cursor-pointer'
                   }`
                 }
               >
@@ -205,16 +214,16 @@ const Sidebar = () => {
               {user && (user.firstName || user.lastName)
                 ? `${(user.firstName || '').charAt(0) || ''}${(user.lastName || '').charAt(0) || ''}`.toUpperCase()
                 : user && user.email
-                ? user.email.split('@')[0].substring(0, 2).toUpperCase()
-                : 'AD'}
+                  ? user.email.split('@')[0].substring(0, 2).toUpperCase()
+                  : 'AD'}
             </div>
             <div>
               <div className="text-sm font-medium text-gray-700">
                 {user && (user.firstName || user.lastName)
                   ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
                   : user && user.email
-                  ? user.email.split('@')[0]
-                  : 'Admin'}
+                    ? user.email.split('@')[0]
+                    : 'Admin'}
               </div>
               <div className="text-xs text-gray-400">{getRoleSubtitle().toUpperCase()}</div>
             </div>

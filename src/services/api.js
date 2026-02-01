@@ -171,6 +171,7 @@ export const apiService = {
   getMyAttendance: (params = {}) => api.get('/attendance/my', { params }),
   markAttendance: (attendanceData) => api.post('/attendance', attendanceData),
   getAttendanceStats: (params = {}) => api.get('/attendance/stats', { params }),
+  getAttendanceReport: (startDate, endDate) => api.get('/attendance/report', { params: { startDate, endDate } }),
 
   // Projects
   getAllProjects: (params = {}) => api.get('/projects', { params }),

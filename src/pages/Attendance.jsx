@@ -26,6 +26,7 @@ const Attendance = () => {
   const [attendanceData, setAttendanceData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Calculate attendance statistics from daily updates
   const calculateAttendanceStats = useCallback((updates) => {
@@ -163,8 +164,8 @@ const Attendance = () => {
       setError(null);
       try {
         if (userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER) {
-          // Admin: fetch team & per-project attendance stats
-          const resp = await apiService.getAttendanceStats({ date: new Date().toISOString() });
+          // Admin: fetch team & per-project attendance stats for selected date
+          const resp = await apiService.getAttendanceStats({ date: new Date(selectedDate).toISOString() });
           if (resp.data && resp.data.success) {
             const data = resp.data;
             setAttendanceData({
@@ -228,7 +229,7 @@ const Attendance = () => {
     if (user) {
       loadAttendanceData();
     }
-  }, [user, userRole, ROLES.PROJECT_MANAGER, calculateAttendanceStats]);
+  }, [user, userRole, selectedDate, ROLES.ADMIN, ROLES.PROJECT_MANAGER, calculateAttendanceStats]);
 
   const handleProjectClick = (project) => {
     setSelectedProject(project);
@@ -307,6 +308,28 @@ const Attendance = () => {
             </p>
           </div>
         </div>
+
+        {/* Date Filter for Admin/PM */}
+        {(userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER) && (
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <FiCalendar className="w-4 h-4 text-gray-500" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+            >
+              Today
+            </Button>
+          </div>
+        )}
       </motion.div>
 
       {/* Quick Stats */}
@@ -353,10 +376,10 @@ const Attendance = () => {
                     </p>
                     <p
                       className={`text-sm ${overview.teamAttendanceRate >= 90
-                          ? 'text-green-600'
-                          : overview.teamAttendanceRate >= 75
-                            ? 'text-yellow-600'
-                            : 'text-red-600'
+                        ? 'text-green-600'
+                        : overview.teamAttendanceRate >= 75
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
                         }`}
                     >
                       {overview.teamAttendanceRate >= 90
@@ -368,18 +391,18 @@ const Attendance = () => {
                   </div>
                   <div
                     className={`p-3 rounded-full ${overview.teamAttendanceRate >= 90
-                        ? 'bg-green-100'
-                        : overview.teamAttendanceRate >= 75
-                          ? 'bg-yellow-100'
-                          : 'bg-red-100'
+                      ? 'bg-green-100'
+                      : overview.teamAttendanceRate >= 75
+                        ? 'bg-yellow-100'
+                        : 'bg-red-100'
                       }`}
                   >
                     <FiTrendingUp
                       className={`w-6 h-6 ${overview.teamAttendanceRate >= 90
-                          ? 'text-green-600'
-                          : overview.teamAttendanceRate >= 75
-                            ? 'text-yellow-600'
-                            : 'text-red-600'
+                        ? 'text-green-600'
+                        : overview.teamAttendanceRate >= 75
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
                         }`}
                     />
                   </div>
@@ -452,18 +475,18 @@ const Attendance = () => {
                   </div>
                   <div
                     className={`p-3 rounded-full ${overview.attendanceRate >= 90
-                        ? 'bg-green-100'
-                        : overview.attendanceRate >= 75
-                          ? 'bg-yellow-100'
-                          : 'bg-red-100'
+                      ? 'bg-green-100'
+                      : overview.attendanceRate >= 75
+                        ? 'bg-yellow-100'
+                        : 'bg-red-100'
                       }`}
                   >
                     <FiTrendingUp
                       className={`w-6 h-6 ${overview.attendanceRate >= 90
-                          ? 'text-green-600'
-                          : overview.attendanceRate >= 75
-                            ? 'text-yellow-600'
-                            : 'text-red-600'
+                        ? 'text-green-600'
+                        : overview.attendanceRate >= 75
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
                         }`}
                     />
                   </div>
@@ -536,10 +559,10 @@ const Attendance = () => {
                     </p>
                     <p
                       className={`text-sm ${overview.attendanceRate >= 90
-                          ? 'text-green-600'
-                          : overview.attendanceRate >= 75
-                            ? 'text-yellow-600'
-                            : 'text-red-600'
+                        ? 'text-green-600'
+                        : overview.attendanceRate >= 75
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
                         }`}
                     >
                       {overview.attendanceRate >= 90
@@ -551,18 +574,18 @@ const Attendance = () => {
                   </div>
                   <div
                     className={`p-3 rounded-full ${overview.attendanceRate >= 90
-                        ? 'bg-green-100'
-                        : overview.attendanceRate >= 75
-                          ? 'bg-yellow-100'
-                          : 'bg-red-100'
+                      ? 'bg-green-100'
+                      : overview.attendanceRate >= 75
+                        ? 'bg-yellow-100'
+                        : 'bg-red-100'
                       }`}
                   >
                     <FiTrendingUp
                       className={`w-6 h-6 ${overview.attendanceRate >= 90
-                          ? 'text-green-600'
-                          : overview.attendanceRate >= 75
-                            ? 'text-yellow-600'
-                            : 'text-red-600'
+                        ? 'text-green-600'
+                        : overview.attendanceRate >= 75
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
                         }`}
                     />
                   </div>
@@ -639,10 +662,10 @@ const Attendance = () => {
                     </div>
                     <Badge
                       className={`${project.attendanceRate >= 80
-                          ? 'bg-green-100 text-green-800'
-                          : project.attendanceRate >= 60
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
+                        ? 'bg-green-100 text-green-800'
+                        : project.attendanceRate >= 60
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
                         }`}
                     >
                       {project.attendanceRate}%

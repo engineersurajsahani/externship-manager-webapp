@@ -20,6 +20,7 @@ const Attendance = React.lazy(() => import('./pages/Attendance'));
 const Projects = React.lazy(() => import('./pages/Projects'));
 const Chat = React.lazy(() => import('./pages/Chat'));
 const UserManagement = React.lazy(() => import('./pages/UserManagement'));
+const Reports = React.lazy(() => import('./pages/Reports'));
 
 // Loading Fallback Component
 const LoadingFallback = () => (
@@ -90,6 +91,7 @@ const MainLayout = () => {
               <Route path="/projects" element={<Projects />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/users" element={<UserManagement />} />
+              <Route path="/reports" element={<Reports />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </Suspense>

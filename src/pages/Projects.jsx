@@ -221,7 +221,7 @@ const Projects = () => {
 
   const handleSaveAssignments = async (assignmentData) => {
     try {
-      const { teamLeaders, interns, projectId } = assignmentData;
+      const { projectManager, teamLeaders, interns, projectId } = assignmentData;
       if (!projectId) {
         throw new Error('Missing project identifier for assignment');
       }
@@ -250,21 +250,35 @@ const Projects = () => {
       // For simplicity, we'll clear all current assignments and reassign
       // In a production system, you'd want to be more granular
 
-      // Remove all current team members except the project manager
+      // Remove all current team members (including PM if being reassigned)
       const currentMembers = currentProject.teamMembers || [];
       for (const member of currentMembers) {
-        if (member.role !== 'project_manager') {
-          const memberUserId = resolveUserId(member);
-          if (!memberUserId) {
-            console.warn('Skipping unassign for member with missing user ID', member);
-            continue;
-          }
-          await apiService.unassignUserFromProject(projectId, memberUserId);
+        const memberUserId = resolveUserId(member);
+        if (!memberUserId) {
+          console.warn('Skipping unassign for member with missing user ID', member);
+          continue;
         }
+        await apiService.unassignUserFromProject(projectId, memberUserId);
       }
 
       // Assign new team members
       const assignments = [];
+
+      // Assign Project Manager (Admin only)
+      if (projectManager) {
+        const pmId = resolveUserId(projectManager);
+        if (pmId) {
+          assignments.push(
+            apiService.assignUserToProject(
+              projectId,
+              pmId,
+              'project_manager'
+            )
+          );
+        } else {
+          console.warn('Skipping PM assignment due to missing ID', projectManager);
+        }
+      }
 
       // Assign team leaders
       if (teamLeaders && teamLeaders.length > 0) {
