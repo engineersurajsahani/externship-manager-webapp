@@ -28,10 +28,10 @@ const Button = ({
       'bg-yellow-600 hover:bg-yellow-700 text-white shadow-lg hover:shadow-xl',
     danger: 'bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl',
     outline:
-      'border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-600 hover:text-white bg-white',
-    ghost: 'text-gray-700 hover:bg-gray-100 bg-transparent',
+      'border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-600 hover:text-white bg-white dark:bg-transparent dark:text-indigo-400 dark:border-indigo-400 dark:hover:bg-indigo-400 dark:hover:text-white',
+    ghost: 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 bg-transparent',
     gradient: 'gradient-primary text-white shadow-lg hover:shadow-xl',
-    glass: 'glass text-gray-800 hover:bg-white/20',
+    glass: 'glass text-gray-800 dark:text-white hover:bg-white/20 dark:hover:bg-gray-800/20',
   };
 
   const sizes = {

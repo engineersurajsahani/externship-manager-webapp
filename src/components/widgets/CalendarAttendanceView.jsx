@@ -255,29 +255,29 @@ const CalendarAttendanceView = () => {
       'w-12 h-12 flex items-center justify-center rounded-xl cursor-pointer transition-all duration-200 text-sm font-medium relative ';
 
     if (!dayData.isCurrentMonth) {
-      classes += 'text-gray-300 hover:bg-gray-50';
+      classes += 'text-gray-300 dark:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50';
     } else if (dayData.isWeekend) {
-      classes += 'text-gray-400 bg-gray-50 cursor-default';
+      classes += 'text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800/30 cursor-default';
     } else {
       switch (dayData.status) {
         case 'present':
           classes +=
-            'bg-gradient-to-br from-green-100 to-green-200 text-green-800 hover:from-green-200 hover:to-green-300 shadow-sm hover:shadow-md';
+            'bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 text-green-800 dark:text-green-300 hover:from-green-200 hover:to-green-300 dark:hover:from-green-800/60 dark:hover:to-green-700/60 shadow-sm hover:shadow-md';
           break;
         case 'absent':
           classes +=
-            'bg-gradient-to-br from-red-100 to-red-200 text-red-800 hover:from-red-200 hover:to-red-300 shadow-sm hover:shadow-md';
+            'bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/40 dark:to-red-800/40 text-red-800 dark:text-red-300 hover:from-red-200 hover:to-red-300 dark:hover:from-red-800/60 dark:hover:to-red-700/60 shadow-sm hover:shadow-md';
           break;
         case 'pending':
           classes +=
-            'bg-gradient-to-br from-yellow-100 to-yellow-200 text-yellow-800 hover:from-yellow-200 hover:to-yellow-300 ring-2 ring-yellow-300 shadow-sm hover:shadow-md animate-pulse';
+            'bg-gradient-to-br from-yellow-100 to-yellow-200 dark:from-yellow-900/40 dark:to-yellow-800/40 text-yellow-800 dark:text-yellow-300 hover:from-yellow-200 hover:to-yellow-300 dark:hover:from-yellow-800/60 dark:hover:to-yellow-700/60 ring-2 ring-yellow-300 dark:ring-yellow-600 shadow-sm hover:shadow-md animate-pulse';
           break;
         case 'future':
           classes +=
-            'text-gray-600 hover:bg-gradient-to-br hover:from-gray-50 hover:to-gray-100 hover:shadow-sm';
+            'text-gray-600 dark:text-gray-400 hover:bg-gradient-to-br hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-sm';
           break;
         default:
-          classes += 'text-gray-500 hover:bg-gray-50';
+          classes += 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800';
       }
     }
 
@@ -525,7 +525,7 @@ const CalendarAttendanceView = () => {
     <Card className="p-6">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
-        <h3 className="text-xl font-bold text-gray-900">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
           Attendance Calendar
         </h3>
         <Button
@@ -551,7 +551,7 @@ const CalendarAttendanceView = () => {
           <FiChevronLeft className="w-4 h-4" />
         </Button>
 
-        <h4 className="text-xl font-semibold text-gray-900">
+        <h4 className="text-xl font-semibold text-gray-900 dark:text-white">
           {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
         </h4>
 
@@ -574,41 +574,41 @@ const CalendarAttendanceView = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center border border-green-200 hover:shadow-md transition-shadow"
+          className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-4 text-center border border-green-200 dark:border-green-800/50 hover:shadow-md transition-shadow"
         >
           <div className="flex items-center justify-center mb-2">
-            <FiCheckCircle className="w-5 h-5 text-green-600 mr-2" />
-            <p className="text-2xl font-bold text-green-700">{stats.present}</p>
+            <FiCheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mr-2" />
+            <p className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.present}</p>
           </div>
-          <p className="text-sm font-medium text-green-600">Present Days</p>
+          <p className="text-sm font-medium text-green-600 dark:text-green-400">Present Days</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 text-center border border-red-200 hover:shadow-md transition-shadow"
+          className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-xl p-4 text-center border border-red-200 dark:border-red-800/50 hover:shadow-md transition-shadow"
         >
           <div className="flex items-center justify-center mb-2">
-            <FiXCircle className="w-5 h-5 text-red-600 mr-2" />
-            <p className="text-2xl font-bold text-red-700">{stats.absent}</p>
+            <FiXCircle className="w-5 h-5 text-red-600 dark:text-red-400 mr-2" />
+            <p className="text-2xl font-bold text-red-700 dark:text-red-300">{stats.absent}</p>
           </div>
-          <p className="text-sm font-medium text-red-600">Absent Days</p>
+          <p className="text-sm font-medium text-red-600 dark:text-red-400">Absent Days</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center border border-blue-200 hover:shadow-md transition-shadow"
+          className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-4 text-center border border-blue-200 dark:border-blue-800/50 hover:shadow-md transition-shadow"
         >
           <div className="flex items-center justify-center mb-2">
-            <div className="w-5 h-5 bg-blue-600 rounded-full mr-2"></div>
-            <p className="text-2xl font-bold text-blue-700">
+            <div className="w-5 h-5 bg-blue-600 dark:bg-blue-500 rounded-full mr-2"></div>
+            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
               {stats.total}
             </p>
           </div>
-          <p className="text-sm font-medium text-blue-600">
+          <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
             Working Days Until Today
           </p>
         </motion.div>
@@ -622,8 +622,8 @@ const CalendarAttendanceView = () => {
             <div
               key={day}
               className={`p-3 text-center text-sm font-semibold rounded-lg ${index === 0 || index === 6
-                ? 'text-gray-400 bg-gray-50'  // Sunday and Saturday
-                : 'text-gray-700 bg-blue-50' // Monday to Friday
+                ? 'text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800/50'  // Sunday and Saturday
+                : 'text-gray-700 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/20' // Monday to Friday
                 }`}
             >
               {day}
@@ -632,7 +632,7 @@ const CalendarAttendanceView = () => {
         </div>
 
         {/* Calendar Days */}
-        <div className="grid grid-cols-7 gap-2 p-4 bg-gray-50 rounded-2xl">
+        <div className="grid grid-cols-7 gap-2 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl">
           {calendarDays.map((day, index) => {
             const dateString = formatLocalDate(day);
             const status = getDayStatus(dateString);
@@ -677,11 +677,11 @@ const CalendarAttendanceView = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 border border-blue-100 shadow-sm"
+          className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-xl p-6 mb-6 border border-blue-100 dark:border-blue-900/30 shadow-sm"
         >
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h4 className="font-semibold text-gray-900 text-lg">
+              <h4 className="font-semibold text-gray-900 dark:text-white text-lg">
                 {selectedLocalDate
                   ? selectedLocalDate.toLocaleDateString('en-US', {
                     weekday: 'long',
@@ -691,19 +691,19 @@ const CalendarAttendanceView = () => {
                   })
                   : ''}
               </h4>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Click on any working day to see details
               </p>
             </div>
             <div className="flex items-center space-x-3">
               <Badge
                 className={`px-3 py-1 text-sm font-medium ${selectedDayData.status === 'present'
-                  ? 'bg-green-100 text-green-800 border border-green-200'
+                  ? 'bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/50'
                   : selectedDayData.status === 'absent'
-                    ? 'bg-red-100 text-red-800 border border-red-200'
+                    ? 'bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50'
                     : selectedDayData.status === 'pending'
-                      ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                      : 'bg-gray-100 text-gray-800 border border-gray-200'
+                      ? 'bg-yellow-100 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800/50'
+                      : 'bg-gray-100 text-gray-800 border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'
                   }`}
               >
                 {selectedDayData.status.charAt(0).toUpperCase() +
@@ -716,7 +716,7 @@ const CalendarAttendanceView = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => handleViewDetails(selectedDayData.attendanceRecord || {})}
-                  className="bg-white hover:bg-gray-50 border-gray-300"
+                  className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-gray-300"
                 >
                   <FiEye className="w-3 h-3 mr-1" />
                   View Details
@@ -726,11 +726,11 @@ const CalendarAttendanceView = () => {
           </div>
 
           {selectedDayData.attendanceRecord && (selectedDayData.attendanceRecord.dailyUpdate || selectedDayData.attendanceRecord.hasSubmittedUpdate) && (
-            <div className="bg-white rounded-lg p-4 space-y-3 border border-blue-100">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3 border border-blue-100 dark:border-blue-900/30">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <p className="text-sm text-gray-600 font-medium">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
                     Daily update submitted
                     {selectedDayData.attendanceRecord.checkInTime &&
                       ` at ${new Date(selectedDayData.attendanceRecord.checkInTime).toLocaleTimeString('en-US', {
@@ -744,7 +744,7 @@ const CalendarAttendanceView = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => handleViewDetails(selectedDayData.attendanceRecord)}
-                  className="bg-white hover:bg-gray-50 border-gray-300"
+                  className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-gray-300"
                 >
                   <FiEye className="w-3 h-3 mr-1" />
                   View Details
@@ -760,13 +760,13 @@ const CalendarAttendanceView = () => {
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+                  className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
                 >
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-gray-900">Daily Update Details</h2>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Daily Update Details</h2>
                     <button
                       onClick={() => { setViewModalOpen(false); setViewModalData(null); }}
-                      className="text-gray-400 hover:text-gray-600"
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     >
                       ×
                     </button>
@@ -774,15 +774,15 @@ const CalendarAttendanceView = () => {
 
                   <div className="space-y-6">
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <FiEye className="w-6 h-6 text-blue-600" />
+                      <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                        <FiEye className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900">{viewModalData.projectName}</h3>
-                        <p className="text-sm text-gray-500">
+                        <h3 className="font-medium text-gray-900 dark:text-white">{viewModalData.projectName}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {viewModalData.user?.email || ''}
                         </p>
-                        <div className="flex items-center space-x-2 text-xs text-gray-400">
+                        <div className="flex items-center space-x-2 text-xs text-gray-400 dark:text-gray-500">
                           <span>
                             {viewModalData.date ? new Date(viewModalData.date).toLocaleDateString() : ''}
                           </span>
@@ -792,12 +792,12 @@ const CalendarAttendanceView = () => {
                           </span>
                         </div>
                       </div>
-                      <Badge className="bg-green-100 text-green-800">Submitted</Badge>
+                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Submitted</Badge>
                     </div>
 
                     <div>
-                      <h4 className="font-medium text-gray-700 mb-2">What was accomplished:</h4>
-                      <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{viewModalData.workDone || 'No details provided'}</p>
+                      <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-2">What was accomplished:</h4>
+                      <p className="text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg">{viewModalData.workDone || 'No details provided'}</p>
                     </div>
 
                     <div>

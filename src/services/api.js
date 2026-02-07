@@ -171,7 +171,7 @@ export const apiService = {
   getMyAttendance: (params = {}) => api.get('/attendance/my', { params }),
   markAttendance: (attendanceData) => api.post('/attendance', attendanceData),
   getAttendanceStats: (params = {}) => api.get('/attendance/stats', { params }),
-  getAttendanceReport: (startDate, endDate) => api.get('/attendance/report', { params: { startDate, endDate } }),
+  getAttendanceReport: (startDate, endDate, page = 1, limit = 10) => api.get('/attendance/report', { params: { startDate, endDate, page, limit } }),
 
   // Projects
   getAllProjects: (params = {}) => api.get('/projects', { params }),
@@ -191,6 +191,8 @@ export const apiService = {
     api.put(`/projects/${projectId}/assign`, { userId, role }),
   unassignUserFromProject: (projectId, userId) =>
     api.put(`/projects/${projectId}/unassign`, { userId }),
+  updateProjectTeam: (projectId, teamData) =>
+    api.put(`/projects/${projectId}/team`, teamData),
 
   // Dashboard
   getDashboardStats: () => api.get('/dashboard/stats'),

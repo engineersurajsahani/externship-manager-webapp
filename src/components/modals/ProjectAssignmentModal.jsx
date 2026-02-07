@@ -88,7 +88,7 @@ const ProjectAssignmentModal = ({
     if (project) {
       // Parse current team members from project.teamMembers array
       const teamMembers = project.teamMembers || [];
-      
+
       // Find current project manager (either from projectManager field or teamMembers with role)
       let currentPM = null;
       if (project.projectManager) {
@@ -96,7 +96,7 @@ const ProjectAssignmentModal = ({
         const pmId = project.projectManager._id || project.projectManager.id || project.projectManager;
         currentPM = projectManagers.find((user) => user.id === pmId);
       }
-      
+
       // If not found, look in teamMembers array
       if (!currentPM) {
         const pmMember = teamMembers.find((member) => member.role === 'project_manager');
@@ -218,12 +218,12 @@ const ProjectAssignmentModal = ({
         >
           <Card className="p-0">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Project Team Assignment
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   {project
                     ? `Assign team members to "${project.name}"`
                     : 'Assign team members to project'}
@@ -231,32 +231,32 @@ const ProjectAssignmentModal = ({
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-400 dark:text-gray-500"
               >
                 <FiX className="w-5 h-5" />
               </button>
             </div>
 
             {/* Assignment Summary */}
-            <div className="p-6 bg-gray-50 border-b border-gray-200">
+            <div className="p-6 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center">
-                    <FiUsers className="w-5 h-5 text-gray-400 mr-2" />
-                    <span className="text-sm font-medium text-gray-700">
+                    <FiUsers className="w-5 h-5 text-gray-400 dark:text-gray-500 mr-2" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Total Assigned: {getTotalAssigned()}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
                     {currentUserRole === 'admin' && (
-                      <Badge className="bg-blue-100 text-blue-800">
+                      <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
                         PM: {assignments.projectManager ? 1 : 0}
                       </Badge>
                     )}
-                    <Badge className="bg-green-100 text-green-800">
+                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                       TL: {assignments.teamLeaders.length}
                     </Badge>
-                    <Badge className="bg-orange-100 text-orange-800">
+                    <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
                       Interns: {assignments.interns.length}
                     </Badge>
                   </div>
@@ -270,10 +270,10 @@ const ProjectAssignmentModal = ({
               {currentUserRole === 'admin' && (
                 <div>
                   <div className="flex items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       Project Manager
                     </h3>
-                    <Badge className="ml-3 bg-blue-100 text-blue-800">
+                    <Badge className="ml-3 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
                       {assignments.projectManager ? 'Assigned' : 'Not Assigned'}
                     </Badge>
                   </div>
@@ -283,17 +283,16 @@ const ProjectAssignmentModal = ({
                         key={pm.id}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                          isUserAssigned(pm, 'pm')
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300 bg-white'
-                        }`}
+                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${isUserAssigned(pm, 'pm')
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800'
+                          }`}
                         onClick={() => handleAssignPM(pm)}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-blue-600 font-medium text-sm">
+                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-blue-600 dark:text-blue-400 font-medium text-sm">
                                 {pm.name
                                   .split(' ')
                                   .map((n) => n[0])
@@ -301,16 +300,16 @@ const ProjectAssignmentModal = ({
                               </span>
                             </div>
                             <div>
-                              <h4 className="font-medium text-gray-900">
+                              <h4 className="font-medium text-gray-900 dark:text-white">
                                 {pm.name}
                               </h4>
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
                                 {pm.department}
                               </p>
                             </div>
                           </div>
                           {isUserAssigned(pm, 'pm') && (
-                            <FiCheck className="w-5 h-5 text-blue-600" />
+                            <FiCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                           )}
                         </div>
                       </motion.div>
@@ -322,10 +321,10 @@ const ProjectAssignmentModal = ({
               {/* Team Leaders Section */}
               <div>
                 <div className="flex items-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Team Leaders
                   </h3>
-                  <Badge className="ml-3 bg-green-100 text-green-800">
+                  <Badge className="ml-3 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                     {assignments.teamLeaders.length} Selected
                   </Badge>
                 </div>
@@ -335,17 +334,16 @@ const ProjectAssignmentModal = ({
                       key={tl.id}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        isUserAssigned(tl, 'tl')
-                          ? 'border-green-500 bg-green-50'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
-                      }`}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${isUserAssigned(tl, 'tl')
+                        ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800'
+                        }`}
                       onClick={() => handleToggleTL(tl)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
-                          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                            <span className="text-green-600 font-medium text-sm">
+                          <div className="w-10 h-10 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mr-3">
+                            <span className="text-green-600 dark:text-green-400 font-medium text-sm">
                               {tl.name
                                 .split(' ')
                                 .map((n) => n[0])
@@ -353,18 +351,18 @@ const ProjectAssignmentModal = ({
                             </span>
                           </div>
                           <div>
-                            <h4 className="font-medium text-gray-900">
+                            <h4 className="font-medium text-gray-900 dark:text-white">
                               {tl.name}
                             </h4>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
                               {tl.department}
                             </p>
                           </div>
                         </div>
                         {isUserAssigned(tl, 'tl') ? (
-                          <FiCheck className="w-5 h-5 text-green-600" />
+                          <FiCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
                         ) : (
-                          <FiPlus className="w-5 h-5 text-gray-400" />
+                          <FiPlus className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                         )}
                       </div>
                     </motion.div>
@@ -375,10 +373,10 @@ const ProjectAssignmentModal = ({
               {/* Interns Section */}
               <div>
                 <div className="flex items-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Interns
                   </h3>
-                  <Badge className="ml-3 bg-orange-100 text-orange-800">
+                  <Badge className="ml-3 bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
                     {assignments.interns.length} Selected
                   </Badge>
                 </div>
@@ -388,17 +386,16 @@ const ProjectAssignmentModal = ({
                       key={intern.id}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        isUserAssigned(intern, 'intern')
-                          ? 'border-orange-500 bg-orange-50'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
-                      }`}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${isUserAssigned(intern, 'intern')
+                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800'
+                        }`}
                       onClick={() => handleToggleIntern(intern)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
-                          <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                            <span className="text-orange-600 font-medium text-sm">
+                          <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/50 rounded-full flex items-center justify-center mr-3">
+                            <span className="text-orange-600 dark:text-orange-400 font-medium text-sm">
                               {intern.name
                                 .split(' ')
                                 .map((n) => n[0])
@@ -406,18 +403,18 @@ const ProjectAssignmentModal = ({
                             </span>
                           </div>
                           <div>
-                            <h4 className="font-medium text-gray-900">
+                            <h4 className="font-medium text-gray-900 dark:text-white">
                               {intern.name}
                             </h4>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
                               {intern.department}
                             </p>
                           </div>
                         </div>
                         {isUserAssigned(intern, 'intern') ? (
-                          <FiCheck className="w-5 h-5 text-orange-600" />
+                          <FiCheck className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                         ) : (
-                          <FiPlus className="w-5 h-5 text-gray-400" />
+                          <FiPlus className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                         )}
                       </div>
                     </motion.div>
@@ -427,8 +424,8 @@ const ProjectAssignmentModal = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-between p-6 border-t border-gray-200">
-              <div className="text-sm text-gray-500">
+            <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
                 {getTotalAssigned() > 0 && (
                   <span>
                     {getTotalAssigned()} team member

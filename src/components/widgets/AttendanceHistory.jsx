@@ -187,22 +187,21 @@ const AttendanceHistory = ({ viewMode = "table" }) => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
             Attendance History
           </h3>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Your daily update submission record
           </p>
         </div>
         <div className="flex items-center space-x-2">
           <Badge
-            className={`${
-              stats.percentage >= 90
-                ? "bg-green-100 text-green-800"
-                : stats.percentage >= 75
-                  ? "bg-yellow-100 text-yellow-800"
-                  : "bg-red-100 text-red-800"
-            }`}
+            className={`${stats.percentage >= 90
+              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+              : stats.percentage >= 75
+                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+              }`}
           >
             {stats.percentage}% Present
           </Badge>
@@ -219,7 +218,7 @@ const AttendanceHistory = ({ viewMode = "table" }) => {
           <FiChevronLeft className="w-4 h-4" />
         </Button>
 
-        <h4 className="text-lg font-medium text-gray-900">
+        <h4 className="text-lg font-medium text-gray-900 dark:text-white">
           {monthNames[selectedMonth]} {selectedYear}
         </h4>
 
@@ -238,17 +237,17 @@ const AttendanceHistory = ({ viewMode = "table" }) => {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-green-50 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-green-600">{stats.present}</p>
-          <p className="text-xs text-green-700">Present</p>
+        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center">
+          <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.present}</p>
+          <p className="text-xs text-green-700 dark:text-green-300">Present</p>
         </div>
-        <div className="bg-red-50 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-red-600">{stats.absent}</p>
-          <p className="text-xs text-red-700">Absent</p>
+        <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 text-center">
+          <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.absent}</p>
+          <p className="text-xs text-red-700 dark:text-red-300">Absent</p>
         </div>
-        <div className="bg-blue-50 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
-          <p className="text-xs text-blue-700">Total Days</p>
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
+          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.total}</p>
+          <p className="text-xs text-blue-700 dark:text-blue-300">Total Days</p>
         </div>
       </div>
 
@@ -268,16 +267,16 @@ const AttendanceHistory = ({ viewMode = "table" }) => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.02 }}
-              className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
             >
               <div className="flex items-center space-x-3">
                 {getStatusIcon(record.status)}
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
                     {formatDate(record.date)}
                   </p>
                   {record.timestamp && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       Submitted at {formatTime(record.timestamp)}
                     </p>
                   )}
@@ -291,17 +290,17 @@ const AttendanceHistory = ({ viewMode = "table" }) => {
                 </Badge>
 
                 {record.hasUpdate && record.update && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          // Replace native alert with UI toast showing details (info)
-                          const message = `Update Details:\n\nWork Done: ${record.update.workDone || 'N/A'}\n\nChallenges: ${record.update.challenges || 'N/A'}\n\nPlan Tomorrow: ${record.update.planForTomorrow || 'N/A'}`;
-                          window.dispatchEvent(new CustomEvent('app-toast', { detail: { message, type: 'info', duration: 8000 } }));
-                        }}
-                      >
-                        <FiEye className="w-3 h-3" />
-                      </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Replace native alert with UI toast showing details (info)
+                      const message = `Update Details:\n\nWork Done: ${record.update.workDone || 'N/A'}\n\nChallenges: ${record.update.challenges || 'N/A'}\n\nPlan Tomorrow: ${record.update.planForTomorrow || 'N/A'}`;
+                      window.dispatchEvent(new CustomEvent('app-toast', { detail: { message, type: 'info', duration: 8000 } }));
+                    }}
+                  >
+                    <FiEye className="w-3 h-3" />
+                  </Button>
                 )}
               </div>
             </motion.div>
@@ -310,23 +309,23 @@ const AttendanceHistory = ({ viewMode = "table" }) => {
       </div>
 
       {/* Legend */}
-      <div className="mt-6 pt-4 border-t border-gray-200">
+      <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center space-x-6 text-xs">
           <div className="flex items-center space-x-1">
-            <FiCheckCircle className="w-3 h-3 text-green-600" />
-            <span className="text-gray-600">Present (Update Submitted)</span>
+            <FiCheckCircle className="w-3 h-3 text-green-600 dark:text-green-400" />
+            <span className="text-gray-600 dark:text-gray-400">Present (Update Submitted)</span>
           </div>
           <div className="flex items-center space-x-1">
-            <FiXCircle className="w-3 h-3 text-red-600" />
-            <span className="text-gray-600">Absent (No Update)</span>
+            <FiXCircle className="w-3 h-3 text-red-600 dark:text-red-400" />
+            <span className="text-gray-600 dark:text-gray-400">Absent (No Update)</span>
           </div>
           <div className="flex items-center space-x-1">
-            <FiClock className="w-3 h-3 text-yellow-600" />
-            <span className="text-gray-600">Pending</span>
+            <FiClock className="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
+            <span className="text-gray-600 dark:text-gray-400">Pending</span>
           </div>
         </div>
         <div className="mt-2 text-center">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             Working days: Monday to Saturday • Sunday is off
           </p>
         </div>

@@ -15,10 +15,10 @@ const Card = ({
   const baseClasses = 'card-premium overflow-hidden';
 
   const variants = {
-    default: 'bg-white border border-gray-100',
-    elevated: 'bg-white shadow-xl border-0',
-    flat: 'bg-white border border-gray-200 shadow-none',
-    bordered: 'bg-white border-2 border-gray-200',
+    default: 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700',
+    elevated: 'bg-white dark:bg-gray-800 shadow-xl border-0',
+    flat: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-none',
+    bordered: 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700',
     dark: 'bg-gray-800 text-white border border-gray-700',
   };
 
@@ -78,7 +78,7 @@ const Card = ({
 // Card sub-components
 const CardHeader = ({ children, className = '', ...props }) => (
   <div
-    className={`pb-4 border-b border-gray-100 last:border-b-0 ${className}`}
+    className={`pb-4 border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${className}`}
     {...props}
   >
     {children}
@@ -93,7 +93,7 @@ const CardBody = ({ children, className = '', ...props }) => (
 
 const CardFooter = ({ children, className = '', ...props }) => (
   <div
-    className={`pt-4 border-t border-gray-100 first:border-t-0 ${className}`}
+    className={`pt-4 border-t border-gray-100 dark:border-gray-700 first:border-t-0 ${className}`}
     {...props}
   >
     {children}
@@ -104,7 +104,7 @@ const CardTitle = ({ children, className = '', as = 'h3', ...props }) => {
   const Component = as;
   return (
     <Component
-      className={`text-lg font-semibold text-gray-900 ${className}`}
+      className={`text-lg font-semibold text-gray-900 dark:text-white ${className}`}
       {...props}
     >
       {children}
@@ -113,7 +113,7 @@ const CardTitle = ({ children, className = '', as = 'h3', ...props }) => {
 };
 
 const CardDescription = ({ children, className = '', ...props }) => (
-  <p className={`text-sm text-gray-600 mt-1 ${className}`} {...props}>
+  <p className={`text-sm text-gray-600 dark:text-gray-400 mt-1 ${className}`} {...props}>
     {children}
   </p>
 );

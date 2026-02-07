@@ -239,85 +239,17 @@ const Projects = () => {
         return nestedUser._id || nestedUser.id || null;
       };
 
-      // Get the current project to determine what changes need to be made
-      const currentProject = projects.find(
-        (p) => p._id?.toString() === projectId.toString()
-      );
-      if (!currentProject) {
-        throw new Error('Project not found');
-      }
+      // Extract IDs
+      const pmId = resolveUserId(projectManager);
+      const tlIds = (teamLeaders || []).map(resolveUserId).filter(Boolean);
+      const internIds = (interns || []).map(resolveUserId).filter(Boolean);
 
-      // For simplicity, we'll clear all current assignments and reassign
-      // In a production system, you'd want to be more granular
-
-      // Remove all current team members (including PM if being reassigned)
-      const currentMembers = currentProject.teamMembers || [];
-      for (const member of currentMembers) {
-        const memberUserId = resolveUserId(member);
-        if (!memberUserId) {
-          console.warn('Skipping unassign for member with missing user ID', member);
-          continue;
-        }
-        await apiService.unassignUserFromProject(projectId, memberUserId);
-      }
-
-      // Assign new team members
-      const assignments = [];
-
-      // Assign Project Manager (Admin only)
-      if (projectManager) {
-        const pmId = resolveUserId(projectManager);
-        if (pmId) {
-          assignments.push(
-            apiService.assignUserToProject(
-              projectId,
-              pmId,
-              'project_manager'
-            )
-          );
-        } else {
-          console.warn('Skipping PM assignment due to missing ID', projectManager);
-        }
-      }
-
-      // Assign team leaders
-      if (teamLeaders && teamLeaders.length > 0) {
-        for (const tl of teamLeaders) {
-          const tlId = resolveUserId(tl);
-          if (!tlId) {
-            console.warn('Skipping team leader assignment due to missing ID', tl);
-            continue;
-          }
-          assignments.push(
-            apiService.assignUserToProject(
-              projectId,
-              tlId,
-              'team_leader'
-            )
-          );
-        }
-      }
-
-      // Assign interns
-      if (interns && interns.length > 0) {
-        for (const intern of interns) {
-          const internId = resolveUserId(intern);
-          if (!internId) {
-            console.warn('Skipping intern assignment due to missing ID', intern);
-            continue;
-          }
-          assignments.push(
-            apiService.assignUserToProject(
-              projectId,
-              internId,
-              'intern'
-            )
-          );
-        }
-      }
-
-      // Wait for all assignments to complete
-      await Promise.all(assignments);
+      // Call bulk update endpoint
+      await apiService.updateProjectTeam(projectId, {
+        projectManager: pmId,
+        teamLeaders: tlIds,
+        interns: internIds
+      });
 
       // Refresh projects to show updated team assignments
       await loadProjects();
@@ -515,24 +447,26 @@ const Projects = () => {
                 <div className="flex flex-col h-full">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
-                        <FiBriefcase className="w-5 h-5 text-indigo-600" />
+                      <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400">
+                        <FiBriefcase className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                           {project.name}
                         </h3>
-                        <p className="text-sm text-gray-500">{project.lead}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          PM: {project.projectManager?.firstName ? `${project.projectManager.firstName} ${project.projectManager.lastName || ''}` : 'Not Assigned'}
+                        </p>
                       </div>
                     </div>
                     <div className="relative">
-                      <button className="p-1 hover:bg-gray-100 rounded">
-                        <FiMoreVertical className="w-4 h-4 text-gray-400" />
+                      <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-400 dark:text-gray-500">
+                        <FiMoreVertical className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
 
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
                     {project.description}
                   </p>
 
@@ -540,7 +474,7 @@ const Projects = () => {
                     <Badge className={getStatusColor(project.status)}>
                       {project.status
                         ? project.status.charAt(0).toUpperCase() +
-                        project.status.slice(1)
+                        project.status.slice(1).replace('_', ' ')
                         : 'Unknown'}
                     </Badge>
                     {project.priority && (
@@ -551,13 +485,15 @@ const Projects = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
                     <div className="flex items-center">
-                      <FiUsers className="w-4 h-4 mr-1" />
-                      <span>{project.teamMembers?.length || 0} members</span>
+                      <FiUsers className="w-4 h-4 mr-1 text-gray-400" />
+                      <span>
+                        {project.teamMembers?.filter(m => m.role === 'team_leader').length || 0} TLs, {project.teamMembers?.filter(m => m.role === 'intern').length || 0} Interns
+                      </span>
                     </div>
                     <div className="flex items-center">
-                      <FiCalendar className="w-4 h-4 mr-1" />
+                      <FiCalendar className="w-4 h-4 mr-1 text-gray-400" />
                       <span>
                         {project.endDate
                           ? new Date(project.endDate).toLocaleDateString()
@@ -611,45 +547,45 @@ const Projects = () => {
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-gray-900/50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Project
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Progress
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Team
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Due Date
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredProjects.map((project) => (
                     <tr
                       key={project._id || project.id}
-                      className="hover:bg-gray-50"
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center">
-                          <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
-                            <FiBriefcase className="w-4 h-4 text-indigo-600" />
+                          <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400">
+                            <FiBriefcase className="w-4 h-4" />
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
                               {project.name}
                             </div>
-                            <div className="text-sm text-gray-500">
-                              {project.lead}
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              PM: {project.projectManager?.firstName ? `${project.projectManager.firstName} ${project.projectManager.lastName || ''}` : 'Not Assigned'}
                             </div>
                           </div>
                         </div>
@@ -658,30 +594,30 @@ const Projects = () => {
                         <Badge className={getStatusColor(project.status)}>
                           {project.status
                             ? project.status.charAt(0).toUpperCase() +
-                            project.status.slice(1)
+                            project.status.slice(1).replace('_', ' ')
                             : 'Unknown'}
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center">
-                          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                          <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2 mr-2">
                             <div
                               className="bg-indigo-600 h-2 rounded-full"
                               style={{ width: `${project.progress || 0}%` }}
                             />
                           </div>
-                          <span className="text-sm font-medium">
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             {project.progress || 0}%
                           </span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <FiUsers className="w-4 h-4 mr-1" />
-                          {project.teamMembers?.length || 0}
+                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                          <FiUsers className="w-4 h-4 mr-1 text-gray-400" />
+                          {project.teamMembers?.filter(m => m.role === 'team_leader').length || 0} TLs
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                         {project.endDate
                           ? new Date(project.endDate).toLocaleDateString()
                           : 'No end date'}

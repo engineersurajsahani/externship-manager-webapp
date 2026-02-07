@@ -204,14 +204,14 @@ const ProjectModal = ({
         >
           <Card className="p-0">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   {mode === 'create' && 'Create New Project'}
                   {mode === 'edit' && 'Edit Project'}
                   {mode === 'view' && 'Project Details'}
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   {mode === 'create' &&
                     'Set up a new project with timeline and requirements'}
                   {mode === 'edit' && 'Update project information and settings'}
@@ -220,7 +220,7 @@ const ProjectModal = ({
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-400 dark:text-gray-500"
               >
                 <FiX className="w-5 h-5" />
               </button>
@@ -231,11 +231,11 @@ const ProjectModal = ({
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Project Name */}
                 <div className="lg:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Project Name *
                   </label>
                   <div className="relative">
-                    <FiBriefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <FiBriefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                     <input
                       type="text"
                       value={formData.name}
@@ -243,9 +243,8 @@ const ProjectModal = ({
                         handleInputChange('name', e.target.value)
                       }
                       disabled={mode === 'view'}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                        errors.name ? 'border-red-300' : 'border-gray-300'
-                      } ${mode === 'view' ? 'bg-gray-50' : ''}`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.name ? 'border-red-300 dark:border-red-900' : 'border-gray-300 dark:border-gray-600'
+                        } ${mode === 'view' ? 'bg-gray-50 dark:bg-gray-800' : ''}`}
                       placeholder="Enter project name"
                     />
                   </div>
@@ -256,7 +255,7 @@ const ProjectModal = ({
 
                 {/* Description */}
                 <div className="lg:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Description *
                   </label>
                   <div className="relative">
@@ -268,11 +267,10 @@ const ProjectModal = ({
                       }
                       disabled={mode === 'view'}
                       rows={3}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                        errors.description
-                          ? 'border-red-300'
-                          : 'border-gray-300'
-                      } ${mode === 'view' ? 'bg-gray-50' : ''}`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.description
+                        ? 'border-red-300 dark:border-red-900'
+                        : 'border-gray-300 dark:border-gray-600'
+                        } ${mode === 'view' ? 'bg-gray-50 dark:bg-gray-800' : ''}`}
                       placeholder="Describe the project objectives and scope"
                     />
                   </div>
@@ -285,7 +283,7 @@ const ProjectModal = ({
 
                 {/* Start Date */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Start Date *
                   </label>
                   <div className="relative">
@@ -297,16 +295,15 @@ const ProjectModal = ({
                         handleInputChange('startDate', e.target.value)
                       }
                       disabled={mode === 'view'}
-                      className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                        mode === 'view' ? 'bg-gray-50' : ''
-                      }`}
+                      className={`w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${mode === 'view' ? 'bg-gray-50 dark:bg-gray-800' : ''
+                        }`}
                     />
                   </div>
                 </div>
 
                 {/* End Date */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     End Date *
                   </label>
                   <div className="relative">
@@ -318,9 +315,8 @@ const ProjectModal = ({
                         handleInputChange('endDate', e.target.value)
                       }
                       disabled={mode === 'view'}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                        errors.endDate ? 'border-red-300' : 'border-gray-300'
-                      } ${mode === 'view' ? 'bg-gray-50' : ''}`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.endDate ? 'border-red-300 dark:border-red-900' : 'border-gray-300 dark:border-gray-600'
+                        } ${mode === 'view' ? 'bg-gray-50 dark:bg-gray-800' : ''}`}
                     />
                   </div>
                   {errors.endDate && (
@@ -332,7 +328,7 @@ const ProjectModal = ({
 
                 {/* Priority */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Priority
                   </label>
                   <div className="relative">
@@ -343,9 +339,8 @@ const ProjectModal = ({
                         handleInputChange('priority', e.target.value)
                       }
                       disabled={mode === 'view'}
-                      className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                        mode === 'view' ? 'bg-gray-50' : ''
-                      }`}
+                      className={`w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${mode === 'view' ? 'bg-gray-50 dark:bg-gray-800' : ''
+                        }`}
                     >
                       {priorities.map((priority) => (
                         <option key={priority.value} value={priority.value}>
@@ -358,7 +353,7 @@ const ProjectModal = ({
 
                 {/* Status */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Status
                   </label>
                   <select
@@ -367,9 +362,8 @@ const ProjectModal = ({
                       handleInputChange('status', e.target.value)
                     }
                     disabled={mode === 'view'}
-                    className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50' : ''
-                    }`}
+                    className={`w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${mode === 'view' ? 'bg-gray-50 dark:bg-gray-800' : ''
+                      }`}
                   >
                     {statuses.map((status) => (
                       <option key={status.value} value={status.value}>
@@ -381,7 +375,7 @@ const ProjectModal = ({
 
                 {/* Department */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Department *
                   </label>
                   <select
@@ -390,9 +384,8 @@ const ProjectModal = ({
                       handleInputChange('department', e.target.value)
                     }
                     disabled={mode === 'view'}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                      errors.department ? 'border-red-300' : 'border-gray-300'
-                    } ${mode === 'view' ? 'bg-gray-50' : ''}`}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.department ? 'border-red-300 dark:border-red-900' : 'border-gray-300 dark:border-gray-600'
+                      } ${mode === 'view' ? 'bg-gray-50 dark:bg-gray-800' : ''}`}
                   >
                     <option value="">Select department</option>
                     {departments.map((dept) => (
@@ -410,7 +403,7 @@ const ProjectModal = ({
 
                 {/* Budget */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Budget (USD)
                   </label>
                   <div className="relative">
@@ -424,9 +417,8 @@ const ProjectModal = ({
                         handleInputChange('budget', e.target.value)
                       }
                       disabled={mode === 'view'}
-                      className={`w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                        mode === 'view' ? 'bg-gray-50' : ''
-                      }`}
+                      className={`w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${mode === 'view' ? 'bg-gray-50 dark:bg-gray-800' : ''
+                        }`}
                       placeholder="0"
                     />
                   </div>
@@ -434,7 +426,7 @@ const ProjectModal = ({
 
                 {/* Requirements */}
                 <div className="lg:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Requirements & Objectives
                   </label>
                   <textarea
@@ -444,9 +436,8 @@ const ProjectModal = ({
                     }
                     disabled={mode === 'view'}
                     rows={4}
-                    className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50' : ''
-                    }`}
+                    className={`w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${mode === 'view' ? 'bg-gray-50 dark:bg-gray-800' : ''
+                      }`}
                     placeholder="List key requirements, deliverables, and success criteria"
                   />
                 </div>
@@ -454,7 +445,7 @@ const ProjectModal = ({
 
               {/* Action Buttons */}
               {mode !== 'view' && (
-                <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+                <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
                   <Button
                     type="button"
                     variant="outline"
@@ -475,7 +466,7 @@ const ProjectModal = ({
               )}
 
               {mode === 'view' && (
-                <div className="flex items-center justify-end pt-6 border-t border-gray-200">
+                <div className="flex items-center justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
                   <Button variant="outline" onClick={onClose}>
                     Close
                   </Button>

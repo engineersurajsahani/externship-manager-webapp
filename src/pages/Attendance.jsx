@@ -296,12 +296,12 @@ const Attendance = () => {
             <FiCalendar className="w-6 h-6 text-blue-600" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               {userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER
                 ? 'Team Attendance Management'
                 : 'Attendance Tracking'}
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               {userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER
                 ? 'Monitor team attendance and daily update submissions across all users'
                 : 'Monitor your daily update submissions and attendance record'}
@@ -313,12 +313,12 @@ const Attendance = () => {
         {(userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER) && (
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
-              <FiCalendar className="w-4 h-4 text-gray-500" />
+              <FiCalendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
             </div>
             <Button
@@ -345,16 +345,16 @@ const Attendance = () => {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Total Users
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {overview.totalUsers}
                     </p>
-                    <p className="text-sm text-gray-500">Registered users</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Registered users</p>
                   </div>
-                  <div className="p-3 bg-blue-100 rounded-full">
-                    <FiCalendar className="w-6 h-6 text-blue-600" />
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                    <FiCalendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                 </div>
               </Card>
@@ -368,10 +368,10 @@ const Attendance = () => {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Team Attendance
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {overview.teamAttendanceRate}%
                     </p>
                     <p
@@ -391,18 +391,18 @@ const Attendance = () => {
                   </div>
                   <div
                     className={`p-3 rounded-full ${overview.teamAttendanceRate >= 90
-                      ? 'bg-green-100'
+                      ? 'bg-green-100 dark:bg-green-900/30'
                       : overview.teamAttendanceRate >= 75
-                        ? 'bg-yellow-100'
-                        : 'bg-red-100'
+                        ? 'bg-yellow-100 dark:bg-yellow-900/30'
+                        : 'bg-red-100 dark:bg-red-900/30'
                       }`}
                   >
                     <FiTrendingUp
                       className={`w-6 h-6 ${overview.teamAttendanceRate >= 90
-                        ? 'text-green-600'
+                        ? 'text-green-600 dark:text-green-400'
                         : overview.teamAttendanceRate >= 75
-                          ? 'text-yellow-600'
-                          : 'text-red-600'
+                          ? 'text-yellow-600 dark:text-yellow-400'
+                          : 'text-red-600 dark:text-red-400'
                         }`}
                     />
                   </div>
@@ -418,16 +418,16 @@ const Attendance = () => {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Today Submitted
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {overview.todaySubmissions}
                     </p>
-                    <p className="text-sm text-gray-500">Updates received</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Updates received</p>
                   </div>
-                  <div className="p-3 bg-green-100 rounded-full">
-                    <FiTarget className="w-6 h-6 text-green-600" />
+                  <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                    <FiCheckCircle className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                   </div>
                 </div>
               </Card>
@@ -444,15 +444,15 @@ const Attendance = () => {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       This Month
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {overview.presentDays}/{overview.totalWorkingDays}
                     </p>
                   </div>
-                  <div className="p-3 bg-blue-100 rounded-full">
-                    <FiCalendar className="w-6 h-6 text-blue-600" />
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                    <FiCalendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                 </div>
               </Card>
@@ -466,27 +466,27 @@ const Attendance = () => {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Attendance Rate
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {overview.attendanceRate}%
                     </p>
                   </div>
                   <div
                     className={`p-3 rounded-full ${overview.attendanceRate >= 90
-                      ? 'bg-green-100'
+                      ? 'bg-green-100 dark:bg-green-900/30'
                       : overview.attendanceRate >= 75
-                        ? 'bg-yellow-100'
-                        : 'bg-red-100'
+                        ? 'bg-yellow-100 dark:bg-yellow-900/30'
+                        : 'bg-red-100 dark:bg-red-900/30'
                       }`}
                   >
                     <FiTrendingUp
                       className={`w-6 h-6 ${overview.attendanceRate >= 90
-                        ? 'text-green-600'
+                        ? 'text-green-600 dark:text-green-400'
                         : overview.attendanceRate >= 75
-                          ? 'text-yellow-600'
-                          : 'text-red-600'
+                          ? 'text-yellow-600 dark:text-yellow-400'
+                          : 'text-red-600 dark:text-red-400'
                         }`}
                     />
                   </div>
@@ -502,16 +502,16 @@ const Attendance = () => {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Current Streak
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {overview.streak}   days
                     </p>
 
                   </div>
-                  <div className="p-3 bg-orange-100 rounded-full">
-                    <FiTarget className="w-6 h-6 text-orange-600" />
+                  <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+                    <FiTarget className="w-6 h-6 text-orange-600 dark:text-orange-400" />
                   </div>
                 </div>
               </Card>
@@ -628,10 +628,10 @@ const Attendance = () => {
         >
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Project Attendance Overview
               </h3>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 Today's attendance by project
               </span>
             </div>
@@ -643,19 +643,19 @@ const Attendance = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * index }}
-                  className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 hover:shadow-md transition-all cursor-pointer"
+                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all cursor-pointer"
                   onClick={() => handleProjectClick(project)}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-blue-100 rounded-lg">
-                        <FiFolder className="w-5 h-5 text-blue-600" />
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                        <FiFolder className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-900">
+                        <h4 className="font-semibold text-gray-900 dark:text-white">
                           {project.name}
                         </h4>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {project.totalMembers} members
                         </p>
                       </div>
@@ -738,18 +738,18 @@ const Attendance = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-xl p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto"
+            className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <FiFolder className="w-6 h-6 text-blue-600" />
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <FiFolder className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     {selectedProject.name}
                   </h2>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Attendance: {selectedProject.attendanceRate}% •{' '}
                     {selectedProject.totalMembers} total members
                   </p>
@@ -757,7 +757,7 @@ const Attendance = () => {
               </div>
               <button
                 onClick={handleCloseModal}
-                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl font-bold"
               >
                 ×
               </button>
@@ -767,10 +767,10 @@ const Attendance = () => {
               {/* Present Members */}
               <div>
                 <div className="flex items-center space-x-2 mb-4">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <FiCheck className="w-5 h-5 text-green-600" />
+                  <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                    <FiCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Present Today ({selectedProject.presentCount})
                   </h3>
                 </div>
@@ -779,16 +779,16 @@ const Attendance = () => {
                     selectedProject.presentMembers.map((member, index) => (
                       <div
                         key={member.email}
-                        className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg"
+                        className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg"
                       >
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                          <FiUsers className="w-4 h-4 text-green-600" />
+                        <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                          <FiUsers className="w-4 h-4 text-green-600 dark:text-green-400" />
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-gray-900 dark:text-white">
                             {member.name}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             {member.department} • {member.role}
                           </p>
                         </div>
@@ -799,8 +799,8 @@ const Attendance = () => {
                     ))
                   ) : (
                     <div className="text-center py-6">
-                      <FiCheck className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-500">No members present today</p>
+                      <FiCheck className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                      <p className="text-gray-500 dark:text-gray-400">No members present today</p>
                     </div>
                   )}
                 </div>
@@ -809,10 +809,10 @@ const Attendance = () => {
               {/* Absent Members */}
               <div>
                 <div className="flex items-center space-x-2 mb-4">
-                  <div className="p-2 bg-red-100 rounded-lg">
-                    <FiX className="w-5 h-5 text-red-600" />
+                  <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                    <FiX className="w-5 h-5 text-red-600 dark:text-red-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Absent Today ({selectedProject.absentCount})
                   </h3>
                 </div>
@@ -821,28 +821,28 @@ const Attendance = () => {
                     selectedProject.absentMembers.map((member, index) => (
                       <div
                         key={member.email}
-                        className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg"
+                        className="flex items-center space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg"
                       >
-                        <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                          <FiUsers className="w-4 h-4 text-red-600" />
+                        <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                          <FiUsers className="w-4 h-4 text-red-600 dark:text-red-400" />
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-gray-900 dark:text-white">
                             {member.name}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             {member.department} • {member.role}
                           </p>
                         </div>
-                        <div className="p-1 bg-red-100 rounded-full">
-                          <FiX className="w-4 h-4 text-red-600" />
+                        <div className="p-1 bg-red-100 dark:bg-red-900/30 rounded-full">
+                          <FiX className="w-4 h-4 text-red-600 dark:text-red-400" />
                         </div>
                       </div>
                     ))
                   ) : (
                     <div className="text-center py-6">
-                      <FiX className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-500">
+                      <FiX className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                      <p className="text-gray-500 dark:text-gray-400">
                         All members are present today!
                       </p>
                     </div>
@@ -851,7 +851,7 @@ const Attendance = () => {
               </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
               <div className="flex justify-end">
                 <Button onClick={handleCloseModal}>Close</Button>
               </div>
