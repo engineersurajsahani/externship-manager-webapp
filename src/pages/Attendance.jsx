@@ -6,6 +6,7 @@ import {
   FiTarget,
   FiUsers,
   FiCheck,
+  FiCheckCircle,
   FiX,
   FiEye,
   FiFolder,
