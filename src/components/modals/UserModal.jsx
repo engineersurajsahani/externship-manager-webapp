@@ -433,7 +433,7 @@ const UserModal = ({
                   Join Date
                 </label>
                 <div className="relative">
-                  <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black dark:text-white transition-colors duration-300 w-4 h-4" />
                   <input
                     type="date"
                     value={formData.joinDate}

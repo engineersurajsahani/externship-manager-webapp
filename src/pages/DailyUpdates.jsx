@@ -531,8 +531,8 @@ const DailyUpdates = () => {
                   >
                     <Card
                       className={`p-6 relative overflow-hidden ${hasSubmittedToday
-                          ? 'border-green-200 bg-green-50/30'
-                          : 'border-gray-200 hover:border-blue-300 hover:shadow-lg'
+                        ? 'border-green-200 bg-green-50/30'
+                        : 'border-gray-200 hover:border-blue-300 hover:shadow-lg'
                         } transition-all`}
                     >
                       {/* Status indicator */}
@@ -551,8 +551,8 @@ const DailyUpdates = () => {
                             </h3>
                             <Badge
                               className={`${project.status === 'active'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-gray-100 text-gray-800'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-gray-100 text-gray-800'
                                 }`}
                             >
                               {project.status}
@@ -634,8 +634,8 @@ const DailyUpdates = () => {
                         <Button
                           onClick={() => handleProjectUpdateSubmit(project)}
                           className={`${hasSubmittedToday
-                              ? 'bg-blue-600 hover:bg-blue-700'
-                              : 'bg-green-600 hover:bg-green-700'
+                            ? 'bg-blue-600 hover:bg-blue-700'
+                            : 'bg-green-600 hover:bg-green-700'
                             }`}
                           size="sm"
                         >
@@ -950,7 +950,7 @@ const DailyUpdates = () => {
               <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
                 {/* Date Filter */}
                 <div className="flex items-center space-x-2">
-                  <FiCalendar className="w-4 h-4 text-gray-400" />
+                  <FiCalendar className="w-4 h-4 text-black dark:text-white transition-colors duration-300" />
                   <input
                     type="date"
                     value={selectedDate}

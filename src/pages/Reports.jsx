@@ -341,7 +341,7 @@ const Reports = () => {
                                 Start Date
                             </label>
                             <div className="relative">
-                                <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
+                                <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black dark:text-white transition-colors duration-300 w-4 h-4" />
                                 <input
                                     type="date"
                                     value={startDate}
@@ -357,7 +357,7 @@ const Reports = () => {
                                 End Date
                             </label>
                             <div className="relative">
-                                <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
+                                <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black dark:text-white transition-colors duration-300 w-4 h-4" />
                                 <input
                                     type="date"
                                     value={endDate}
@@ -633,8 +633,8 @@ const Reports = () => {
                                                         key={p}
                                                         onClick={() => changePage(p)}
                                                         className={`w-8 h-8 flex items-center justify-center rounded-md text-sm font-medium transition-colors ${currentPage === p
-                                                                ? 'bg-purple-600 text-white'
-                                                                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                                                            ? 'bg-purple-600 text-white'
+                                                            : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
                                                             }`}
                                                     >
                                                         {p}

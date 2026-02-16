@@ -314,7 +314,7 @@ const Attendance = () => {
         {(userRole === ROLES.ADMIN || userRole === ROLES.PROJECT_MANAGER) && (
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
-              <FiCalendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+              <FiCalendar className="w-4 h-4 text-black dark:text-white transition-colors duration-300" />
               <input
                 type="date"
                 value={selectedDate}
