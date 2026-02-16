@@ -205,22 +205,22 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"
+            className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col transition-colors"
           >
             {/* Header */}
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800 transition-colors">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <FiTarget className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center transition-colors">
+                    <FiTarget className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white transition-colors">
                       {hasExistingUpdate
                         ? "Update Submission"
                         : "Submit Daily Update"}
                     </h2>
-                    <p className="text-sm text-gray-600 flex items-center">
+                    <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center transition-colors">
                       <FiCalendar className="w-4 h-4 mr-1" />
                       {getCurrentTime()}
                     </p>
@@ -238,21 +238,21 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
             </div>
 
             {/* Project Info */}
-            <div className="p-6 bg-gray-50 border-b border-gray-200">
+            <div className="p-6 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2 transition-colors">
                     {project.name}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 transition-colors">
                     {project.description}
                   </p>
                   <div className="flex items-center space-x-4 text-xs">
                     {project.projectManager && (
                       <div className="flex items-center space-x-1">
-                        <FiUser className="w-3 h-3 text-gray-400" />
-                        <span className="text-gray-500">PM:</span>
-                        <span className="font-medium text-gray-700">
+                        <FiUser className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                        <span className="text-gray-500 dark:text-gray-400">PM:</span>
+                        <span className="font-medium text-gray-700 dark:text-gray-200">
                           {project.projectManager.name}
                         </span>
                       </div>
@@ -260,7 +260,7 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
                     {project.teamLeader && (
                       <div className="flex items-center space-x-1">
                         <FiUser className="w-3 h-3 text-gray-400" />
-                        <span className="text-gray-500">TL:</span>
+                        <span className="text-gray-500 dark:text-gray-400">TL:</span>
                         <span className="font-medium text-gray-700">
                           {project.teamLeader.name}
                         </span>
@@ -299,16 +299,16 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg"
+                  className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg transition-colors"
                 >
                   <div className="flex items-center">
-                    <FiCheckCircle className="w-4 h-4 text-blue-600 mr-2" />
+                    <FiCheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 mr-2" />
                     <div>
-                      <p className="text-sm font-medium text-blue-900">
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
                         You've already submitted an update for this project
                         today
                       </p>
-                      <p className="text-xs text-blue-700 mt-1">
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
                         You can modify your submission until the daily cutoff
                         time.
                       </p>
@@ -324,7 +324,7 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
                   {/* Work Done Today */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                       What did you work on today for this project? *
                     </label>
                     <textarea
@@ -333,7 +333,7 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
                         handleInputChange("workDone", e.target.value)
                       }
                       rows={4}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${errors.workDone ? "border-red-300" : "border-gray-300"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors ${errors.workDone ? "border-red-300 dark:border-red-900" : "border-gray-300 dark:border-gray-600"
                         }`}
                       placeholder={`Describe the specific tasks you completed for ${project.name}...`}
                       required
@@ -342,11 +342,11 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
                       {errors.workDone ? (
                         <p className="text-red-500 text-xs">{errors.workDone}</p>
                       ) : (
-                        <p className="text-gray-500 text-xs">
+                        <p className="text-gray-500 dark:text-gray-400 text-xs">
                           Be specific about your project contributions
                         </p>
                       )}
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
                         {getWordCount(formData.workDone)} words
                       </span>
                     </div>
@@ -363,7 +363,7 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
                         handleInputChange("challenges", e.target.value)
                       }
                       rows={3}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${errors.challenges ? "border-red-300" : "border-gray-300"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors ${errors.challenges ? "border-red-300 dark:border-red-900" : "border-gray-300 dark:border-gray-600"
                         }`}
                       placeholder="Describe any project-specific blockers or difficulties..."
                     />
@@ -394,7 +394,7 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
                         handleInputChange("planForTomorrow", e.target.value)
                       }
                       rows={3}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${errors.planForTomorrow ? "border-red-300" : "border-gray-300"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors ${errors.planForTomorrow ? "border-red-300 dark:border-red-900" : "border-gray-300 dark:border-gray-600"
                         }`}
                       placeholder={`Outline your goals and tasks for ${project.name} tomorrow...`}
                     />
@@ -416,14 +416,14 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
 
                   {/* Submit Error */}
                   {errors.submit && (
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-red-600 text-sm">{errors.submit}</p>
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 rounded-lg transition-colors">
+                      <p className="text-red-600 dark:text-red-400 text-sm">{errors.submit}</p>
                     </div>
                   )}
                 </div>
 
                 {/* Form Footer */}
-                <div className="p-6 pt-4 border-t border-gray-200 bg-gray-50">
+                <div className="p-6 pt-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors">
                   <div className="flex items-center justify-between">
                     <div></div>
                     <div className="flex items-center space-x-3">
@@ -432,7 +432,7 @@ const ProjectUpdateModal = ({ isOpen, project, onClose, onSuccess }) => {
                       </Button>
                       <div className="flex items-center space-x-3">
                         {isCompleted && (
-                          <div className="text-sm text-red-600 mr-2">This project is completed — updates and attendance cannot be submitted.</div>
+                          <div className="text-sm text-red-600 dark:text-red-400 mr-2">This project is completed — updates and attendance cannot be submitted.</div>
                         )}
                         <Button
                           type="submit"
