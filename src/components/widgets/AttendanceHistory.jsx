@@ -326,7 +326,7 @@ const AttendanceHistory = ({ viewMode = "table" }) => {
         </div>
         <div className="mt-2 text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Working days: Monday to Saturday • Sunday is off
+            Working days: Monday to Sunday
           </p>
         </div>
       </div>
