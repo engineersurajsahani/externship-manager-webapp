@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiUsers, FiPlus, FiCheck, FiSave } from 'react-icons/fi';
+import { FiX, FiUsers, FiPlus, FiCheck, FiSave, FiSearch } from 'react-icons/fi';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
@@ -24,6 +24,10 @@ const ProjectAssignmentModal = ({
     interns: [],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [internSearch, setInternSearch] = useState('');
+  const [internDeptFilter, setInternDeptFilter] = useState('all');
+  const [internPage, setInternPage] = useState(1);
+  const internItemsPerPage = 5;
 
   useEffect(() => {
     if (!isOpen || users.length === 0) {
@@ -162,6 +166,35 @@ const ProjectAssignmentModal = ({
         : [...prev.interns, intern],
     }));
   };
+
+  // Filter and paginate interns
+  const filteredInterns = availableUsers.interns.filter((intern) => {
+    const matchesSearch =
+      intern.name.toLowerCase().includes(internSearch.toLowerCase()) ||
+      intern.email.toLowerCase().includes(internSearch.toLowerCase());
+    const matchesDept =
+      internDeptFilter === 'all' || intern.department === internDeptFilter;
+    return matchesSearch && matchesDept;
+  });
+
+  const totalInternPages = Math.ceil(
+    filteredInterns.length / internItemsPerPage
+  );
+  const paginatedInterns = filteredInterns.slice(
+    (internPage - 1) * internItemsPerPage,
+    internPage * internItemsPerPage
+  );
+
+  // Reset intern page when filters change
+  useEffect(() => {
+    setInternPage(1);
+  }, [internSearch, internDeptFilter]);
+
+  // Unique departments for filter
+  const departments = [
+    'all',
+    ...new Set(availableUsers.interns.map((u) => u.department)),
+  ];
 
   const handleSave = async () => {
     setIsSubmitting(true);
@@ -380,45 +413,130 @@ const ProjectAssignmentModal = ({
                     {assignments.interns.length} Selected
                   </Badge>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {availableUsers.interns.map((intern) => (
-                    <motion.div
-                      key={intern.id}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${isUserAssigned(intern, 'intern')
-                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800'
-                        }`}
-                      onClick={() => handleToggleIntern(intern)}
+                <div className="space-y-4">
+                  {/* Intern Filters */}
+                  <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                    <div className="flex-1 relative">
+                      <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input
+                        type="text"
+                        placeholder="Search interns..."
+                        value={internSearch}
+                        onChange={(e) => setInternSearch(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <select
+                      value={internDeptFilter}
+                      onChange={(e) => setInternDeptFilter(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/50 rounded-full flex items-center justify-center mr-3">
-                            <span className="text-orange-600 dark:text-orange-400 font-medium text-sm">
-                              {intern.name
-                                .split(' ')
-                                .map((n) => n[0])
-                                .join('')}
-                            </span>
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-gray-900 dark:text-white">
-                              {intern.name}
-                            </h4>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {intern.department}
-                            </p>
-                          </div>
-                        </div>
-                        {isUserAssigned(intern, 'intern') ? (
-                          <FiCheck className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                      <option value="all">All Departments</option>
+                      {departments.filter(d => d !== 'all').map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Interns Table */}
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 uppercase text-xs font-medium">
+                        <tr>
+                          <th className="px-4 py-3">Intern</th>
+                          <th className="px-4 py-3">Department</th>
+                          <th className="px-4 py-3 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                        {paginatedInterns.length > 0 ? (
+                          paginatedInterns.map((intern) => (
+                            <tr key={intern.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center">
+                                  <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/50 rounded-full flex items-center justify-center mr-3">
+                                    <span className="text-orange-600 dark:text-orange-400 font-medium text-xs">
+                                      {intern.name
+                                        .split(' ')
+                                        .map((n) => n[0])
+                                        .join('')}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <div className="font-medium text-gray-900 dark:text-white">{intern.name}</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{intern.email}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                                {intern.department}
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <button
+                                  onClick={() => handleToggleIntern(intern)}
+                                  className={`p-1.5 rounded-full transition-colors ${isUserAssigned(intern, 'intern')
+                                    ? 'bg-orange-500 text-white hover:bg-orange-600'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                    }`}
+                                >
+                                  {isUserAssigned(intern, 'intern') ? (
+                                    <FiCheck className="w-4 h-4" />
+                                  ) : (
+                                    <FiPlus className="w-4 h-4" />
+                                  )}
+                                </button>
+                              </td>
+                            </tr>
+                          ))
                         ) : (
-                          <FiPlus className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                          <tr>
+                            <td colSpan="3" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                              No interns found matching your criteria
+                            </td>
+                          </tr>
                         )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Intern Pagination */}
+                  {totalInternPages > 1 && (
+                    <div className="flex items-center justify-between pt-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Showing {(internPage - 1) * internItemsPerPage + 1} to {Math.min(internPage * internItemsPerPage, filteredInterns.length)} of {filteredInterns.length}
+                      </p>
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => setInternPage(p => Math.max(1, p - 1))}
+                          disabled={internPage === 1}
+                          className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded disabled:opacity-50 text-gray-600 dark:text-gray-400"
+                        >
+                          Prev
+                        </button>
+                        {[...Array(totalInternPages)].map((_, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setInternPage(i + 1)}
+                            className={`px-2 py-1 text-xs rounded ${internPage === i + 1
+                              ? 'bg-indigo-600 text-white'
+                              : 'border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400'
+                              }`}
+                          >
+                            {i + 1}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => setInternPage(p => Math.min(totalInternPages, p + 1))}
+                          disabled={internPage === totalInternPages}
+                          className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded disabled:opacity-50 text-gray-600 dark:text-gray-400"
+                        >
+                          Next
+                        </button>
                       </div>
-                    </motion.div>
-                  ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

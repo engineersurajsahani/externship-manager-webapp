@@ -101,12 +101,21 @@ const UserManagement = () => {
     }
   };
 
-  // Debounce search and handle filters
+  // Fetch users when filters or page change
   useEffect(() => {
-    // Reset to page 1 when filters change (except when simply changing page)
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, selectedRole, selectedStatus]);
+  }, [currentPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      fetchUsers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRole, selectedStatus]);
 
   // Separate effect for search to implement debounce
   useEffect(() => {
@@ -149,7 +158,7 @@ const UserManagement = () => {
       if (!user) return;
 
       const updateData = {
-        isActive: user.status !== 'active',
+        isActive: !user.isActive,
       };
 
       const response = await apiService.updateUser(userId, updateData);
@@ -514,11 +523,11 @@ const UserManagement = () => {
                             : 'text-green-600 hover:text-green-900'
                             }`}
                           title={
-                            user.status === 'active' ? 'Deactivate' : 'Activate'
+                            user.isActive ? 'Deactivate' : 'Activate'
                           }
                           onClick={() => handleToggleUserStatus(user.id)}
                         >
-                          {user.status === 'active' ? (
+                          {user.isActive ? (
                             <FiUserX className="w-4 h-4" />
                           ) : (
                             <FiUserCheck className="w-4 h-4" />
