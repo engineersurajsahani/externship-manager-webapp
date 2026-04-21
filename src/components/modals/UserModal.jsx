@@ -43,7 +43,7 @@ const UserModal = ({
         phone: user?.phoneNumber || '',
         department: user?.department || '',
         role: user?.role || 'intern',
-        status: user?.isActive ? 'active' : 'inactive',
+        status: user?.isActive ? (user.lastLogin === 'Never' || !user.lastLogin ? 'pending' : 'active') : 'inactive',
         joinDate: user?.joinDate
           ? new Date(user.joinDate).toISOString().split('T')[0]
           : new Date().toISOString().split('T')[0],
@@ -130,7 +130,7 @@ const UserModal = ({
         phoneNumber: formData.phone,
         department: formData.department || 'General',
         role: formData.role,
-        isActive: formData.status === 'active',
+        isActive: formData.status !== 'inactive',
         joinDate: formData.joinDate,
       };
 
