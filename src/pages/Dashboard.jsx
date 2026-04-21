@@ -386,11 +386,8 @@ const Dashboard = () => {
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        // Exclude Sundays and Saturdays
-        workingDays++;
-      }
+      // All days are working days
+      workingDays++;
     }
 
     return workingDays;
@@ -401,11 +398,8 @@ const Dashboard = () => {
 
     for (let day = 1; day <= currentDay; day++) {
       const date = new Date(year, month, day);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        // Exclude Sundays and Saturdays
-        workingDays++;
-      }
+      // All days are working days
+      workingDays++;
     }
 
     return workingDays;

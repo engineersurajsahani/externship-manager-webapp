@@ -79,11 +79,8 @@ const Attendance = () => {
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        // Exclude Sundays and Saturdays
-        workingDays++;
-      }
+      // All days are working days
+      workingDays++;
     }
 
     return workingDays;
@@ -95,11 +92,8 @@ const Attendance = () => {
 
     for (let day = 1; day <= currentDay; day++) {
       const date = new Date(year, month, day);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        // Exclude Sundays and Saturdays
-        workingDays++;
-      }
+      // All days are working days
+      workingDays++;
     }
 
     return workingDays;
@@ -129,16 +123,8 @@ const Attendance = () => {
       checkDate.setDate(checkDate.getDate() - 1);
     }
 
-    // Count consecutive days with updates (skip Sundays)
+    // Count consecutive days with updates (Mon-Sun)
     while (true) {
-      const dayOfWeek = checkDate.getDay();
-
-      if (dayOfWeek === 0) {
-        // Skip Sundays
-        checkDate.setDate(checkDate.getDate() - 1);
-        continue;
-      }
-
       const hasUpdate = sortedUpdates.some((update) => {
         const updateDate = new Date(update.date);
         return updateDate.toDateString() === checkDate.toDateString();
