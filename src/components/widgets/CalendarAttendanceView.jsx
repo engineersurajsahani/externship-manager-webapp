@@ -180,7 +180,7 @@ const CalendarAttendanceView = () => {
       // Use local date string to avoid UTC offset causing previous/next day
       const dateString = formatLocalDate(d);
       const dayOfWeek = d.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday (0) and Saturday (6) are weekends
+      const isWeekend = false;
       const isCurrentMonth = d.getMonth() === currentDate.getMonth();
 
       // Find attendance record for this date
@@ -191,7 +191,7 @@ const CalendarAttendanceView = () => {
 
       let status = 'none'; // Default for weekends and future dates
 
-      if (!isWeekend && isCurrentMonth) {
+      if (isCurrentMonth) {
         const today = new Date();
         const isToday = d.toDateString() === today.toDateString();
         const isPast = d < today && !isToday;
@@ -477,23 +477,20 @@ const CalendarAttendanceView = () => {
     return { total, present, absent, leaves, pending, percentage };
   };
 
-  // Helper function to calculate working days until today
-  const getWorkingDaysUntilToday = (startDate, endDate) => {
-    let workingDays = 0;
-    let currentDate = new Date(startDate);
-    const end = new Date(endDate);
+// Helper function to calculate working days until today (ALL days included)
+const getWorkingDaysUntilToday = (startDate, endDate) => {
+  let workingDays = 0;
+  let currentDate = new Date(startDate);
+  const end = new Date(endDate);
 
-    // Ensure we're counting up to and including today
-    while (currentDate <= end) {
-      const dayOfWeek = currentDate.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        workingDays++;
-      }
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
+  // Count every day including Saturday and Sunday
+  while (currentDate <= end) {
+    workingDays++;
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
 
-    return workingDays;
-  };
+  return workingDays;
+};
 
   const generateCalendarDays = () => {
     const firstDayOfMonth = new Date(
@@ -956,7 +953,7 @@ const CalendarAttendanceView = () => {
         </div>
         <div className="mt-3 pt-3 border-t border-gray-100">
           <p className="text-center text-xs text-gray-500">
-            Working days: Monday to Friday • Saturday and Sunday are off
+            Working days: Monday to Sunday
           </p>
         </div>
       </div>

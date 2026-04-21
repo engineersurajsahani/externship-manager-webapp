@@ -72,39 +72,31 @@ const Attendance = () => {
     };
   }, []);
 
-  // Helper function to get total working days in a month (exclude Sundays and Saturdays)
-  const getWorkingDaysInMonth = (year, month) => {
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    let workingDays = 0;
+  // Helper function to get total working days in a month (ALL days included)
+const getWorkingDaysInMonth = (year, month) => {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  let workingDays = 0;
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        // Exclude Sundays and Saturdays
-        workingDays++;
-      }
-    }
+  for (let day = 1; day <= daysInMonth; day++) {
+    // Count every day as a working day
+    workingDays++;
+  }
 
-    return workingDays;
-  };
+  return workingDays;
+};
 
-  // Helper function to get working days that have passed in current month
-  const getWorkingDaysPassed = (year, month, currentDay) => {
-    let workingDays = 0;
+  // Helper function to get working days passed in current month (ALL days included)
+const getWorkingDaysPassed = (year, month, currentDay) => {
+  let workingDays = 0;
 
-    for (let day = 1; day <= currentDay; day++) {
-      const date = new Date(year, month, day);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        // Exclude Sundays and Saturdays
-        workingDays++;
-      }
-    }
+  for (let day = 1; day <= currentDay; day++) {
+    // Count every day as a working day
+    workingDays++;
+  }
 
-    return workingDays;
-  };
-
+  return workingDays;
+};
+  
   // Calculate consecutive days streak
   const calculateStreak = (updates) => {
     if (!updates || updates.length === 0) return 0;
@@ -132,12 +124,6 @@ const Attendance = () => {
     // Count consecutive days with updates (skip Sundays)
     while (true) {
       const dayOfWeek = checkDate.getDay();
-
-      if (dayOfWeek === 0) {
-        // Skip Sundays
-        checkDate.setDate(checkDate.getDate() - 1);
-        continue;
-      }
 
       const hasUpdate = sortedUpdates.some((update) => {
         const updateDate = new Date(update.date);
