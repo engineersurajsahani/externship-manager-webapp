@@ -225,8 +225,8 @@ export const dashboardHelpers = {
         (currentDate - updateDate) / (1000 * 60 * 60 * 24)
       );
 
-      if (daysDifference <= 1 && currentDate.getDay() !== 0) {
-        // Only Sunday is non-working day
+      if (daysDifference <= 1) {
+        // Every day is a working day
         streak++;
         currentDate = new Date(updateDate);
         currentDate.setDate(currentDate.getDate() - 1);
@@ -245,11 +245,8 @@ export const dashboardHelpers = {
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0) {
-        // Only Sunday is non-working day
-        workingDays++;
-      }
+      // Every day is a working day
+      workingDays++;
     }
 
     return workingDays;
@@ -266,9 +263,8 @@ export const dashboardHelpers = {
 
     for (let day = 1; day <= today; day++) {
       const date = new Date(currentYear, currentMonth, day);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && date <= now) {
-        // Only Sunday is non-working day
+      if (date <= now) {
+        // Every day is a working day
         pastWorkingDays++;
       }
     }

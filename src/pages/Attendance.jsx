@@ -77,10 +77,18 @@ const getWorkingDaysInMonth = (year, month) => {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   let workingDays = 0;
 
+<<<<<<< HEAD
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      // All days are working days
+      workingDays++;
+    }
+=======
   for (let day = 1; day <= daysInMonth; day++) {
     // Count every day as a working day
     workingDays++;
   }
+>>>>>>> 6a49d646eb820227c844aba4d635ebdf2f8ee71d
 
   return workingDays;
 };
@@ -89,10 +97,21 @@ const getWorkingDaysInMonth = (year, month) => {
 const getWorkingDaysPassed = (year, month, currentDay) => {
   let workingDays = 0;
 
+<<<<<<< HEAD
+    for (let day = 1; day <= currentDay; day++) {
+      const date = new Date(year, month, day);
+      // All days are working days
+      workingDays++;
+    }
+
+    return workingDays;
+  };
+=======
   for (let day = 1; day <= currentDay; day++) {
     // Count every day as a working day
     workingDays++;
   }
+>>>>>>> 6a49d646eb820227c844aba4d635ebdf2f8ee71d
 
   return workingDays;
 };
@@ -121,10 +140,13 @@ const getWorkingDaysPassed = (year, month, currentDay) => {
       checkDate.setDate(checkDate.getDate() - 1);
     }
 
-    // Count consecutive days with updates (skip Sundays)
+    // Count consecutive days with updates (Mon-Sun)
     while (true) {
+<<<<<<< HEAD
+=======
       const dayOfWeek = checkDate.getDay();
 
+>>>>>>> 6a49d646eb820227c844aba4d635ebdf2f8ee71d
       const hasUpdate = sortedUpdates.some((update) => {
         const updateDate = new Date(update.date);
         return updateDate.toDateString() === checkDate.toDateString();

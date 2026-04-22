@@ -180,7 +180,11 @@ const CalendarAttendanceView = () => {
       // Use local date string to avoid UTC offset causing previous/next day
       const dateString = formatLocalDate(d);
       const dayOfWeek = d.getDay();
+<<<<<<< HEAD
+      const isWeekend = false; // Every day is a working day
+=======
       const isWeekend = false;
+>>>>>>> 6a49d646eb820227c844aba4d635ebdf2f8ee71d
       const isCurrentMonth = d.getMonth() === currentDate.getMonth();
 
       // Find attendance record for this date
@@ -243,7 +247,7 @@ const CalendarAttendanceView = () => {
 
   const getDayStatus = (dateString) => {
     const dayData = attendanceData[dateString];
-    if (!dayData || dayData.isWeekend || !dayData.isCurrentMonth) return null;
+    if (!dayData || !dayData.isCurrentMonth) return null;
     return dayData.status;
   };
 
@@ -256,8 +260,8 @@ const CalendarAttendanceView = () => {
 
     if (!dayData.isCurrentMonth) {
       classes += 'text-gray-300 dark:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50';
-    } else if (dayData.isWeekend) {
-      classes += 'text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800/30 cursor-default';
+    } else if (false) {
+      // Logic for weekends removed as they are now working days
     } else {
       switch (dayData.status) {
         case 'present':
@@ -290,7 +294,7 @@ const CalendarAttendanceView = () => {
 
   const handleDateClick = (dateString) => {
     const dayData = attendanceData[dateString];
-    if (dayData && dayData.isCurrentMonth && !dayData.isWeekend) {
+    if (dayData && dayData.isCurrentMonth) {
       setSelectedDate(selectedDate === dateString ? null : dateString);
     }
   };
@@ -457,7 +461,7 @@ const CalendarAttendanceView = () => {
   const getMonthlyStats = () => {
     // Filter for current month working days only
     const monthData = Object.values(attendanceData).filter(
-      (day) => day.isCurrentMonth && !day.isWeekend
+      (day) => day.isCurrentMonth
     );
 
     // Calculate working days until today in current month
@@ -483,11 +487,21 @@ const getWorkingDaysUntilToday = (startDate, endDate) => {
   let currentDate = new Date(startDate);
   const end = new Date(endDate);
 
+<<<<<<< HEAD
+    // Ensure we're counting up to and including today
+    while (currentDate <= end) {
+      const dayOfWeek = currentDate.getDay();
+      // All days are working days
+      workingDays++;
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+=======
   // Count every day including Saturday and Sunday
   while (currentDate <= end) {
     workingDays++;
     currentDate.setDate(currentDate.getDate() + 1);
   }
+>>>>>>> 6a49d646eb820227c844aba4d635ebdf2f8ee71d
 
   return workingDays;
 };
@@ -619,7 +633,7 @@ const getWorkingDaysUntilToday = (startDate, endDate) => {
             <div
               key={day}
               className={`p-3 text-center text-sm font-semibold rounded-lg ${index === 0 || index === 6
-                ? 'text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800/50'  // Sunday and Saturday
+                ? 'text-gray-700 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/20'  // Saturday and Sunday
                 : 'text-gray-700 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/20' // Monday to Friday
                 }`}
             >
