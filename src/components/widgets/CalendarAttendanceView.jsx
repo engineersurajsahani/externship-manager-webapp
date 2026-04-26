@@ -179,12 +179,12 @@ const CalendarAttendanceView = () => {
     ) {
       // Use local date string to avoid UTC offset causing previous/next day
       const dateString = formatLocalDate(d);
-      const dayOfWeek = d.getDay();
-<<<<<<< HEAD
+    
+
       const isWeekend = false; // Every day is a working day
-=======
-      const isWeekend = false;
->>>>>>> 6a49d646eb820227c844aba4d635ebdf2f8ee71d
+
+     
+
       const isCurrentMonth = d.getMonth() === currentDate.getMonth();
 
       // Find attendance record for this date
@@ -487,21 +487,12 @@ const getWorkingDaysUntilToday = (startDate, endDate) => {
   let currentDate = new Date(startDate);
   const end = new Date(endDate);
 
-<<<<<<< HEAD
-    // Ensure we're counting up to and including today
+
+
     while (currentDate <= end) {
-      const dayOfWeek = currentDate.getDay();
-      // All days are working days
       workingDays++;
       currentDate.setDate(currentDate.getDate() + 1);
     }
-=======
-  // Count every day including Saturday and Sunday
-  while (currentDate <= end) {
-    workingDays++;
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
->>>>>>> 6a49d646eb820227c844aba4d635ebdf2f8ee71d
 
   return workingDays;
 };
