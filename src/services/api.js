@@ -12,7 +12,7 @@ const getApiBaseUrl = () => {
   }
 
   // Default to localhost for development to fix "Network Error"
-  return 'http://localhost:5050/api';
+  return 'https://externship-manager-api-qiwo.onrender.com/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();
